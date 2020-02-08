@@ -77,7 +77,87 @@
 	function ScreenList(str) if type(screenList[str]) == 'function' then return screenList[str]() else return screenList[str] end end
 
 -- Judgment tween commands.
-	function JudgmentTween(self) self:zoom(1.05) self:decelerate(.1) self:zoom(1) self:sleep(.6) self:accelerate(.2) self:zoom(0) end
+if FUCK_EXE and tonumber(GAMESTATE:GetVersionDate()) >= 20180821 then
+	t_ease = {
+		outElastic = function(t, b, c, d, a, p)
+			if t == 0 then return b end
+
+			t = t / d
+
+			if t == 1 then return b + c end
+
+			if not p then p = d * 0.3 end
+
+			local s
+
+			if not a or a < math.abs(c) then
+				a = c
+				s = p / 4
+			else
+				s = p / (2 * math.pi) * math.asin(c/a)
+			end
+
+			return a * math.pow(2, -10 * t) * math.sin((t * d - s) * (2 * math.pi) / p) + c + b
+		end,
+
+		inBack = function(t, b, c, d, s)
+			if not s then s = 1.70158 end
+			t = t / d
+			return c * t * t * ((s + 1) * t - s) + b
+		end,
+
+		outCirc = function(t, b, c, d)
+			t = t / d - 1
+			return(c * math.sqrt(1 - math.pow(t, 2)) + b)
+		end,
+
+		outBounce = function(t, b, c, d)
+			t = t / d
+			if t < 1 / 2.75 then
+				return c * (7.5625 * t * t) + b
+			elseif t < 2 / 2.75 then
+				t = t - (1.5 / 2.75)
+				return c * (7.5625 * t * t + 0.75) + b
+			elseif t < 2.5 / 2.75 then
+				t = t - (2.25 / 2.75)
+				return c * (7.5625 * t * t + 0.9375) + b
+			else
+				t = t - (2.625 / 2.75)
+				return c * (7.5625 * t * t + 0.984375) + b
+			end
+		end
+	}
+	function JudgmentTween(self)
+		self:zoomx(0.7)
+		self:zoomy(0.9)
+		self:tween(.7, 't_ease.outElastic(%f, 0, 1, 1)')
+		self:zoomx(1)
+		self:zoomy(1)
+		self:tween(.2, 't_ease.inBack(%f, 0, 1, 1, 2.5)')
+		self:zoom(0)
+	end
+
+	function ComboTween(self)
+		local y=self:GetY();
+		self:zoom(0.7);
+		self:tween(0.05, 't_ease.outCirc(%f, 0, 1, 1)');
+		--self:zoomy(0.7 * 1.15);
+		self:y(y - 12);
+		self:tween(0.2, 't_ease.outBounce(%f, 0, 1, 1)');
+		--self:zoom(0.7);
+		self:y(y);
+	end
+else
+	function JudgmentTween(self) self:zoom(.8) self:decelerate(.1) self:zoom(.75) self:sleep(.6) self:accelerate(.2) self:zoom(0) end
+
+	function ComboTween(self)
+		local combo=self:GetZoom();
+		local newZoom=scale(combo,50,3000,0.8,1.8);
+		self:zoom(0.7*newZoom);
+		self:linear(0.05);
+		self:zoom(0.7*newZoom);
+	end
+end
 	function HoldTween(self) self:diffuse(1,1,1,1) self:zoom(.5); self:sleep(.5) self:zoom(0) end
 
 -- Used with Judgment Graphs.

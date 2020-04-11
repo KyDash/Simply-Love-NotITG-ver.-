@@ -290,11 +290,7 @@
 		Text=""
 		InitCommand="x,SCREEN_CENTER_X;y,SCREEN_TOP+66;zoom,.3;shadowlength,0"
 		OnCommand="queuecommand,Update"
-		UpdateCommand="%function(self) 
-		s = modRate .. 'x'
-		if modRate == 1 then s = '' end
-		self:settext(s)
-		end"
+		UpdateCommand="%GameplayRateMod"
 	/>
 </children> </ActorFrame>
 

@@ -841,12 +841,19 @@ function GameplayBPM(self)
 	if b and bpm then
 		bpm[3] = Screen():GetChild('BPMDisplay'):GetChild('Text'):GetText()
 		if not OPENITG then bpm[3] = math.floor(bpm[3] * modRate + 0.5) end
-		self:settext(bpm[3])
+		self:settext(bpm[3] * modRate)
 		self:sleep(.05)
 		self:queuecommand('Update')
 	end
 end
 
+function GameplayRateMod(self)
+	local s = bpm[3] .. ' @ ' .. modRate .. 'x'
+	if modRate == 1 then s = '' end
+	self:settext(s)
+	self:sleep(.05)
+	self:queuecommand('Update')
+end
 -------------------------------------
 -- Lua Option Row support functions
 -------------------------------------
@@ -1141,13 +1148,17 @@ function CalculateSpeedMod()
 	end end
 end
 
-function SpeedString(pn,speed) local s = speed or modSpeed[pn] or ''; if modType[pn] == 'x' then return string.format('%g',s/100) .. 'x' else return modType[pn] .. s end end
+function SpeedString(pn,speed) local s = speed or modSpeed[pn] or ''; if modType[pn] == 'x' then return string.format('%g',math.floor(s)/100) .. 'x' else return modType[pn] .. s end end
 function SetSpeedMod(pn) ApplyMod('1x',pn) ApplyMod(SpeedString(pn),pn) BM('SpeedModChanged') end
 
 function ApplyRateAdjust()
 	for pn=1,2 do
 		if Player(pn) and modSpeed then
-			ApplyMod(SpeedString(pn,math.ceil(modSpeed[pn]/modRate)),pn)
+			if modType[pn] == 'x' then
+				ApplyMod(SpeedString(pn,math.ceil(modSpeed[pn])),pn)
+			else
+				ApplyMod(SpeedString(pn,math.ceil(modSpeed[pn]/modRate)),pn)
+			end
 		end
 	end
 end

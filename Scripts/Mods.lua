@@ -173,7 +173,7 @@ end
 	feetBaseZoom = 1
 
 -- Judgment Font List
-	judgmentFontList = { 'Default' , 'Love' , 'Tactics', 'Chromatic', 'Deco', 'GrooveNights', 'FP', 'ITG2' }
+	judgmentFontList = { 'Default' , 'Love' , 'Tactics', 'Chromatic', 'Deco', 'GrooveNights', 'ITG2' }
 
 -- Used with ThemeFiles function
 	themeDir = '_ThemeFiles'
@@ -1057,16 +1057,31 @@ function SpeedNumber()
 	return SliderOption('Adjust Speed',move,display)
 end
 
-function RateMods( s )
-	local t = OptionRowBase('Music Rate',s and rateModsEdit or rateMods)
-	t.OneChoiceForAllPlayers = true
-	t.LoadSelections = function(self, list, pn)	for i,m in ipairs(self.Choices) do if CheckMod(pn,m..'music') then list[i] = true; s = string.gsub(m,'x','') modRate = tonumber(s) end end end
-	t.SaveSelections = function(self, list, pn)
-		for i,m in ipairs(self.Choices) do if list[i] then s = string.gsub(m,'x',''); modRate = tonumber(s) AdjustXModFromRate() SetOptionRow('Adjust Speed',true) end end
-		ApplyMod(s..'xmusic',pn+1)
-		MESSAGEMAN:Broadcast('RateModChanged')
+do
+	local lastModRate = 1
+	local function AdjustXModFromRate()
+		for pn = 1, 2 do
+			if Player(pn) then
+				if modType[pn] == 'x' then
+
+					modSpeed[pn] = modSpeed[pn] * lastModRate / modRate
+				end
+			end
+		end
+		lastModRate = modRate
 	end
-	return t
+
+	function RateMods( s )
+		local t = OptionRowBase('Music Rate',s and rateModsEdit or rateMods)
+		t.OneChoiceForAllPlayers = true
+		t.LoadSelections = function(self, list, pn)	for i,m in ipairs(self.Choices) do if CheckMod(pn,m..'music') then list[i] = true; s = string.gsub(m,'x','') modRate = tonumber(s) end end end
+		t.SaveSelections = function(self, list, pn)
+			for i,m in ipairs(self.Choices) do if list[i] then s = string.gsub(m,'x',''); modRate = tonumber(s) AdjustXModFromRate() SetOptionRow('Adjust Speed',true) end end
+			ApplyMod(s..'xmusic',pn+1)
+			MESSAGEMAN:Broadcast('RateModChanged')
+		end
+		return t
+	end
 end
 
 do
@@ -1163,7 +1178,7 @@ function CalculateSpeedMod()
 	end end
 end
 
-function SpeedString(pn,speed) local s = speed or modSpeed[pn] or ''; if modType[pn] == 'x' then return string.format('%g',math.floor(s)/100) .. 'x' else return modType[pn] .. s end end
+function SpeedString(pn,speed) local s = speed or modSpeed[pn] or ''; if modType[pn] == 'x' then return string.format('%g',math.floor(s)/100) .. 'x' else return modType[pn] .. math.floor(s) end end
 function SetSpeedMod(pn) ApplyMod('1x',pn) ApplyMod(SpeedString(pn),pn) BM('SpeedModChanged') end
 
 function ApplyRateAdjust()

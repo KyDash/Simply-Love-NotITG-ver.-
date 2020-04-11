@@ -828,8 +828,8 @@ end
 function DisplaySpeedMod(pn)
 	local s = ''
 	if modType[pn] == 'x' and tonumber(bpm[1]) then
-		s = math.floor(modSpeed[pn] / 100 * bpm[1] + 0.5)
-		if tonumber(bpm[2]) then s = s ..  '-' .. math.floor(modSpeed[pn] / 100 * bpm[2] + 0.5) end
+		s = math.floor(modSpeed[pn] / 100 * bpm[1] * modRate + 0.5)
+		if tonumber(bpm[2]) then s = s ..  '-' .. math.floor(modSpeed[pn] / 100 * bpm[2] * modRate + 0.5) end
 		s = ' (' .. s .. ')'
 	end
 	return SpeedString(pn) .. s
@@ -1062,11 +1062,26 @@ function RateMods( s )
 	t.OneChoiceForAllPlayers = true
 	t.LoadSelections = function(self, list, pn)	for i,m in ipairs(self.Choices) do if CheckMod(pn,m..'music') then list[i] = true; s = string.gsub(m,'x','') modRate = tonumber(s) end end end
 	t.SaveSelections = function(self, list, pn)
-		for i,m in ipairs(self.Choices) do if list[i] then s = string.gsub(m,'x',''); modRate = tonumber(s) end end
+		for i,m in ipairs(self.Choices) do if list[i] then s = string.gsub(m,'x',''); modRate = tonumber(s) AdjustXModFromRate() SetOptionRow('Adjust Speed',true) end end
 		ApplyMod(s..'xmusic',pn+1)
 		MESSAGEMAN:Broadcast('RateModChanged')
 	end
 	return t
+end
+
+do
+	local lastModRate = 1
+	function AdjustXModFromRate()
+		for pn = 1, 2 do
+			if Player(pn) then
+				if modType[pn] == 'x' then
+
+					modSpeed[pn] = modSpeed[pn] * lastModRate / modRate
+				end
+			end
+		end
+		lastModRate = modRate
+	end
 end
 
 function NextScreenOption()

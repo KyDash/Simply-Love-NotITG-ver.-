@@ -192,6 +192,7 @@ end
 	speedMin = 5
 
 -- These will be the option rows available on the [nth] option screen. The 'NextScreen' row will be automatically added as long as there is more than 1 option screen.
+-- ACTUALLY CONTAINED IN THEME.LUA
 	playerOptions = {}
 	--playerOptions[1] = { 'SpeedType','SpeedNumber','Mini','Perspective','NoteSkin','Turn','LifeBar','Compare','Rate' }
 	--playerOptions[2] = { 'Turn','Accel','Scroll','Effect','Appearance','Handicap','InsertTaps','InsertOther','Hide','Meta','Ghost' }
@@ -839,8 +840,9 @@ function GameplayBPM(self)
 	local b = Screen():GetChild('BPMDisplay')
 	if b then b = b:GetChild('Text'):GetText() end
 	if b and bpm then
-		bpm[3] = Screen():GetChild('BPMDisplay'):GetChild('Text'):GetText()
-		if not OPENITG then bpm[3] = math.floor(bpm[3] * modRate + 0.5) end
+		--bpm[3] = Screen():GetChild('BPMDisplay'):GetChild('Text'):GetText()
+		--if not OPENITG then bpm[3] = math.floor(bpm[3] * modRate + 0.5) end
+		bpm[3] = FUCK_EXE and GAMESTATE:GetCurBPM() or Screen():GetChild('BPMDisplay'):GetChild('Text'):GetText() -- more accurate than bpmdisplay
 		self:settext(bpm[3] * modRate)
 		self:sleep(.05)
 		self:queuecommand('Update')
@@ -854,6 +856,19 @@ function GameplayRateMod(self)
 	self:sleep(.05)
 	self:queuecommand('Update')
 end
+
+function DisplayOptionsBPM(self)
+	local s = '???'
+	if bpm and tonumber(bpm[1]) then
+		s = bpm[1] * modRate
+		if tonumber(bpm[2]) then
+			s = s .. ' - ' .. bpm[2] * modRate
+		end
+	end
+	return s
+	--self:settext(s)
+end
+
 -------------------------------------
 -- Lua Option Row support functions
 -------------------------------------
@@ -1077,30 +1092,23 @@ do
 	end
 
 	function RateMods( s )
-		local t = OptionRowBase('Music Rate',s and rateModsEdit or rateMods)
+		local t = OptionRowBase('Music Rate\nBPM: ' .. DisplayOptionsBPM(),s and rateModsEdit or rateMods)
+		local edit = s and true or false
 		t.OneChoiceForAllPlayers = true
 		t.LoadSelections = function(self, list, pn)	for i,m in ipairs(self.Choices) do if CheckMod(pn,m..'music') then list[i] = true; s = string.gsub(m,'x','') modRate = tonumber(s) end end end
 		t.SaveSelections = function(self, list, pn)
-			for i,m in ipairs(self.Choices) do if list[i] then s = string.gsub(m,'x',''); modRate = tonumber(s) AdjustXModFromRate() SetOptionRow('Adjust Speed',true) end end
+			for i,m in ipairs(self.Choices) do if list[i] then s = string.gsub(m,'x',''); modRate = tonumber(s) if not edit then AdjustXModFromRate() SetOptionRow('Adjust Speed',true) end end end
 			ApplyMod(s..'xmusic',pn+1)
 			MESSAGEMAN:Broadcast('RateModChanged')
-		end
-		return t
-	end
-end
 
-do
-	local lastModRate = 1
-	function AdjustXModFromRate()
-		for pn = 1, 2 do
-			if Player(pn) then
-				if modType[pn] == 'x' then
+			if optionRowTextCache[t.Name] then
+				local text = optionRowText[ optionRowTextCache[t.Name] ][1]
 
-					modSpeed[pn] = modSpeed[pn] * lastModRate / modRate
-				end
+				text:settext('Music Rate\nBPM: ' .. DisplayOptionsBPM())
+				text:maxwidth(0)
 			end
 		end
-		lastModRate = modRate
+		return t
 	end
 end
 

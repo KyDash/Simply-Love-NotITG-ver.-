@@ -73,7 +73,7 @@
 -- Redefine these in Theme.lua if other values are desired.
 
 -- Used with GoTo option for PlayerOptions and with Summary screen. These can return either functions or strings.
-	screenList = { TitleMenu = 'TitleMenu' , SelectMusic = 'SelectMusic' , PlayerOptions = 'PlayerOptions' , Stage = 'Stage' , Gameplay = 'Gameplay' , Evaluation = 'Evaluation' , NameEntry = 'NameEntry' , Summary = 'Summary' , Ending = 'TitleMenu' }
+	--screenList = { TitleMenu = 'TitleMenu' , SelectMusic = 'SelectMusic' , PlayerOptions = 'PlayerOptions' , Stage = 'Stage' , Gameplay = 'Gameplay' , Evaluation = 'Evaluation' , NameEntry = 'NameEntry' , Summary = 'Summary' , Ending = 'TitleMenu' }
 	function ScreenList(str) if type(screenList[str]) == 'function' then return screenList[str]() else return screenList[str] end end
 
 -- Judgment tween commands.
@@ -193,9 +193,9 @@ end
 
 -- These will be the option rows available on the [nth] option screen. The 'NextScreen' row will be automatically added as long as there is more than 1 option screen.
 	playerOptions = {}
-	playerOptions[1] = { 'SpeedType','SpeedNumber','Mini','Perspective','NoteSkin','Turn','LifeBar','Compare','Rate' }
-	playerOptions[2] = { 'Turn','Accel','Scroll','Effect','Appearance','Handicap','InsertTaps','InsertOther','Hide','Ghost' }
-	playerOptions.Edit = { 'SpeedType','SpeedNumber','Mini','Perspective','NoteSkin','Turn' }
+	--playerOptions[1] = { 'SpeedType','SpeedNumber','Mini','Perspective','NoteSkin','Turn','LifeBar','Compare','Rate' }
+	--playerOptions[2] = { 'Turn','Accel','Scroll','Effect','Appearance','Handicap','InsertTaps','InsertOther','Hide','Meta','Ghost' }
+	--playerOptions.Edit = { 'SpeedType','SpeedNumber','Mini','Perspective','NoteSkin','Turn' }
 	ShowAllInRow = false
 
 -----------------------
@@ -734,7 +734,7 @@ function CaptureJudgment() for pn = 1, 2 do if Player(pn) then for i,v in ipairs
 
 function CaptureMeter()
 	for pn = 1, 2 do if Player(pn) then
-		s = GAMESTATE:GetCurrentSteps(pn-1)
+		local s = GAMESTATE:GetCurrentSteps(pn-1)
 		if s then Difficulty[pn] = s:GetDifficulty() else Difficulty[pn] = Screen():GetChild('MeterP'.. pn):GetChild('Difficulty'):GetText() end
 		for i=0,5 do if DifficultyToThemedString(i) == Difficulty[pn] or string.upper(DifficultyToThemedString(i)) == Difficulty[pn] then Difficulty[pn] = i break end end
 		Meter[pn] = Screen():GetChild('MeterP'.. pn):GetChild('Meter'):GetText()
@@ -746,9 +746,9 @@ function CaptureSteps()
 	steps = {}
 	if GAMESTATE:GetCurrentSong() then
 		steps = GAMESTATE:GetCurrentSong():GetStepsByStepsType( st )
-		t = {} -- Sorting manually. For whatever reason table.sort was returning true for a:GetMeter() == b:GetMeter() on some edits when that was NOT true. Maybe the function was too long? The length was required.
+		local t = {} -- Sorting manually. For whatever reason table.sort was returning true for a:GetMeter() == b:GetMeter() on some edits when that was NOT true. Maybe the function was too long? The length was required.
 		for n=1,table.getn(steps) do
-			m = 1
+			local m = 1
 			for i,a in ipairs(steps) do
 				local b = steps[m]
 				if a:GetDifficulty()< b:GetDifficulty() or (a:GetDifficulty() == b:GetDifficulty() and (a:GetMeter() < b:GetMeter() or (a:GetMeter() == b:GetMeter() and a:GetDescription()<b:GetDescription()))) then m = i end
@@ -879,6 +879,8 @@ ModsMaster.Appearance = 	{ modlist = {'Sudden','Hidden','Blink','Stealth'}, defa
 ModsMaster.Handicap = 		{ modlist = {'No Mines','No Rolls','No Holds','No Hands','No Jumps','No Stretch'}, default ='no nomines,no noholds,no norolls,no nohands,no nojumps,no nostretch', mods = {'nomines','norolls','noholds','nohands','nojumps','nostretch'} } 
 ModsMaster.InsertTaps =		{ name = 'Insert', modlist = {'Little','Big','Quick','Skippy','Echo','Wide','Stomp'}, default = 'no little,no big,no quick,no skippy,no echo,no stomp,no wide', mods = {'Little','Big','Quick','Skippy','Echo','Wide','Stomp'} }
 ModsMaster.InsertOther =	{ name = 'Other', modlist = {'Planted','Floored','Twister','Mines'}, default = 'no planted,no floored,no twister,no mines' }
+ModsMaster.Meta = 			{ name = 'MetaMods', modlist = {'Flip','Invert','Reverse','Stealth','Dizzy','Orient'}, default = 'no metaflip, no metainvert, no metareverse, no metastealth, no metadizzy, no metaorient', mods = {'metaflip','metainvert','metareverse','50% metastealth','metadizzy','metaorient'} }
+ModsMaster.MetaOther = 		{ name = ' ', modlist = {'Invisible', 'Groove Coaster', 'Social Distancing', 'Quarantine'}, mods = {'metastealth', '50% metaflip', '-50% metaflip', '-100% metaflip'} }
 
 ModsMaster.NoMines =		{ name = 'No Mines' }
 ModsMaster.NoJumps =		{ name = 'No Jumps' }
@@ -903,6 +905,9 @@ ModsMaster.Tipsy =			{ float = true }
 ModsMaster.Beat =			{ float = true }
 ModsMaster.Mini =			{ float = true }
 
+ModsMaster.MetaStealth =	{ float = true }
+ModsMaster.MetaFlip =		{ float = true }
+
 ModsMaster.SpeedType =		{ fnctn = 'SpeedType' }
 ModsMaster.SpeedNumber =	{ fnctn = 'SpeedNumber' }
 ModsMaster.Next =			{ fnctn = 'NextScreenOption' }
@@ -911,7 +916,7 @@ ModsMaster.Measure =		{ fnctn = 'MeasureOption', modlist = {-1,0,8,12,16,24,32} 
 ModsMaster.Compare =		{ fnctn = 'CompareOption' }
 ModsMaster.LifeBar =		{ fnctn = 'LifeBarOption' }
 ModsMaster.JudgmentFont =	{ fnctn = 'JudgmentOption' }
---ModsMaster.Voice =			{ fnctn = 'VocalizeOption' }
+ModsMaster.Voice =			{ fnctn = 'VocalizeOption' }
 ModsMaster.Rate =			{ fnctn = 'RateMods' }
 ModsMaster.RateEdit =		{ fnctn = 'RateMods', arg = 'Edit' }
 ModsMaster.SpeedBase =		{ fnctn = 'SpeedMods' }
@@ -1387,15 +1392,34 @@ function FrameOn(self,ThemedTitles)
 end
 
 function FrameCapture(self) -- I had a simpler version which checked parent, but on ITG machines parent is not an argument of propagated commands.
-	if Screen():GetChild('Frame'):GetChild('Page') == self then captureIndex = captureIndex + 1 return end
-	for j,v in ipairs({'More','DisqualifiedP1','DisqualifiedP2'}) do if Screen():GetChild('Frame'):GetChild(v) == self then return end end
-	for j,v in ipairs(frameIgnore) do if v == self then return true end end
+	if Screen():GetChild('Frame'):GetChild('Page') == self then
+		captureIndex = captureIndex + 1
+		return
+	end
+	for j,v in ipairs({'More','DisqualifiedP1','DisqualifiedP2'}) do
+		if Screen():GetChild('Frame'):GetChild(v) == self then
+			return
+		end
+	end
+	for j,v in ipairs(frameIgnore) do
+		if v == self then
+			return true
+		end
+	end
 
 	if captureIndex == 1 then -- option rows, cursors, and line highlights
  
 		if IsType(self,'ActorFrame') then
-			if IsType(self:GetChild(''),'ActorFrame') then table.insert(optionRow,self:GetChild('')) self:propagate(1) self:GetChild(''):propagate(1) end
-			if IsType(self:GetChild(''),'Sprite') then table.insert(optionCursor,self) table.insert(optionCursorSprite,{}) self:propagate(1) end
+			if IsType(self:GetChild(''),'ActorFrame') then
+				table.insert(optionRow,self:GetChild(''))
+				self:propagate(1)
+				self:GetChild(''):propagate(1)
+			end
+			if IsType(self:GetChild(''),'Sprite') then
+				table.insert(optionCursor,self)
+				table.insert(optionCursorSprite,{})
+				self:propagate(1)
+			end
 		elseif IsType(self,'Sprite') then
 			table.insert(optionHighlight,self)
 		end
@@ -1403,18 +1427,35 @@ function FrameCapture(self) -- I had a simpler version which checked parent, but
 	elseif captureIndex == 2 then -- cursor sprites, title and item text, and underlines
  
 		if IsType(self,'Sprite') then
-			for j,v in ipairs(optionCursorSprite) do if not v[3] then table.insert(v,self) table.insert(frameIgnore,self) return end end
+			for j,v in ipairs(optionCursorSprite) do
+				if not v[3] then
+					table.insert(v,self)
+					table.insert(frameIgnore,self)
+					return
+				end
+			end
 			table.insert(optionRowText,{}) -- This will be the Bullets, one per option row, and they come before the text.
 		elseif IsType(self,'BitmapText') then -- First index is the row Title, the rest of the items.
 			table.insert(optionRowText[table.getn(optionRowText)],self)
-			if table.getn(optionRowText[table.getn(optionRowText)]) == 1 then optionRowTextCache[self:GetText()] = table.getn(optionRowText) end
+			if table.getn(optionRowText[table.getn(optionRowText)]) == 1 then
+				optionRowTextCache[self:GetText()] = table.getn(optionRowText)
+			end
 		elseif IsType(self,'ActorFrame') and self:GetNumChildren() == 3 then
-			table.insert(optionUnderlineSprite,{Row = table.getn(optionRowText)}) self:propagate(1)
+			table.insert(optionUnderlineSprite,{Row = table.getn(optionRowText)})
+			self:propagate(1)
 		end
 	 
 	elseif captureIndex == 3 then  -- underline sprites
 		Screen():GetChild('Frame'):propagate(0)
-		for j,v in ipairs(optionUnderlineSprite) do if not v[3] then table.insert(v,self) if v[3] then InitializeOptionRow(j) end return end end
+		for j,v in ipairs(optionUnderlineSprite) do
+			if not v[3] then
+				table.insert(v,self)
+				if v[3] then
+					InitializeOptionRow(j)
+				end
+				return
+			end
+		end
 	end
 
 	table.insert(frameIgnore,self)

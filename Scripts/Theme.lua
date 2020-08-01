@@ -5,7 +5,7 @@ JudgeY = 20
 lifeBarSizeAdd.Height = lifeBarSizeAdd.Height - 80
 lifeBarSizeAdd.OffsetY = lifeBarSizeAdd.OffsetY + 40
 
-judgmentFontList = { 'Default' , 'Love' , 'WP' , 'NJSRT' , 'GrooveNights', 'ITG2'}
+--judgmentFontList = { 'Default' , 'Love' , 'WP' , 'NJSRT' , 'GrooveNights', 'ITG2'}
 voiceOption = true
 
 rateModsPay = { "1.0x", "1.1x", "1.2x", "1.3x", "1.4x", "1.5x", "1.6x", "1.7x", "1.8x", "1.9x", "2.0x" }
@@ -13,8 +13,8 @@ rateModsFree = { "1.0x", "1.1x", "1.2x", "1.3x", "1.4x", "1.5x", "1.6x", "1.7x",
 
 screenList = { Gameplay = 'ScreenStage' , SelectMusic = 'ScreenSelectMusic' , PlayerOptions = 'ScreenPlayerOptions' , TitleMenu = ScreenTitleBranch  , NameEntry = 'ScreenNameEntryTraditional' , Evaluation = SelectEvaluationScreen , Summary = 'Summary' , Ending = SelectEndingScreen }
 
-playerOptions[1] = { 'SpeedType','SpeedNumber','Mini','Perspective','NoteSkin','Turn','JudgmentFont','Voice','Rate' }
-playerOptions[2] = { 'Accel','Scroll','Effect','Appearance','Handicap','InsertTaps','InsertOther','Hide','Ghost','Compare','Measure','LifeBar' }
+playerOptions[1] = { 'SpeedType','SpeedNumber','Mini','Perspective','NoteSkin','Turn','Judge','JudgmentFont','Rate' }
+playerOptions[2] = { 'Accel','Scroll','Effect','Appearance','Handicap','InsertTaps','InsertOther','Hide','Meta', 'MetaOther','Ghost','Compare','Measure','LifeBar' }
 
 function CompareTextFormat(self,n) self:zoom(.3) end -- This is added on top of the base positioning etc.
 

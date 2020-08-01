@@ -1,0 +1,134 @@
+<!--From ScreenEvaluation grade frame p1-->
+<Layer Type="ActorFrame" OnCommand="%function(self) for pn=1,2 do _G['t_P'..pn..'_JudText']={}; end end"><children>
+	<!--P1 Items-->
+	<Layer Type="ActorFrame"><children>
+		<Layer Type="ActorFrame" InitCommand="xy,-220,-97"><children>
+			<Layer Type="BitmapText" Font="_misoreg white" Text="" OnCommand="%function(self) table.insert(t_P1_JudText,self); end"/> <!--fantastic-->
+			<Layer Type="ActorFrame" th_EXCELLENTP1MessageCommand="wag;effectmagnitude,0,0,45;effectperiod,4;"><children>
+				<Layer Type="ActorFrame" th_EXCELLENTP1MessageCommand="vibrate;effectmagnitude,2,2,0"><children>
+					<Layer Type="BitmapText" Font="_misoreg white" Text="" OnCommand="%function(self) table.insert(t_P1_JudText,self); end"/> <!--excellent-->
+				</children></Layer>
+			</children></Layer>
+			<Layer Type="ActorFrame" th_GREATP1MessageCommand="vibrate;effectmagnitude,2,2,0"><children>
+				<Layer Type="BitmapText" Font="_misoreg white" Text="" OnCommand="%function(self) table.insert(t_P1_JudText,self); end"/> <!--great-->
+			</children></Layer>
+			<Layer Type="ActorFrame" th_DECENTP1MessageCommand="vibrate;effectmagnitude,2,2,0"><children>
+				<Layer Type="BitmapText" Font="_misoreg white" Text="" OnCommand="%function(self) table.insert(t_P1_JudText,self); end"/> <!--decent-->
+			</children></Layer>
+			<Layer Type="ActorFrame" th_WAYOFFP1MessageCommand="vibrate;effectmagnitude,2,2,0"><children>
+				<Layer Type="BitmapText" Font="_misoreg white" Text="" OnCommand="%function(self) table.insert(t_P1_JudText,self); end"/> <!--way off-->
+			</children></Layer>
+			<Layer Type="ActorFrame" th_MISSP1MessageCommand="vibrate;effectmagnitude,2,2,0"><children>
+				<Layer Type="BitmapText" Font="_misoreg white" Text="" OnCommand="%function(self) table.insert(t_P1_JudText,self); end"/> <!--miss-->
+			</children></Layer>
+		</children></Layer>
+		<Layer Type="ActorFrame" InitCommand="xy,-395,-97"><children>
+			<Layer Type="BitmapText" Font="_misoreg white" Text="" OnCommand="%function(self) table.insert(t_P1_JudText,self); end"/> <!--holds-->
+			<Layer Type="BitmapText" Font="_misoreg white" Text="" OnCommand="%function(self) table.insert(t_P1_JudText,self); end"/> <!--mines-->
+			<Layer Type="BitmapText" Font="_misoreg white" Text="" OnCommand="%function(self) table.insert(t_P1_JudText,self); end"/> <!--hands-->
+			<Layer Type="BitmapText" Font="_misoreg white" Text="" OnCommand="%function(self) table.insert(t_P1_JudText,self); end"/> <!--rolls-->
+		</children></Layer>
+	</children></Layer>
+	<!--P2 Items-->
+	<Layer Type="ActorFrame"><children>
+		<Layer Type="ActorFrame" InitCommand="xy,-65,-97"><children>
+			<Layer Type="BitmapText" Font="_misoreg white" Text="" OnCommand="%function(self) table.insert(t_P2_JudText,self); end"/> <!--fantastic-->
+			<Layer Type="ActorFrame" th_EXCELLENTP2MessageCommand="wag;effectmagnitude,0,0,45;effectperiod,6;effectoffset,1.75"><children>
+				<Layer Type="ActorFrame" th_EXCELLENTP2MessageCommand="vibrate;effectmagnitude,2,2,0"><children>
+					<Layer Type="BitmapText" Font="_misoreg white" Text="" OnCommand="%function(self) table.insert(t_P2_JudText,self); end"/> <!--excellent-->
+				</children></Layer>
+			</children></Layer>
+			<Layer Type="ActorFrame" th_GREATP2MessageCommand="vibrate;effectmagnitude,2,2,0"><children>
+				<Layer Type="BitmapText" Font="_misoreg white" Text="" OnCommand="%function(self) table.insert(t_P2_JudText,self); end"/> <!--great-->
+			</children></Layer>
+			<Layer Type="ActorFrame" th_DECENTP2MessageCommand="vibrate;effectmagnitude,2,2,0"><children>
+				<Layer Type="BitmapText" Font="_misoreg white" Text="" OnCommand="%function(self) table.insert(t_P2_JudText,self); end"/> <!--decent-->
+			</children></Layer>
+			<Layer Type="ActorFrame" th_WAYOFFP2MessageCommand="vibrate;effectmagnitude,2,2,0"><children>
+				<Layer Type="BitmapText" Font="_misoreg white" Text="" OnCommand="%function(self) table.insert(t_P2_JudText,self); end"/> <!--way off-->
+			</children></Layer>
+			<Layer Type="ActorFrame" th_MISSP2MessageCommand="vibrate;effectmagnitude,2,2,0"><children>
+				<Layer Type="BitmapText" Font="_misoreg white" Text="" OnCommand="%function(self) table.insert(t_P2_JudText,self); end"/> <!--miss-->
+			</children></Layer>
+		</children></Layer>
+		<Layer Type="ActorFrame" InitCommand="xy,70,-97"> <children>
+			<Layer Type="BitmapText" Font="_misoreg white" Text="" OnCommand="%function(self) table.insert(t_P2_JudText,self); end"/> <!--holds-->
+			<Layer Type="BitmapText" Font="_misoreg white" Text="" OnCommand="%function(self) table.insert(t_P2_JudText,self); end"/> <!--mines-->
+			<Layer Type="BitmapText" Font="_misoreg white" Text="" OnCommand="%function(self) table.insert(t_P2_JudText,self); end"/> <!--hands-->
+			<Layer Type="BitmapText" Font="_misoreg white" Text="" OnCommand="%function(self) table.insert(t_P2_JudText,self); end"/> <!--rolls-->
+		</children></Layer>
+	</children></Layer>
+	<Layer
+		Type="ActorFrame"
+		OnCommand="queuecommand,Jud"
+		JudCommand="%function(self)
+			local function rgb(t) return {t[1] / 255, t[2] / 255, t[3] / 255} end
+			local t_JudText={
+				{'FANTASTIC',	0, {0,0.8,0.8},		'MarvelousNumberP',	'FANTASTIC'},
+				{'EXCELLENT',	1, {0.8,0.8,0},		'PerfectNumberP',	'fantatsic'},
+				{'GREAT',		2, {0,0.8,0},		'GreatNumberP',		'thanks'},
+				{'DECENT',		3, rgb{151,117,255},'GoodNumberP',		'DECENT'},
+				{'WAY OFF',		4, rgb{232,102,0},	'BooNumberP',		'WAY FUCK'},
+				{'MISS',		5, rgb{255,74,66},	'MissNumberP',		'FUCK'},
+				{'Holds',		2, {1,1,0.6},		'HoldsTextP',		'Holds'},
+				{'Mines',		3, {1,1,0.6},		'MinesTextP',		'Mines'},
+				{'Brackets',	4, {1,1,0.6},		'HandsTextP',		'Brackets'},
+				{'Rolls',		5, {1,1,0.6},		'RollsTextP',		'Rolls'}
+			}
+			
+			--[[local t_JudTextAlt={
+				{'MISS','fuC K','fuck', 'MISS'},
+				--{'MISS','sims','no', 'MISS'},
+				{'WAY OFF','pab','pad', 'WAYOFF'},
+				{'DECENT','h','fantastic', 'DECENT'},
+				{'GREAT','pre    gr    e\n\nat    ant','GREAT', 'GREAT'},
+				--{'EXCELLENT','h','EXCELLENT', 'EXCELLENT'},
+				{'EXCELLENT','osti d\\\'christ de tabarnac osti d\\\'calisse de vierge  \n     osti d\\\'ch\nrist      de tab\narnac osti d\\\'cali    sse de vierge\no\nsti d\\\'ca lver osti d\\\'siboire  cal\n\nis se de tabarnac  \n osti d\\\'c  hrist de \n\\ntabarnac osti d\\\'calisse de\n vierge\n\n\\n\nosti d\\\'christ de tabar nac osti d\\\'calisse de  vie rge\nosti d\\\'calisse de s acre ment si boire de sa\nint osti    \n osti d\\\'christ de tabarn   ac osti d\\\'calisse de vierge\nosti d\\\'christ de tabar    nac osti d\\\'calisse de vi erge\n\\n\\n\\n\\n\\n\\\\n\\n\\n\\n\\n\\\\n','EXCELLENT', 'EXCELLENT'},
+			}]]
+			local t_JudTextAlt={
+				{'MISS','ONE METER','METERS', 'MISS'},
+				{'WAY OFF','pad','PADS', 'WAYOFF'},
+				{'DECENT','DECENT','DECENTS', 'DECENT'},
+				{'GREAT','ONE GRAM','GRAMS', 'GREAT'},
+				{'EXCELLENT','&quot;fantastic&quot;','EXCELLENTS', 'EXCELLENT'},
+				{'FANTASTIC','fantastic','FANTASTICS', 'FANTASTIC'},
+			}
+			for pn=1,2 do
+				if GAMESTATE:IsHumanPlayer(_G['PLAYER_'..pn]) then
+					local th_JudInc=0
+					for i,v in ipairs(_G['t_P'..pn..'_JudText']) do
+						v:settext(t_JudText[i][1])
+						v:diffuse(t_JudText[i][3][1],t_JudText[i][3][2],t_JudText[i][3][3],1)
+						v:zoom(0.35)
+						v:y(27*t_JudText[i][2])
+						v:horizalign('right')
+						v:shadowlength(0)
+						SCREENMAN:GetTopScreen():GetChild(t_JudText[i][4]..pn):diffuse(t_JudText[i][3][1],t_JudText[i][3][2],t_JudText[i][3][3],1)
+						for k,w in ipairs(t_JudTextAlt) do
+							if v:GetText()==w[1] then
+								_G['th_'..w[1]..'Amt']=tonumber((SCREENMAN:GetTopScreen():GetChild(t_JudText[i][4]..pn):GetText()))
+								if k<=3 and _G['th_'..w[1]..'Amt']>=1 then
+									th_JudInc=th_JudInc+1
+									--Trace(th_JudInc)
+									--todo: count down instead of up
+								end
+								if _G['th_'..w[1]..'Amt']==1 then
+									v:rainbow()
+									v:effectoffset((pn-1)/2)
+									SCREENMAN:GetTopScreen():GetChild(t_JudText[i][4]..pn):rainbow()
+									SCREENMAN:GetTopScreen():GetChild(t_JudText[i][4]..pn):effectoffset(((pn-1)/2)+.25)
+									v:settext(w[2])
+									--v:settext(w[3])
+									MESSAGEMAN:Broadcast('th_'..w[4]..'P'..pn)
+								elseif _G['th_'..w[1]..'Amt']>=1 then
+									v:settext(w[3])
+								end
+							end
+						end
+					end
+				end
+			end
+		end"	
+	/>
+
+</children></Layer>

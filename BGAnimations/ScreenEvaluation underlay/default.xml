@@ -2,7 +2,7 @@
 	<ActorFrame InitCommand="%EvaluationInit" FirstUpdateCommand="%Evaluation" />
 	<ActorFrame Command="queuecommand,Icon" IconCommand="%function() StyleIcon() end" />
 	<ActorFrame
-		Condition="GAMESTATE:IsPlayerEnabled(PLAYER_1)"
+		Condition="GAMESTATE:IsPlayerEnabled(PLAYER_1) and not SL_IsCouples(0)"
 		Command="x,DoublesOffset()"
 	><children>
 		<ActorFrame Command="queuecommand,NonCombos"
@@ -27,7 +27,7 @@
 		/>
 	</children></ActorFrame>
 	<ActorFrame
-		Condition="GAMESTATE:IsPlayerEnabled(PLAYER_2)"
+		Condition="GAMESTATE:IsPlayerEnabled(PLAYER_2) and not SL_IsCouples(1)"
 		Command="x,DoublesOffset()"
 	><children>
 		<ActorFrame Command="queuecommand,NonCombos"

@@ -122,7 +122,7 @@
 		/>
 	</children> </Layer>
 	
+	<Layer File="Couples" Condition="SL_IsCouples()"/>
 	<Layer File="OffsetPlot" />
-	<!--Layer File="Couples" /-->
 	
 </children> </ActorFrame>

@@ -42,3 +42,8 @@ function wrap(val,max,min)
 	return math.mod(val+(max-min+1)-min,max-min+1)+min
 end
 
+function SL_IsCouples(pn)
+	if not GAMESTATE:PlayerUsingBothSides() then return false end
+	if pn then return CheckMod(pn, 'Couples') end
+	return (CheckMod(0, 'Couples') or CheckMod(1, 'Couples'))
+end

@@ -1,11 +1,59 @@
 <Layer Type="ActorFrame"><children>
+
+	<!-- Set existing text to empty -->
+	<Layer Type="ActorFrame" OnCommand = "queuecommand,Set" SetCommand="%function(self)
+		local list = {
+			'MarvelousNumber',
+			'PerfectNumber',
+			'GreatNumber',
+			'GoodNumber',
+			'BooNumber',
+			'MissNumber',
+			'OKNumber',
+			'HoldsText',
+			'MinesText',
+			'HandsText',
+			'RollsText',
+			'Percent',
+		}
+		local s = SCREENMAN:GetTopScreen()
+		for pn = 1, 2 do
+			for i, text in ipairs(list) do
+				if s(text .. 'P' .. pn) then
+					s(text .. 'P' .. pn):hidden(1)
+				end
+			end
+		end
+
+		for i, text in ipairs(s:GetChildren()) do
+			print('##', text, text:GetName())
+		end
+	end" />
 	
+	<Layer Type="Quad"
+		OnCommand="diffuse,#1E282F;stretchto,SCREEN_CENTER_X-310,409,SCREEN_CENTER_X+310,443"
+	/>
+	<Layer Type="Quad"
+		OnCommand="diffuse,#1E282F59;stretchto,SCREEN_CENTER_X-310,320,SCREEN_CENTER_X+310,409"
+	/>	
+
+	<Layer Type="Quad"
+		OnCommand="diffuse,#1E282F;stretchto,SCREEN_CENTER_X-310,180,SCREEN_CENTER_X+310,355"
+	/>
+
+	<Layer 
+		Type="BitmapText" 
+		File="_misoreg small.ini" 
+		Text="playeroptions"
+		InitCommand="shadowlength,0;xy,SCREEN_CENTER_X - 300,SCREEN_BOTTOM - 60;zoom,0.5;WrapWidthPixels,595;ShadowLength,0;horizalign,left;queuecommand,Set;" 
+		SetCommand="%function(self) self:settext(SCREENMAN('PlayerOptionsP1') and SCREENMAN('PlayerOptionsP1'):GetText() or SCREENMAN('PlayerOptionsP2'):GetText()) end"
+	/>
 	<!--detect if using couples noteskin, and doubles-->
-	<Layer Type="ActorFrame" OnCommand="xy,SCREEN_CENTER_X+100,SCREEN_CENTER_Y+10;zoom,.88" ><children>
+	<Layer Type="ActorFrame" OnCommand="xy,SCREEN_CENTER_X+155,SCREEN_CENTER_Y+10;zoom,.88" ><children>
 	
-		<Layer Type="Quad"
+		<!--<Layer Type="Quad"
 			OnCommand="diffuse,#1E282F;y,20;zoomto,200,200;"
-		/>
+		/>-->
 		
 		<Layer
 			Type="BitmapText" 
@@ -47,49 +95,49 @@
 			Type="BitmapText" 
 			File="_wendywhite numbers.ini" 
 			Text="fa"
-			InitCommand="shadowlength,0;zoom,.35;xy,-40,-60 + 27*0;horizalign,right;playcommand,Set;" 
+			InitCommand="shadowlength,0;zoom,.35;xy,-40,-60 + 27*0;horizalign,right;diffuse,1,0.4,0.4,1;playcommand,Set;" 
 			SetCommand="%function(self) self:settext(GetNotesFantasticHitCouples(self,PLAYER_1)) end"
 		/>
 		<Layer 
 			Type="BitmapText" 
 			File="_wendywhite numbers.ini" 
 			Text="ex"
-			InitCommand="shadowlength,0;zoom,.35;xy,-40,-60 + 27*1;horizalign,right;playcommand,Set;" 
+			InitCommand="shadowlength,0;zoom,.35;xy,-40,-60 + 27*1;horizalign,right;diffuse,1,0.4,0.4,1;playcommand,Set;" 
 			SetCommand="%function(self) self:settext(GetNotesExcellentHitCouples(self,PLAYER_1)) end"
 		/>
 		<Layer 
 			Type="BitmapText" 
 			File="_wendywhite numbers.ini" 
 			Text="gr"
-			InitCommand="shadowlength,0;zoom,.35;xy,-40,-60 + 27*2;horizalign,right;playcommand,Set;" 
+			InitCommand="shadowlength,0;zoom,.35;xy,-40,-60 + 27*2;horizalign,right;diffuse,1,0.4,0.4,1;playcommand,Set;" 
 			SetCommand="%function(self) self:settext(GetNotesGreatHitCouples(self,PLAYER_1)) end"
 		/>
 		<Layer 
 			Type="BitmapText" 
 			File="_wendywhite numbers.ini" 
 			Text="de"
-			InitCommand="shadowlength,0;zoom,.35;xy,-40,-60 + 27*3;horizalign,right;playcommand,Set;" 
+			InitCommand="shadowlength,0;zoom,.35;xy,-40,-60 + 27*3;horizalign,right;diffuse,1,0.4,0.4,1;playcommand,Set;" 
 			SetCommand="%function(self) self:settext(GetNotesDecentHitCouples(self,PLAYER_1)) end"
 		/>
 		<Layer 
 			Type="BitmapText" 
 			File="_wendywhite numbers.ini" 
 			Text="wo"
-			InitCommand="shadowlength,0;zoom,.35;xy,-40,-60 + 27*4;horizalign,right;playcommand,Set;" 
+			InitCommand="shadowlength,0;zoom,.35;xy,-40,-60 + 27*4;horizalign,right;diffuse,1,0.4,0.4,1;playcommand,Set;" 
 			SetCommand="%function(self) self:settext(GetNotesWayOffHitCouples(self,PLAYER_1)) end"
 		/>
 		<Layer 
 			Type="BitmapText" 
 			File="_wendywhite numbers.ini" 
 			Text="mi"
-			InitCommand="shadowlength,0;zoom,.35;xy,-40,-60 + 27*5;horizalign,right;playcommand,Set;" 
+			InitCommand="shadowlength,0;zoom,.35;xy,-40,-60 + 27*5;horizalign,right;diffuse,1,0.4,0.4,1;playcommand,Set;" 
 			SetCommand="%function(self) self:settext(GetNotesMissedCouples(self,PLAYER_1)) end"
 		/>
 		<Layer 
 			Type="BitmapText" 
 			File="_wendywhite numbers.ini" 
 			Text="mn"
-			InitCommand="shadowlength,0;zoom,.35;xy,-40,-60 + 27*6;horizalign,right;playcommand,Set;" 
+			InitCommand="shadowlength,0;zoom,.35;xy,-40,-60 + 27*6;horizalign,right;diffuse,1,0.4,0.4,1;playcommand,Set;" 
 			SetCommand="%function(self) self:settext(GetMinesHitCouples(self,PLAYER_1)) end"
 		/>
 		
@@ -97,49 +145,49 @@
 			Type="BitmapText" 
 			File="_wendywhite numbers.ini" 
 			Text="fa"
-			InitCommand="shadowlength,0;zoom,.35;xy,40,-60 + 27*0;horizalign,left;playcommand,Set;" 
+			InitCommand="shadowlength,0;zoom,.35;xy,40,-60 + 27*0;horizalign,left;diffuse,0.4,0.4,1,1;playcommand,Set;" 
 			SetCommand="%function(self) self:settext(GetNotesFantasticHitCouples(self,PLAYER_2)) end"
 		/>
 		<Layer 
 			Type="BitmapText" 
 			File="_wendywhite numbers.ini" 
 			Text="ex"
-			InitCommand="shadowlength,0;zoom,.35;xy,40,-60 + 27*1;horizalign,left;playcommand,Set;" 
+			InitCommand="shadowlength,0;zoom,.35;xy,40,-60 + 27*1;horizalign,left;diffuse,0.4,0.4,1,1;playcommand,Set;" 
 			SetCommand="%function(self) self:settext(GetNotesExcellentHitCouples(self,PLAYER_2)) end"
 		/>
 		<Layer 
 			Type="BitmapText" 
 			File="_wendywhite numbers.ini" 
 			Text="gr"
-			InitCommand="shadowlength,0;zoom,.35;xy,40,-60 + 27*2;horizalign,left;playcommand,Set;" 
+			InitCommand="shadowlength,0;zoom,.35;xy,40,-60 + 27*2;horizalign,left;diffuse,0.4,0.4,1,1;playcommand,Set;" 
 			SetCommand="%function(self) self:settext(GetNotesGreatHitCouples(self,PLAYER_2)) end"
 		/>
 		<Layer 
 			Type="BitmapText" 
 			File="_wendywhite numbers.ini" 
 			Text="de"
-			InitCommand="shadowlength,0;zoom,.35;xy,40,-60 + 27*3;horizalign,left;playcommand,Set;" 
+			InitCommand="shadowlength,0;zoom,.35;xy,40,-60 + 27*3;horizalign,left;diffuse,0.4,0.4,1,1;playcommand,Set;" 
 			SetCommand="%function(self) self:settext(GetNotesDecentHitCouples(self,PLAYER_2)) end"
 		/>
 		<Layer 
 			Type="BitmapText" 
 			File="_wendywhite numbers.ini" 
 			Text="wo"
-			InitCommand="shadowlength,0;zoom,.35;xy,40,-60 + 27*4;horizalign,left;playcommand,Set;" 
+			InitCommand="shadowlength,0;zoom,.35;xy,40,-60 + 27*4;horizalign,left;diffuse,0.4,0.4,1,1;playcommand,Set;" 
 			SetCommand="%function(self) self:settext(GetNotesWayOffHitCouples(self,PLAYER_2)) end"
 		/>
 		<Layer 
 			Type="BitmapText" 
 			File="_wendywhite numbers.ini" 
 			Text="mi"
-			InitCommand="shadowlength,0;zoom,.35;xy,40,-60 + 27*5;horizalign,left;playcommand,Set;" 
+			InitCommand="shadowlength,0;zoom,.35;xy,40,-60 + 27*5;horizalign,left;diffuse,0.4,0.4,1,1;playcommand,Set;" 
 			SetCommand="%function(self) self:settext(GetNotesMissedCouples(self,PLAYER_2)) end"
 		/>
 		<Layer 
 			Type="BitmapText" 
 			File="_wendywhite numbers.ini" 
 			Text="mn"
-			InitCommand="shadowlength,0;zoom,.35;xy,40,-60 + 27*6;horizalign,left;playcommand,Set;" 
+			InitCommand="shadowlength,0;zoom,.35;xy,40,-60 + 27*6;horizalign,left;diffuse,0.4,0.4,1,1;playcommand,Set;" 
 			SetCommand="%function(self) self:settext(GetMinesHitCouples(self,PLAYER_2)) end"
 		/>
 	

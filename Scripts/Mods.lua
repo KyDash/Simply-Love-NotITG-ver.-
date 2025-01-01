@@ -174,6 +174,20 @@ end
 
 -- Judgment Font List
 	judgmentFontList = { 'Default' , 'Love' , 'Tactics', 'Chromatic', 'Deco', 'GrooveNights', 'ITG2' }
+	if FUCK_EXE then -- Auto load on NotITG
+		local list = { 'Default' }
+		
+		local dir = string.sub(THEME:GetPath(2,'','_blank.png'),9)
+		dir = string.sub(dir,1,string.find(dir,'/')-1)
+		for _,v in pairs({ GAMESTATE:GetFileStructure('Themes/'.. dir ..'/Graphics/_Judgments/') }) do
+			local t, _, name = string.find(v, "(.+) %dx%d")
+			if t then table.insert( list, name )
+			else print('[Judgment] Error in loading ' .. v)
+			end
+		end
+
+		judgmentFontList = list
+	end
 
 -- Used with ThemeFiles function
 	themeDir = '_ThemeFiles'
@@ -194,9 +208,13 @@ end
 -- These will be the option rows available on the [nth] option screen. The 'NextScreen' row will be automatically added as long as there is more than 1 option screen.
 -- ACTUALLY CONTAINED IN THEME.LUA
 	playerOptions = {}
-	--playerOptions[1] = { 'SpeedType','SpeedNumber','Mini','Perspective','NoteSkin','Turn','LifeBar','Compare','Rate' }
-	--playerOptions[2] = { 'Turn','Accel','Scroll','Effect','Appearance','Handicap','InsertTaps','InsertOther','Hide','Meta','Ghost' }
-	--playerOptions.Edit = { 'SpeedType','SpeedNumber','Mini','Perspective','NoteSkin','Turn' }
+	playerOptions[1] = { 'SpeedType','SpeedNumber','Mini','Perspective','NoteSkin','Turn','JudgmentFont','LifeBar','Compare','Rate' }
+	if FUCK_EXE and tonumber(GAMESTATE:GetVersionDate()) >= 20210420 then -- v4.2.0
+		playerOptions[2] = { 'MetaMods1','MetaMods2','MetaMods3','Turn','Accel','Scroll','Effect','Appearance','Handicap','InsertTaps','InsertOther','Hide','Ghost' }
+	else
+		playerOptions[2] = { 'Turn','Accel','Scroll','Effect','Appearance','Handicap','InsertTaps','InsertOther','Hide','Ghost' }
+	end
+	playerOptions.Edit = { 'SpeedType','SpeedNumber','Mini','Perspective','NoteSkin','Turn' }
 	ShowAllInRow = false
 
 -----------------------
@@ -215,7 +233,6 @@ function GetPref(str) return PREFSMAN:GetPreference(str) end
 function SetPref(str,val) return PREFSMAN:SetPreference(str,val) end
 function ThemeFile( file ) return THEME:GetPath( EC_GRAPHICS, '' , themeDir..'/'..file ) end
 function ThemeName() local str = string.sub(THEME:GetPath(2,'','_blank.png'),9) return string.sub(str,1,string.find(str,'/')-1) end   
-function VocalizePath() return '/Themes/' .. tostring(Profile(0).Love and Profile(0).Love.Dir or 'Simply Love') .. '/Vocalize/' end
 function IsType(a,t) return string.find(tostring(a),t) end
 function TableToString(t) local s = '' for i,v in ipairs(t) do s = s .. tostring(v) end return s end
 function GetStartScreen() SetPref("DelayedScreenLoad",false) if GetPref('BreakComboToGetItem') and GetInputType and GetInputType() == "" then return "ScreenArcadeStart" end return THEME:GetMetric('Common','FirstAttractScreen') end
@@ -224,9 +241,38 @@ function MaxLength(str,l) if string.len(str) > l then str = string.sub(str,0,l-3
 function RowMetric(b,a,r) if r then rowYNum = 0 rowYAdd = a rowYBase = b rowYOffTop = rowYBase + rowYAdd*0.5 return r elseif a then rowYNum = rowYNum + a end rowYNum = rowYNum + 1 if b ~= 'Exit' then rowYOffCenter = rowYBase + rowYAdd*(rowYNum+1+math.mod(rowYNum,2))/2 rowYOffBottom = rowYBase + rowYAdd*(rowYNum+1/2) end return rowYBase+rowYAdd*rowYNum end
 function SecondsToMSS(n) local t = SecondsToMSSMsMs(math.abs(n)) t = string.sub(t,0,string.len(t)-3) if tonumber(n) < 0 then t = '-' .. t end return t end
 function MSSMsMsToSeconds(t) return string.sub(t,string.len(t)-4,string.len(t)) + string.sub(t,1,string.len(t)-6)*60 end
-function ForceSongAndSteps() if not GAMESTATE:GetCurrentSong() then local song = SONGMAN:GetRandomSong() GAMESTATE:SetCurrentSong(song) steps = song:GetAllSteps() GAMESTATE:SetCurrentSteps(0,steps[1]) GAMESTATE:SetCurrentSteps(1,steps[1]) end end
+function ForceSongAndSteps()
+	if not GAMESTATE:GetCurrentSong() then
+		local song = SONGMAN:GetRandomSong()
+		if not song then return end
+		GAMESTATE:SetCurrentSong(song)
+		steps = song:GetAllSteps()
+		GAMESTATE:SetCurrentSteps(0,steps[1])
+		GAMESTATE:SetCurrentSteps(1,steps[1])
+	end
+end
 function Diffuse(self,c,n) if not c[4] then c[4] = 1 end if n == 1 then self:diffuseupperleft(c[1],c[2],c[3],c[4]) elseif n == 2 then self:diffuseupperright(c[1],c[2],c[3],c[4]) elseif n == 3 then self:diffuselowerleft(c[1],c[2],c[3],c[4]) elseif n == 4 then self:diffuselowerright(c[1],c[2],c[3],c[4]) else self:diffuse(c[1],c[2],c[3],c[4]) end end
-function ApplyMod(mod,pn,f) local m = mod if m then if f then m = f .. '% ' .. m end GAMESTATE:ApplyGameCommand('mod,'..m,pn) end end
+if FUCK_EXE then
+	function ApplyMod(mod,pn,f)
+		local m = mod
+		if m then
+			if f then
+				m = f .. '% ' .. m
+			end
+			GAMESTATE:ApplyModifiers(m,pn)
+		end
+	end
+else
+	function ApplyMod(mod,pn,f)
+		local m = mod
+		if m then
+			if f then
+				m = f .. '% ' .. m
+			end
+			GAMESTATE:ApplyGameCommand('mod,'..m,pn)
+		end
+	end
+end
 function CheckMod(pn,mod) return mod and GAMESTATE:PlayerIsUsingModifier(pn,mod) end
 function SummaryBranch() ForceSongAndSteps() if not scoreIndex then scoreIndex = 1 end if scoreIndex <= table.getn(AllScores) then return ScreenList('Summary') else scoreIndex = 1 return ScreenList('Ending') end end
 function Clock(val) local t = GlobalClock:GetSecsIntoEffect() if val then t = t - val end return t end
@@ -256,13 +302,89 @@ function ScreenEdit() EditMode = true; end
 function JudgmentInit()
 	
 	if FakeCombo == nil or not FakeCombo then
-		FakeCombo = {0,0};
+		FakeCombo = {0,0}
 	end
 	
-	judge = {}; ghost = {};
-	for pn = 1,2 do judge[pn] = {0,0,0,0,0,0,0,0,0, T = 0, MaxDP = 0, CurDP = 0, Data = {}, Score = 0, Steps = {}, Stream = {{{0,0}}} } GhostData(pn,'Decompress') for i,v in ipairs(trackedStreams) do judge[pn].Stream[i] = {} end end
-	for i,v in ipairs(holdJudgments) do if i <= table.getn(holdJudgments)/2 then if Player(1) then v:aux(1) else v:aux(2) end else if Player(2) then v:aux(2) else v:aux(1) end end end
-	for pn = 1,2 do local px = Screen():GetChild('PlayerP'..pn) if px then px = px:GetChild('Judgment'):GetChild(''); px:aux(pn); if ModCustom.JudgmentFont[pn] ~= 1 then px:Load( THEME:GetPath( EC_GRAPHICS, '', '_Judgments/'..judgmentFontList[ModCustom.JudgmentFont[pn]] )) end end end
+	judge = {}
+	ghost = {}
+	for pn = 1,2 do
+		judge[pn] = {
+			0,0,0,0,0,0,0,0,0,
+			T = 0,
+			MaxDP = 0,
+			CurDP = 0,
+			Data = {},
+			Score = 0,
+			Steps = {},
+			Stream = {{{0,0}}}
+		}
+		GhostData(pn,'Decompress')
+		for i,v in ipairs(trackedStreams) do
+			judge[pn].Stream[i] = {}
+		end
+	end
+	for i,v in ipairs(holdJudgments) do
+		if i <= table.getn(holdJudgments)/2 then
+			if Player(1) then
+				v:aux(1)
+			else
+				v:aux(2)
+			end
+		else
+			if Player(2) then
+				v:aux(2)
+			else
+				v:aux(1)
+			end
+		end
+	end
+	local invisibleSettings = {'hidden', 1, 'diffusealpha', 0, 'zoom', 0, 'zoom2', 0, 'x', 9e9, 'y', 9e9, 'x2', 9e9, 'y2', 9e9}
+	for pn = 1,8 do
+		local px = Screen():GetChild('PlayerP'..pn)
+		local mpn = math.mod(pn - 1, 2) + 1
+		local judgeIndex = ModCustom.JudgmentFont[mpn]
+		local judgeName = judgmentFontList[judgeIndex]
+		if px then
+			px = px:GetChild('Judgment')
+			local pxc = px:GetChild('')
+			px:aux(mpn)
+			if judgeIndex ~= 1 then
+				pxc:Load( THEME:GetPath( EC_GRAPHICS, '', '_Judgments/'.. judgeName ))
+				-- special case for invisible judgment font
+				if judgeName == 'Invisible' then
+					-- if selected, use every method possible to hide the judgment sprite in case a file loads an alternate judgment font
+					-- maybe a bit overkill 
+					for _, actor in ipairs{px, pxc} do
+						for i = 1, #invisibleSettings, 2 do
+							method = invisibleSettings[i]
+							value = invisibleSettings[i + 1]
+							if px[method] then
+								px[method](px, value)
+							end
+						end
+					end
+					if FUCK_EXE then
+						for _, actor in ipairs{px, pxc} do
+							if actor.SetDrawFunction then
+								actor:SetDrawFunction(function() end)
+							end
+							if actor.SetUpdateFunction then
+								actor:SetUpdateFunction(function()
+									for i = 1, #invisibleSettings, 2 do
+										method = invisibleSettings[i]
+										value = invisibleSettings[i + 1]
+										if px[method] then
+											px[method](px, value)
+										end
+									end
+								end)
+							end
+						end
+					end
+				end
+			end
+		end
+	end
 end
 
 function GameplayUpdate(self)
@@ -296,6 +418,7 @@ function HoldCommand(self,n) TrackJudgment(self,n) HoldTween(self) end
 
 function TrackJudgment(self,j,p)
 	local pn = p or math.max(self:getaux(),1)
+	if pn > 2 then return end
 	
 	judge[pn].Score = GetScore(pn)
 	judge[pn][j] = judge[pn][j] + 1
@@ -411,7 +534,9 @@ function UpdateMeasureText(pn)
 				str = str .. '/' .. math.max(math.floor((k[k[0]][2] - z[table.getn(z)][1])/4),str) -- If current stream is longer than recorded, use current length.
 			end
 		end end
-		measureText[pn]:settext(str)
+		if measureText[pn] then
+			measureText[pn]:settext(str)
+		end
 	end
 end
 
@@ -663,7 +788,6 @@ function LoadFromProfile()
 	for pn = 1,2 do if Player(pn) then local t = Profile(pn) if not t.Mods then t.Mods = {} end
 		for s,v in pairs(ModCustom) do v[pn] = tonumber(t.Mods[s]) or 1 end
 		for i,v in ipairs(judgmentFontList) do if t.Mods.JudgmentFont == v then ModCustom.JudgmentFont[pn] = i end end
-		if vocalize and Profile(pn).Voice then vocalize[pn] = Profile(pn).Voice end
 		LoadFloatFromProfile(pn,'Mini',t)
 		if t.Mods.Cover then ApplyMod('cover',pn) end
 	end end
@@ -681,7 +805,6 @@ function SaveToProfile()
 	for pn = 1,2 do if Player(pn) then local t = Profile(pn)
 		if not t.Mods then t.Mods = {} end
 		for s,v in pairs(ModCustom) do t.Mods[s] = v[pn] end
-		if vocalize then Profile(pn).Voice = vocalize[pn] end
 		t.Mods.JudgmentFont = judgmentFontList[ModCustom.JudgmentFont[pn]]
 		t.Mods.Mini = OptionFromEvalPlayerOptions(pn,'mini')
 		GhostData(pn,'Compress')
@@ -810,9 +933,50 @@ end
 -- BPM format and display functions
 -------------------------------------
 
+-- Intended to be used from ScreenEvaluation.
+-- It will return a human-readable string consists of metamods and rate mods currently being used.
+-- If BitmapText is given, this function will set the string to the BitmapText.
+function SongOptionsLabel(self)
+	local t = {}
+
+	local bpm = RateBPMlabel()
+	if bpm ~= '' then table.insert(t, bpm) end
+
+	local meta = MetaModsText()
+	if meta ~= '' then table.insert(t, meta) end
+
+	s = table.concat(t, ', ')
+
+	if self then
+		self:settext(s)
+	else
+		return s
+	end
+end
+
 function BPMlabelRate(self)	s = AdjustedBPM() .. ' BPM ' .. RateModAppend() if self then self:settext(s) else return s end end
 function BPMandRate(self) s = AdjustedBPM() .. ' ' .. RateModAppend() if self then self:settext(s) else return s end end
 function RateBPMlabel(self) s = RateModText() if s ~= '' then s = s .. ' (' .. AdjustedBPM() .. ' BPM)' end	if self then self:settext(s) else return s end end 
+
+function MetaModsText(self)
+	mods = {}
+
+	for _, metaModsRow in ipairs(metaModsRows) do
+		for i, v in ipairs(metaModsRow.mods) do
+			if CheckMod(0, v) then
+				table.insert(mods, metaModsRow.modlist[i])
+			end
+		end
+	end
+
+	s = table.concat(mods, ', ')
+
+	if self then
+		self:settext(s)
+	else
+		return s
+	end
+end
 
 function RateModText(self) s = '' if modRate ~= 1 then s = string.format('%01.1f',modRate) .. 'x Music Rate' end if self then self:settext(s) else return s end end
 function RateModAppend(self) s = RateModText() if s ~= '' then s = '(' .. s .. ')' end if self then self:settext(s) else return s end end
@@ -876,6 +1040,24 @@ end
 baseSpeed = { "C700", "C800", "C900", "C1000", "C1100", "C1200", "C1300", "C1400", "1x", "2x", "3x", "4x", "5x", "6x", "7x", "C400", "C500", "C600" }
 extraSpeed = { "0", "+C10", "+C20", "+C30", "+C40", "+C50", "+C60", "+C70", "+C80", "+C90", "+.75x", "+.50x", "+.25x" }
 
+metaModsRows = {
+	{
+		modlist = {'MetaFlip', 'MetaInvert', 'MetaVideogames', 'MetaMonocolumn'},
+		default = 'no metaflip, no metainvert, no metavideogames, no metamonocolumn',
+		mods = {'metaflip', 'metainvert', 'metavideogames', 'metamonocolumn'}
+	},
+	{
+		modlist = {'MetaReverse', 'MetaDizzy', 'MetaOrient', 'MetaBrake'},
+		default = 'no metareverse, no metadizzy, no metaorient, no metabrake',
+		mods = {'metareverse', 'metadizzy', 'metaorient', 'metabrake'}
+	},
+	{
+		modlist = {'MetaHidden', '50% MetaStealth'},
+		default = 'no metahidden, no metastealth',
+		mods = {'metahidden', '50% metastealth'}
+	}
+}
+
 rateMods = { "1.0x", "1.1x", "1.2x", "1.3x", "1.4x", "1.5x", "1.6x", "1.7x", "1.8x", "1.9x", "2.0x" }
 rateModsEdit = { "1.0x", "1.1x", "1.2x", "1.3x", "1.4x", "1.5x", "1.6x", "1.7x", "1.8x", "1.9x", "2.0x", "0.3x", "0.4x", "0.5x", "0.6x", "0.7x", "0.8x", "0.9x" }
 
@@ -884,7 +1066,7 @@ modRate = 1
 ModsPlayer = {}
 ModsMaster = {}
 ModsMaster.Perspective =	{ modlist = {'Overhead','Hallway','Distant','Incoming','Space'}, Select = 1 }
-ModsMaster.NoteSkin =		{ modlist = {'Scalable','Metal','Cel','Flat','Vivid','Cyber','DivinEntity','couples'}, Select = 1 }
+ModsMaster.NoteSkin =		{ modlist = NOTESKIN:GetNoteSkinNames(), Select = 1 }
 ModsMaster.Turn =			{ modlist = {'Mirror','SoftShuffle','SmartBlender','Blender',}, default = 'no mirror,no left,no right,no shuffle,no supershuffle,no softshuffle, no spookyshuffle, no smartblender', mods = {'mirror','softshuffle','smartblender','supershuffle'} }
 ModsMaster.Hide = 			{ modlist = {'Hide Targets','Hide Judgments','Hide Background'}, default ='no dark,no blind,no cover', mods = {'dark','blind','cover'} }
 ModsMaster.Accel =			{ modlist = {'Accel','Decel','Wave','Boomerang','Expand','Bump'}, default = 'no boost,no brake,no wave,no boomerang,no expand,no bumpy', mods = {'Boost','Brake','Wave','Boomerang','Expand','Bumpy'} }
@@ -920,9 +1102,9 @@ ModsMaster.Tipsy =			{ float = true }
 ModsMaster.Beat =			{ float = true }
 ModsMaster.Mini =			{ float = true }
 
-ModsMaster.MetaStealth =	{ float = true }
-ModsMaster.MetaFlip =		{ float = true }
-
+ModsMaster.MetaMods1 = 		{ fnctn = 'MetaMods1' }
+ModsMaster.MetaMods2 = 		{ fnctn = 'MetaMods2' }
+ModsMaster.MetaMods3 = 		{ fnctn = 'MetaMods3' }
 ModsMaster.SpeedType =		{ fnctn = 'SpeedType' }
 ModsMaster.SpeedNumber =	{ fnctn = 'SpeedNumber' }
 ModsMaster.Next =			{ fnctn = 'NextScreenOption' }
@@ -931,7 +1113,6 @@ ModsMaster.Measure =		{ fnctn = 'MeasureOption', modlist = {-1,0,8,12,16,24,32} 
 ModsMaster.Compare =		{ fnctn = 'CompareOption' }
 ModsMaster.LifeBar =		{ fnctn = 'LifeBarOption' }
 ModsMaster.JudgmentFont =	{ fnctn = 'JudgmentOption' }
-ModsMaster.Voice =			{ fnctn = 'VocalizeOption' }
 ModsMaster.Rate =			{ fnctn = 'RateMods' }
 ModsMaster.RateEdit =		{ fnctn = 'RateMods', arg = 'Edit' }
 ModsMaster.SpeedBase =		{ fnctn = 'SpeedMods' }
@@ -980,29 +1161,86 @@ function OptionFromList()
 end
 
 function OptionFloat(mod)
-	if not ModsPlayer[mod] then ModsPlayer[mod] = {0,0} end
+	if not ModsPlayer[mod] then
+		ModsPlayer[mod] = {0,0}
+	end
 	local name = ModsMaster[mod].name or mod
-	local function display( text , pn ) text:settext( ModsPlayer[mod][pn] .. '%' ) end
-	local function move(pn,dir,cnt) ModsPlayer[mod][pn+1] = AddSnap(ModsPlayer[mod][pn+1], dir , cnt , { 1 , 5 , 25 }) ApplyMod(mod,pn+1,ModsPlayer[mod][pn+1]) end
+	local function display( text , pn )
+		text:settext( ModsPlayer[mod][pn] .. '%' )
+	end
+	local function move(pn,dir,cnt)
+		ModsPlayer[mod][pn+1] = AddSnap(ModsPlayer[mod][pn+1], dir , cnt , { 1 , 5 , 25 })
+		ApplyMod(mod,pn+1,ModsPlayer[mod][pn+1])
+		ApplyMod(mod,pn+3,ModsPlayer[mod][pn+1])
+		ApplyMod(mod,pn+5,ModsPlayer[mod][pn+1])
+		ApplyMod(mod,pn+7,ModsPlayer[mod][pn+1])
+	end
 	return SliderOption(name,move,display)
 end
 
 function OptionBool(mod)
 	local t = OptionRowBase( ModsMaster[mod].name or mod )
-	t.LoadSelections = function(self, list, pn) list[2] = CheckMod(pn,mod) list[1] = not list[2] end
-	t.SaveSelections = function(self, list, pn) if list[2] then ApplyMod(mod,pn+1) else ApplyMod('no '..mod,pn+1) end end
+	t.LoadSelections = function(self, list, pn)
+		list[2] = CheckMod(pn,mod)
+		list[1] = not list[2]
+	end
+	t.SaveSelections = function(self, list, pn)
+		if list[2] then
+			ApplyMod(mod,pn+1)
+			ApplyMod(mod,pn+3)
+			ApplyMod(mod,pn+5)
+			ApplyMod(mod,pn+7)
+		else
+			ApplyMod('no '..mod,pn+1)
+			ApplyMod('no '..mod,pn+3)
+			ApplyMod('no '..mod,pn+5)
+			ApplyMod('no '..mod,pn+7)
+		end
+	end
 	return t
 end
 
 function OptionList(mod)
 	local Select = string.find(playerOptions.Flags,'toggle') and ModsMaster[mod].Select ~= 1
-	local mods = {}; for i,v in ipairs(ModsMaster[mod].mods or ModsMaster[mod].modlist) do table.insert(mods,v) end
+	local mods = {}
+	for i,v in ipairs(ModsMaster[mod].mods or ModsMaster[mod].modlist) do
+		table.insert(mods,v)
+	end
 	local t = OptionRowBase( ModsMaster[mod].name or mod)
-	t.Choices = {} for i,v in ipairs(ModsMaster[mod].modlist) do table.insert(t.Choices,v) end
-	if Select then t.SelectType = 'SelectMultiple' end
-	if not Select and ModsMaster[mod].Select ~= 1 then table.insert(mods,1,false) table.insert(t.Choices,1,'None') end
-	t.LoadSelections = function(self, list, pn) local k = Select and 0 or 1 for i,v in ipairs(mods) do if CheckMod(pn,v) then k = i list[i] = Select end end list[k] = true end
-	t.SaveSelections = function(self, list, pn) ApplyMod(ModsMaster[mod].default,pn+1) for i,v in ipairs(list) do if v then ApplyMod(mods[i],pn+1) end end end
+	t.Choices = {}
+	for i,v in ipairs(ModsMaster[mod].modlist) do
+		table.insert(t.Choices,v)
+	end
+	if Select then
+		t.SelectType = 'SelectMultiple'
+	end
+	if not Select and ModsMaster[mod].Select ~= 1 then
+		table.insert(mods,1,false)
+		table.insert(t.Choices,1,'None')
+	end
+	t.LoadSelections = function(self, list, pn)
+		local k = Select and 0 or 1
+		for i,v in ipairs(mods) do
+			if CheckMod(pn,v) then
+				k = i list[i] = Select
+			end
+		end
+		list[k] = true
+	end
+	t.SaveSelections = function(self, list, pn)
+		ApplyMod(ModsMaster[mod].default,pn+1)
+		ApplyMod(ModsMaster[mod].default,pn+3)
+		ApplyMod(ModsMaster[mod].default,pn+5)
+		ApplyMod(ModsMaster[mod].default,pn+7)
+		for i,v in ipairs(list) do
+			if v then
+				ApplyMod(mods[i],pn+1)
+				ApplyMod(mods[i],pn+3)
+				ApplyMod(mods[i],pn+5)
+				ApplyMod(mods[i],pn+7)
+			end
+		end
+	end
 	return t
 end
 
@@ -1040,15 +1278,15 @@ function SliderOption(name,move,display,share)
 	t.LayoutType = 'ShowOneInRow'
 	t.LoadSelections = function(self, list, pn) list[1] = true slider[pn+1][1] = 1 end
 	t.SaveSelections = function(self, list, pn)
-			if share and pn ~= GAMESTATE:GetMasterPlayerNumber() then return end
-			if Clock(slider[pn+1][3]) < 0.1 then slider[pn+1][2] = math.min(slider[pn+1][2]+1) else slider[pn+1][2] = 1 end
-			slider[pn+1][3] = Clock()
-			for i=1,3 do if list[i] then
-				if slider[pn+1][1] == math.mod(i+2,3) then move(pn, 1,slider[pn+1][2]) SetOptionRow(name) end
-				if slider[pn+1][1] == math.mod(i+1,3) then move(pn,-1,slider[pn+1][2]) SetOptionRow(name) end
-				slider[pn+1][1] = math.mod(i,3)
-			end end
-		end
+		if share and pn ~= GAMESTATE:GetMasterPlayerNumber() then return end
+		if Clock(slider[pn+1][3]) < 0.1 then slider[pn+1][2] = math.min(slider[pn+1][2]+1) else slider[pn+1][2] = 1 end
+		slider[pn+1][3] = Clock()
+		for i=1,3 do if list[i] then
+			if slider[pn+1][1] == math.mod(i+2,3) then move(pn, 1,slider[pn+1][2]) SetOptionRow(name) end
+			if slider[pn+1][1] == math.mod(i+1,3) then move(pn,-1,slider[pn+1][2]) SetOptionRow(name) end
+			slider[pn+1][1] = math.mod(i,3)
+		end end
+	end
 	return t
 end
 
@@ -1092,7 +1330,7 @@ do
 	end
 
 	function RateMods( s )
-		local t = OptionRowBase('Music Rate\nBPM: ' .. DisplayOptionsBPM(),s and rateModsEdit or rateMods)
+		local t = OptionRowBase('Music Rate',s and rateModsEdit or rateMods)
 		local edit = s and true or false
 		t.OneChoiceForAllPlayers = true
 		t.LoadSelections = function(self, list, pn)	for i,m in ipairs(self.Choices) do if CheckMod(pn,m..'music') then list[i] = true; s = string.gsub(m,'x','') modRate = tonumber(s) end end end
@@ -1110,6 +1348,45 @@ do
 		end
 		return t
 	end
+end
+
+function MetaMods( s, iRow )
+	local metaModsRow = metaModsRows[ iRow ]
+	local t = OptionRowBase('MetaMods' .. iRow, metaModsRow.modlist)
+
+	t.SelectType = 'SelectMultiple'
+	t.OneChoiceForAllPlayers = true
+
+	t.LoadSelections = function(self, list, pn)
+		for i, v in ipairs(metaModsRow.mods) do
+			list[i] = CheckMod(pn, v)
+		end
+	end
+
+	t.SaveSelections = function(self, list, pn)
+		if pn ~= 0 then return end -- in OneChoiceForAllPlayers row, list in other players than player 1 is not valid
+
+		ApplyMod(metaModsRow.default, pn+1)
+		for i, v in ipairs(list) do
+			if v then
+				ApplyMod(metaModsRow.mods[i], pn+1)
+			end
+		end
+	end
+
+	return t
+end
+
+function MetaMods1( s )
+	return MetaMods( s, 1 )
+end
+
+function MetaMods2( s )
+	return MetaMods( s, 2 )
+end
+
+function MetaMods3( s )
+	return MetaMods( s, 3 )
 end
 
 function NextScreenOption()
@@ -1282,20 +1559,46 @@ function DifficultyList()
 		end
 	else
 		difficultyList = steps
-		q = table.getn(steps)
+		q = table.getn(steps or {})
 	end
 --  q is the index of the last entry of difficultyList. We need to save this instead of using table.getn because when you have "FixedDifficultyRow" you often have nil values in the middle of the table.
 	for n=1,2 do if Player(n) then
-		for i=1,q do if difficultyList[i] == GAMESTATE:GetCurrentSteps(n-1) then listPointer[n] = i end end
-		if listPointer[n] <= c then listPointerY[n] = listPointer[n] elseif listPointer[n] >= (q+1)-(r-c) then listPointerY[n] = listPointer[n]-q+r else listPointerY[n] = c end
+		if q > 0 then
+			for i=1,q do
+				if difficultyList[i] == GAMESTATE:GetCurrentSteps(n-1) then
+					listPointer[n] = i
+				end
+			end
+		else
+			listPointer[n] = 5
+		end
+		if listPointer[n] <= c then
+			listPointerY[n] = listPointer[n]
+		elseif listPointer[n] >= (q+1)-(r-c) then
+			listPointerY[n] = listPointer[n]-q+r
+		else
+			listPointerY[n] = c
+		end
 		if FixedDifficultyRows() then listPointerY[n] = listPointer[n] end
 	end end
 	if not twoDifficultyListRows and GAMESTATE:GetNumPlayersEnabled() == 2 and q > r then
 		listPointerY[1] = math.max(math.min(math.ceil((r+listPointer[1]-listPointer[2])/2),b),a)
 		listPointerY[2] = math.max(math.min(math.ceil((r+listPointer[2]-listPointer[1])/2),b),a)
-		if listPointer[1] + listPointer[2] < r+2 and listPointer[1] <= b and listPointer[2] <= b then listPointerY[1] = listPointer[1]; listPointerY[2] = listPointer[2] end
-		if listPointer[1] + listPointer[2] > 2*(q+1)-(r+2) and listPointer[1] >= (q+1)-b and listPointer[2] >= (q+1)-b then listPointerY[1] = listPointer[1]-q+r; listPointerY[2] = listPointer[2]-q+r end
-		for i=1,2 do if listPointer[i] <= a then listPointerY[i] = listPointer[i] elseif listPointer[i] >= (q+1)-a then listPointerY[i] = listPointer[i]-q+r end end
+		if listPointer[1] + listPointer[2] < r+2 and listPointer[1] <= b and listPointer[2] <= b then
+			listPointerY[1] = listPointer[1]
+			listPointerY[2] = listPointer[2]
+		end
+		if listPointer[1] + listPointer[2] > 2*(q+1)-(r+2) and listPointer[1] >= (q+1)-b and listPointer[2] >= (q+1)-b then
+			listPointerY[1] = listPointer[1]-q+r
+			listPointerY[2] = listPointer[2]-q+r
+		end
+		for i=1,2 do
+			if listPointer[i] <= a then
+				listPointerY[i] = listPointer[i]
+			elseif listPointer[i] >= (q+1)-a then
+				listPointerY[i] = listPointer[i]-q+r
+			end
+		end
 	end
 end
 
@@ -1309,8 +1612,16 @@ function DifficultyListRow(self,k,t,pn)
 	
 	self:stopeffect()
 	
-	if Player(1) then d[1] = k+listPointer[1]-listPointerY[1] else d[1] = 0 end
-	if Player(2) then d[2] = k+listPointer[2]-listPointerY[2] else d[2] = 0 end
+	if Player(1) and listPointer[1] then
+		d[1] = k+listPointer[1]-listPointerY[1]
+	else
+		d[1] = 0
+	end
+	if Player(2) and listPointer[2] then
+		d[2] = k+listPointer[2]-listPointerY[2]
+	else
+		d[2] = 0
+	end
 	if not GAMESTATE:GetCurrentSong() then
 		if t == 'difficulty' then if k - 1 < 5 then self:settext(string.upper(DifficultyToThemedString( k - 1 ))) self:diffuse(DifficultyColorRGB( k - 1 )) else self:settext('') end end
 		if t == 'meter' then if k - 1 < 5 then self:settext(b) self:diffuse(DifficultyColorRGB( k - 1 )) else self:settext('') end end
@@ -1367,6 +1678,7 @@ function DifficultyListRow(self,k,t,pn)
 end
 
 function FixedDifficultyRows()
+	if not steps then return false end
 	l = table.getn(steps)
 	if l > 5 then return false end
 	for i,v in ipairs(steps) do

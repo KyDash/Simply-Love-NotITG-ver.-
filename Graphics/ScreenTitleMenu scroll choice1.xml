@@ -1,7 +1,7 @@
 <ActorFrame><children>
 	<Layer
 		Font="_wendy small"
-		Text="Dance Mode"
+		Text="Play"
 		InitCommand="horizalign,center;shadowlength,0;diffusealpha,0;sleep,0.2;accelerate,0.6;diffusealpha,1"
 		GainFocusCommand="@'diffuse,'..DifficultyColor(1)..';zoom,1'"
 		LoseFocusCommand="zoom,0.8;diffuse,#FFFFFF"

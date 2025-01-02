@@ -1,0 +1,6 @@
+UKSRT weights
+redo screeneval to display scatterplot on lifebar, probably steal bx's
+mines of scatterplot should be a line
+make scatterplot be less chunky (look at how sm5 handles it)
+remove playeroption access from songwheel
+remove / obfuscate step count cards on songwheel

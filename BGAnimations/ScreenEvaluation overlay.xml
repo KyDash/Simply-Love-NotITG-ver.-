@@ -134,9 +134,8 @@
 		/>
 	</children> </Layer>
 	
-	<Layer File="Couples" Condition="SL_IsCouples()"/>
+	<Layer File="Couples" Condition="_SL.IsCouples()"/>
 	<Layer File="OffsetPlot" />
 	<Layer File="ScreenEvaluation widget pb" />
-	<!--Layer File="Couples" /-->
-	
+
 </children> </ActorFrame>

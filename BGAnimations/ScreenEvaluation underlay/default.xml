@@ -43,7 +43,7 @@
 		end"
 	/>
 	<ActorFrame
-		Condition="GAMESTATE:IsPlayerEnabled(PLAYER_1) and not SL_IsCouples(0)"
+		Condition="GAMESTATE:IsPlayerEnabled(PLAYER_1) and not _SL.IsCouples(0)"
 		Command="x,DoublesOffset()"
 		InitCommand="queuecommand,Set"
 		Name="GradePaneP1"
@@ -63,7 +63,7 @@
 		/>
 	</children></ActorFrame>
 	<ActorFrame
-		Condition="GAMESTATE:IsPlayerEnabled(PLAYER_2) and not SL_IsCouples(1)"
+		Condition="GAMESTATE:IsPlayerEnabled(PLAYER_2) and not _SL.IsCouples(1)"
 		Command="x,DoublesOffset()"
 		Name="GradePaneP2"
 	><children>

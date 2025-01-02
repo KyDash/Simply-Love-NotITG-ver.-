@@ -74,11 +74,12 @@
 
 -- Used with GoTo option for PlayerOptions and with Summary screen. These can return either functions or strings.
 	--screenList = { TitleMenu = 'TitleMenu' , SelectMusic = 'SelectMusic' , PlayerOptions = 'PlayerOptions' , Stage = 'Stage' , Gameplay = 'Gameplay' , Evaluation = 'Evaluation' , NameEntry = 'NameEntry' , Summary = 'Summary' , Ending = 'TitleMenu' }
+	screenList = { TitleMenu = 'TitleMenu' , SelectMusic = 'SelectMusic' , PlayerOptions = 'PlayerOptions' , Stage = 'Stage' , Gameplay = 'Gameplay' , Evaluation = 'Evaluation' , NameEntry = 'NameEntry' , Summary = 'Summary' , Ending = 'TitleMenu' }
 	function ScreenList(str) if type(screenList[str]) == 'function' then return screenList[str]() else return screenList[str] end end
 
 -- Judgment tween commands.
 if FUCK_EXE and tonumber(GAMESTATE:GetVersionDate()) >= 20180821 then
-	t_ease = {
+	_SL.Tweens = {
 		outElastic = function(t, b, c, d, a, p)
 			if t == 0 then return b end
 
@@ -130,20 +131,20 @@ if FUCK_EXE and tonumber(GAMESTATE:GetVersionDate()) >= 20180821 then
 	function JudgmentTween(self)
 		self:zoomx(0.7)
 		self:zoomy(0.9)
-		self:tween(.7, 't_ease.outElastic(%f, 0, 1, 1)')
+		self:tween(.7, '_SL.Tweens.outElastic(%f, 0, 1, 1)')
 		self:zoomx(1)
 		self:zoomy(1)
-		self:tween(.2, 't_ease.inBack(%f, 0, 1, 1, 2.5)')
+		self:tween(.2, '_SL.Tweens.inBack(%f, 0, 1, 1, 2.5)')
 		self:zoom(0)
 	end
 
 	function ComboTween(self)
 		local y=self:GetY();
 		self:zoom(0.7);
-		self:tween(0.05, 't_ease.outCirc(%f, 0, 1, 1)');
+		self:tween(0.05, '_SL.Tweens.outCirc(%f, 0, 1, 1)');
 		--self:zoomy(0.7 * 1.15);
 		self:y(y - 12);
-		self:tween(0.2, 't_ease.outBounce(%f, 0, 1, 1)');
+		self:tween(0.2, '_SL.Tweens.outBounce(%f, 0, 1, 1)');
 		--self:zoom(0.7);
 		self:y(y);
 	end

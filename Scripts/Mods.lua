@@ -73,7 +73,6 @@
 -- Redefine these in Theme.lua if other values are desired.
 
 -- Used with GoTo option for PlayerOptions and with Summary screen. These can return either functions or strings.
-	--screenList = { TitleMenu = 'TitleMenu' , SelectMusic = 'SelectMusic' , PlayerOptions = 'PlayerOptions' , Stage = 'Stage' , Gameplay = 'Gameplay' , Evaluation = 'Evaluation' , NameEntry = 'NameEntry' , Summary = 'Summary' , Ending = 'TitleMenu' }
 	screenList = { TitleMenu = 'TitleMenu' , SelectMusic = 'SelectMusic' , PlayerOptions = 'PlayerOptions' , Stage = 'Stage' , Gameplay = 'Gameplay' , Evaluation = 'Evaluation' , NameEntry = 'NameEntry' , Summary = 'Summary' , Ending = 'TitleMenu' }
 	function ScreenList(str) if type(screenList[str]) == 'function' then return screenList[str]() else return screenList[str] end end
 
@@ -173,7 +172,7 @@ end
 	feetBaseZoom = 0.275
 
 -- Judgment Font List
-	judgmentFontList = { 'Default' , 'Love' , 'Tactics', 'Chromatic', 'Deco', 'GrooveNights', 'ITG2' }
+	judgmentFontList = { 'Default' , 'Tactics', 'Chromatic', 'Deco', 'GrooveNights', 'ITG2' }
 	if FUCK_EXE then -- Auto load on NotITG
 		local list = { 'Default' }
 		
@@ -187,6 +186,22 @@ end
 		end
 
 		judgmentFontList = list
+	end
+
+	holdJudgmentFontList = { 'Default' , 'GrooveNights', 'ITG2'}
+	if FUCK_EXE then
+		local list = { 'Default' }
+		
+		local dir = string.sub(THEME:GetPath(2,'','_blank.png'),9)
+		dir = string.sub(dir,1,string.find(dir,'/')-1)
+		for _,v in pairs({ GAMESTATE:GetFileStructure('Themes/'.. dir ..'/Graphics/_Hold Judgments/') }) do
+			local t, _, name = string.find(v, "(.+) %dx%d")
+			if t then table.insert( list, name )
+			else print('[Hold Judgment] Error in loading ' .. v)
+			end
+		end
+
+		holdJudgmentFontList = list
 	end
 
 -- Used with ThemeFiles function
@@ -208,11 +223,12 @@ end
 -- These will be the option rows available on the [nth] option screen. The 'NextScreen' row will be automatically added as long as there is more than 1 option screen.
 
 	playerOptions = {}
-	playerOptions[1] = { 'SpeedType','SpeedNumber','Mini','Perspective','NoteSkin','Turn','JudgmentFont','LifeBar','Compare','Rate' }
+	playerOptions[1] = { 'SpeedType','SpeedNumber','Mini','Perspective','NoteSkin','Turn','JudgmentFont','HoldJudgmentFont','Rate' }
+
 	if FUCK_EXE and tonumber(GAMESTATE:GetVersionDate()) >= 20210420 then -- v4.2.0
-		playerOptions[2] = { 'MetaMods1','MetaMods2','MetaMods3','Turn','Accel','Scroll','Effect','Appearance','Handicap','InsertTaps','InsertOther','Hide','Ghost' }
+		playerOptions[2] = { 'MetaMods1','MetaMods2','MetaMods3','Accel','Scroll','Effect','Appearance','Handicap','InsertTaps','InsertOther','Hide','Ghost','Compare','Measure','LifeBar' }
 	else
-		playerOptions[2] = { 'Turn','Accel','Scroll','Effect','Appearance','Handicap','InsertTaps','InsertOther','Hide','Ghost' }
+		playerOptions[2] = { 'Accel','Scroll','Effect','Appearance','Handicap','InsertTaps','InsertOther','Hide','Ghost','Compare','Measure','LifeBar' }
 	end
 	playerOptions.Edit = { 'SpeedType','SpeedNumber','Mini','Perspective','NoteSkin','Turn' }
 	ShowAllInRow = false
@@ -273,7 +289,7 @@ else
 		end
 	end
 end
-function CheckMod(pn,mod) return mod and GAMESTATE:PlayerIsUsingModifier(pn,mod) end
+function CheckMod(pn,mod) return mod and GAMESTATE:PlayerIsUsingModifier(pn,string.lower(mod)) end
 function SummaryBranch() ForceSongAndSteps() if not scoreIndex then scoreIndex = 1 end if scoreIndex <= table.getn(AllScores) then return ScreenList('Summary') else scoreIndex = 1 return ScreenList('Ending') end end
 function Clock(val) local t = GlobalClock:GetSecsIntoEffect() if val then t = t - val end return t end
 --function Clock(val) local t = 0 if val then t = t - val end return t end
@@ -323,21 +339,21 @@ function JudgmentInit()
 			judge[pn].Stream[i] = {}
 		end
 	end
-	for i,v in ipairs(holdJudgments) do
-		if i <= table.getn(holdJudgments)/2 then
-			if Player(1) then
-				v:aux(1)
-			else
-				v:aux(2)
-			end
-		else
-			if Player(2) then
-				v:aux(2)
-			else
-				v:aux(1)
+
+		for pn = 1, 8 do
+			local px = Screen():GetChild('PlayerP'..pn)
+			local mpn = math.mod(pn - 1, 2) + 1
+			local holdJudgeIndex = ModCustom.HoldJudgmentFont[mpn]
+			local holdJudgeName = holdJudgmentFontList[holdJudgeIndex]
+			-- check the contents of the player, if the actor is an actorframe, grab it's contents, if a sprite is contained, check to see if the path contains HoldJudgment to swap
+			if px and holdJudgeIndex ~= 1 then
+				for i = 0, 15 do
+					local sprite = px:GetChild('HoldJudgmentCol' .. i):GetChild('')
+					sprite:Load( THEME:GetPath( EC_GRAPHICS, '', '_Hold Judgments/'.. holdJudgeName ))
+				end
 			end
 		end
-	end
+	
 	local invisibleSettings = {'hidden', 1, 'diffusealpha', 0, 'zoom', 0, 'zoom2', 0, 'x', 9e9, 'y', 9e9, 'x2', 9e9, 'y2', 9e9}
 	for pn = 1,8 do
 		local px = Screen():GetChild('PlayerP'..pn)
@@ -534,9 +550,7 @@ function UpdateMeasureText(pn)
 				str = str .. '/' .. math.max(math.floor((k[k[0]][2] - z[table.getn(z)][1])/4),str) -- If current stream is longer than recorded, use current length.
 			end
 		end end
-		if measureText[pn] then
-			measureText[pn]:settext(str)
-		end
+		measureText[pn]:settext(str)
 	end
 end
 
@@ -774,7 +788,7 @@ end
 function InitializeMods()
 	if GAMESTATE:GetEnv('Mods') then return end
 	ModsPlayer = { }
-	ModCustom = { LifeBar = {1,1}, JudgmentFont = {1,1}, Compare = {1,1}, Measure = {1,1} }
+	ModCustom = { LifeBar = {1,1}, JudgmentFont = {1,1}, HoldJudgmentFont = {1,1}, Compare = {1,1}, Measure = {1,1} }
 	modRate = 1
 	CalculateSpeedMod()
 	ResetScores()
@@ -788,6 +802,7 @@ function LoadFromProfile()
 	for pn = 1,2 do if Player(pn) then local t = Profile(pn) if not t.Mods then t.Mods = {} end
 		for s,v in pairs(ModCustom) do v[pn] = tonumber(t.Mods[s]) or 1 end
 		for i,v in ipairs(judgmentFontList) do if t.Mods.JudgmentFont == v then ModCustom.JudgmentFont[pn] = i end end
+		for i,v in ipairs(holdJudgmentFontList) do if t.Mods.HoldJudgmentFont == v then ModCustom.HoldJudgmentFont[pn] = i end end
 		LoadFloatFromProfile(pn,'Mini',t)
 		if t.Mods.Cover then ApplyMod('cover',pn) end
 	end end
@@ -806,6 +821,7 @@ function SaveToProfile()
 		if not t.Mods then t.Mods = {} end
 		for s,v in pairs(ModCustom) do t.Mods[s] = v[pn] end
 		t.Mods.JudgmentFont = judgmentFontList[ModCustom.JudgmentFont[pn]]
+		t.Mods.HoldJudgmentFont = holdJudgmentFontList[ModCustom.HoldJudgmentFont[pn]]
 		t.Mods.Mini = OptionFromEvalPlayerOptions(pn,'mini')
 		GhostData(pn,'Compress')
 	end end
@@ -1076,8 +1092,6 @@ ModsMaster.Appearance = 	{ modlist = {'Sudden','Hidden','Blink','Stealth'}, defa
 ModsMaster.Handicap = 		{ modlist = {'No Mines','No Rolls','No Holds','No Hands','No Jumps','No Stretch'}, default ='no nomines,no noholds,no norolls,no nohands,no nojumps,no nostretch', mods = {'nomines','norolls','noholds','nohands','nojumps','nostretch'} } 
 ModsMaster.InsertTaps =		{ name = 'Insert', modlist = {'Little','Big','Quick','Skippy','Echo','Wide','Stomp'}, default = 'no little,no big,no quick,no skippy,no echo,no stomp,no wide', mods = {'Little','Big','Quick','Skippy','Echo','Wide','Stomp'} }
 ModsMaster.InsertOther =	{ name = 'Other', modlist = {'Planted','Floored','Twister','Mines'}, default = 'no planted,no floored,no twister,no mines' }
-ModsMaster.Meta = 			{ name = 'MetaMods', modlist = {'Flip','Invert','Reverse','Stealth','Dizzy','Orient'}, default = 'no metaflip, no metainvert, no metareverse, no metastealth, no metadizzy, no metaorient', mods = {'metaflip','metainvert','metareverse','50% metastealth','metadizzy','metaorient'} }
-ModsMaster.MetaOther = 		{ name = ' ', modlist = {'Invisible', 'Groove Coaster', 'Social Distancing', 'Quarantine'}, mods = {'metastealth', '50% metaflip', '-50% metaflip', '-100% metaflip'} }
 
 ModsMaster.NoMines =		{ name = 'No Mines' }
 ModsMaster.NoJumps =		{ name = 'No Jumps' }
@@ -1113,6 +1127,7 @@ ModsMaster.Measure =		{ fnctn = 'MeasureOption', modlist = {-1,0,8,12,16,24,32} 
 ModsMaster.Compare =		{ fnctn = 'CompareOption' }
 ModsMaster.LifeBar =		{ fnctn = 'LifeBarOption' }
 ModsMaster.JudgmentFont =	{ fnctn = 'JudgmentOption' }
+ModsMaster.HoldJudgmentFont =	{ fnctn = 'HoldJudgmentOption' }
 ModsMaster.Rate =			{ fnctn = 'RateMods' }
 ModsMaster.RateEdit =		{ fnctn = 'RateMods', arg = 'Edit' }
 ModsMaster.SpeedBase =		{ fnctn = 'SpeedMods' }
@@ -1438,6 +1453,7 @@ function CutOffTime()
 end
 
 function JudgmentOption() return CustomMod('Judgment Font','JudgmentFont',judgmentFontList) end
+function HoldJudgmentOption() return CustomMod('Hold Judgment Font','HoldJudgmentFont',holdJudgmentFontList) end
 function LifeBarOption() return CustomMod('Life Bar Type','LifeBar',{'Normal','Surround'}) end
 function CompareOption()
 	local t = CustomMod('Compare Score','Compare',{ 'None' , 'Personal' , 'Machine' , 'Subtractive' })

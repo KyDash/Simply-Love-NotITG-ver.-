@@ -1,196 +1,412 @@
 <Layer Type="ActorFrame"><children>
+	<Layer Type="ActorFrame" OnCommand="%function(self)
+		local scx, scy = SCREEN_CENTER_X, SCREEN_CENTER_Y
+		local function color(r, g, b, a)
+			return r / 255, g / 255, b / 255, a or 1
+		end
+		local function hex(c)
+			local colour = {}
+			string.gsub(c, '%x%x', function(c)
+				table.insert(colour, tonumber(c, 16))
+				return colour
+			end)
+			return color(colour[1], colour[2], colour[3], (colour[4] or 255) / 255)
+		end
+		self:addcommand('ForceObjects', function(self)
+			local s = SCREENMAN()
+			local masterplayer = GAMESTATE:GetMasterPlayerNumber()
+			local pn = masterplayer + 1
+			local overlay = s'Overlay'
+			local lifegraph = s('LifeGraphP' .. pn)
+			local combograph = s('ComboGraphP' .. pn)
+			local playeroptions = s('PlayerOptionsP' .. pn)
+			local percent = s('PercentP' .. pn)
+			local scatterplot = overlay'ScatterPlot'
+			local parent = self:GetParent()
+			local poptionsquad = parent'poptionsquad'
+			local labelsquad = parent'labelsquad'
+			local extendlabelsquad = parent'extendlabelsquad'
+			local lifequad = parent'lifequad'
+			local scorequad = parent'scorequad'
+			local labels = parent'labels'
+			local numbers = {parent'numbersp1', parent'numbersp2'}
+			local disqualified = s('DisqualifiedP' .. pn)
 
-	<!-- Set existing text to empty -->
-	<Layer Type="ActorFrame" OnCommand = "queuecommand,Set" SetCommand="%function(self)
-		local list = {
-			'MarvelousNumber',
-			'PerfectNumber',
-			'GreatNumber',
-			'GoodNumber',
-			'BooNumber',
-			'MissNumber',
-			'OKNumber',
-			'HoldsText',
-			'MinesText',
-			'HandsText',
-			'RollsText',
-			'Percent',
-		}
-		local s = SCREENMAN:GetTopScreen()
-		for pn = 1, 2 do
-			for i, text in ipairs(list) do
-				if s(text .. 'P' .. pn) then
-					s(text .. 'P' .. pn):hidden(1)
+			-- hide unnused actors
+			local gradeactor = s(36):GetName() == ('DisqualifiedP' .. pn) and 38 or 37 -- index of possible locations of the GradeP<pn> actor, which is not grabbable due to a sprite with the same name being loaded first, assumes Grade is always 37 or 38
+			local actorstohide = {'GradeFrameP' .. pn, 'GradeP' .. pn, gradeactor}
+			for i, v in ipairs{'Marvelous', 'Perfect', 'Great', 'Good', 'Boo', 'Miss', 'OK'} do
+				table.insert(actorstohide, v .. 'Label')
+				table.insert(actorstohide, v .. 'NumberP' .. pn)
+			end
+			for i, v in ipairs{'Holds', 'Mines', 'Hands', 'Rolls'} do
+				table.insert(actorstohide, v .. 'Label')
+				table.insert(actorstohide, v .. 'TextP' .. pn)
+			end
+			for i, v in ipairs(actorstohide) do
+				if s(v) then s(v):hidden(1) end
+			end
+			if s'Underlay''GradePaneP1' then s'Underlay''GradePaneP1':hidden(1) end
+			if s'Underlay''GradePaneP2' then s'Underlay''GradePaneP2':hidden(1) end
+
+			local rightside = scx + 160
+			local leftside = scx - 160
+			-- reposition frame and life/combo actors
+			if combograph then combograph:x(rightside) end
+			if lifegraph then lifegraph:x(rightside) end
+			playeroptions:x(playeroptions:GetX() + 160)
+			percent:x(leftside + 40) -- align properly factoring the invisible % character
+			-- proper alignment with a visible % is + 10
+
+			-- override behavior of scatterplot display, since only a single player contains the timing data
+			local targetsp = scatterplot('ScatterPlotP' .. pn)
+			targetsp'Plays':xy(83, -98)
+			for p = 1, 2 do
+				for i, dir in ipairs{'Left', 'Down', 'Up', 'Right'} do
+					scatterplot('ScatterPlotP' .. p):removecommand('StepP1' .. dir .. 'Press')
+					scatterplot('ScatterPlotP' .. p):removecommand('StepP2' .. dir .. 'Press')
+				end
+				targetsp:addcommand('StepP' .. p .. 'UpPress', function()
+					if oplot_spellCards then
+						curcard[pn] = curcard[pn] - 1
+						if curcard[pn] < 0 then
+							curcard[pn] = table.getn(oplot_spellCards)
+						end
+						MESSAGEMAN:Broadcast('UpdateSpellDisplayP' .. pn);
+					end
+				end)
+				targetsp:addcommand('StepP' .. p .. 'DownPress', function()
+					if oplot_spellCards then
+						curcard[pn] = curcard[pn] + 1
+						if curcard[pn] > table.getn(oplot_spellCards) then
+							curcard[pn] = 0
+						end
+						MESSAGEMAN:Broadcast('UpdateSpellDisplayP' .. pn);
+					end
+				end)
+			end
+
+			oplot_hidden[pn] = -1
+			targetsp:x(rightside)
+			MESSAGEMAN:Broadcast( 'UpdateSpellDisplayP' .. pn ) -- force an update before unhiding so the polygon properly initializes
+			targetsp:hidden(0)
+
+			local minpoint = 313
+			labelsquad:diffuse(hex'#1E282F')
+			labelsquad:stretchto(scx - minpoint, 180, scx + minpoint, 356)
+			extendlabelsquad:diffuse(hex'#1E282F')
+			extendlabelsquad:stretchto(scx - minpoint, 356, scx + 8, 409)
+			poptionsquad:diffuse(hex'#1E282F')
+			poptionsquad:stretchto(scx - minpoint, 409, scx + minpoint, 443)
+			lifequad:diffuse(hex'#1E282F59')
+			lifequad:stretchto(scx + 8, 356, scx + minpoint, 409)
+			scorequad:diffuse(hex'#00000077')
+			scorequad:stretchto(scx - 313, 180, scx + 8, 240)
+			if disqualified then
+				disqualified:x(scx + 305)
+			end
+
+			local p1color = '#FF9999'
+			local p2color = '#9999FF'
+
+			local pss = STATSMAN:GetCurStageStats():GetPlayerStageStats(masterplayer)
+			local judgecounts = {{}, {}}
+			for p = 1, 2 do
+				for i, tns in ipairs{TNS_MARVELOUS, TNS_PERFECT, TNS_GREAT, TNS_GOOD, TNS_BOO, TNS_MISS, TNS_HITMINE} do
+					judgecounts[p][i] = pss:GetTapNoteScoresForPlayer(p, tns)
+				end
+				judgecounts[p][#judgecounts[p] + 1] = pss:GetHoldNoteScoresForPlayer(p, HNS_OK)
+				judgecounts[p][#judgecounts[p] + 1] = pss:GetHoldNoteScoresForPlayer(p, HNS_NG)
+			end
+
+			do
+				for i = 1, 6 do
+					local judge = labels(i)
+					judge:settext(string.upper(judge:GetName()))
+					judge:zoom(0.4)
+					judge:xy(scx - 220, scy + ((i - 1) * 32) + 16)
+					for p = 1, 2 do
+						local sign = p * 2 - 3
+						local align = sign < 0 and 'right' or 'left'
+						local n = numbers[p](i)
+						n:settext(judgecounts[p][i])
+						n:zoom(0.4)
+						n:xy(scx - 220 + (40 * sign), scy + ((i - 1) * 32) + 21)
+						n:horizalign(align)
+					end
+				end
+
+				-- todo get max amount of x
+				for i = 7, 9 do
+					local label = labels(i)
+					label:settext(string.lower(label:GetName()))
+					label:zoom(0.4)
+					label:xy(scx - 70, scy + ((i - 7) * 32) + 16)
+					for p = 1, 2 do
+						local sign = p * 2 - 3
+						local align = sign < 0 and 'right' or 'left'
+						local n = numbers[p](i)
+						n:settext(judgecounts[p][i])
+						n:zoom(0.4)
+						n:xy(scx - 70 + (30 * sign), scy + ((i - 7) * 32) + 21)
+						n:horizalign(align)
+					end
+				end
+
+				for i, v in ipairs(labels:GetChildren()) do
+					v:shadowlength(0)
+				end
+				for i, v in ipairs(numbers[1]:GetChildren()) do
+					v:shadowlength(0)
+				end
+				for i, v in ipairs(numbers[2]:GetChildren()) do
+					v:shadowlength(0)
 				end
 			end
-		end
 
-		for i, text in ipairs(s:GetChildren()) do
-			print('##', text, text:GetName())
-		end
+			local getscoreforpn
+			do
+				local prefs = PREFSMAN
+				local gp = prefs['GetPreference']
+				local weights = {
+					gp(prefs, 'GradeWeightMarvelous'),
+					gp(prefs, 'GradeWeightPerfect'),
+					gp(prefs, 'GradeWeightGreat'),
+					gp(prefs, 'GradeWeightGood'),
+					gp(prefs, 'GradeWeightBoo'),
+					gp(prefs, 'GradeWeightMiss'),
+					gp(prefs, 'GradeWeightHitMine'),
+					gp(prefs, 'GradeWeightOK'),
+					gp(prefs, 'GradeWeightNG'),
+				}
+				function getscoreforpn(pn)
+					local pdp = pss['GetPossibleDancePointsCouplesP' .. pn](pss)
+					local cdp = 0 -- currentdancepoints - more precisely, how many dance points a player has on eval
+					for i = 1, #weights do
+						cdp = cdp + judgecounts[pn][i] * weights[i]
+					end
+					return string.format('%.2f', math.max(0, (cdp / pdp) * 100)) .. '%'
+				end
+			end
+
+			pss:GetPossibleDancePointsCouplesP1()
+			pss:GetPossibleDancePointsCouplesP2()
+
+			numbers[1]:diffuse(hex(p1color))
+			numbers[2]:diffuse(hex(p2color))
+
+			local scorep1 = getscoreforpn(1)
+			local scorep2 = getscoreforpn(2)
+
+			local grade = {}
+			do
+				local theme = THEME
+				local gm = theme['GetMetric']
+				local stats = 'PlayerStageStats'
+				local tiermap = {
+					gm(theme, stats, 'GradePercentTier01'),
+					gm(theme, stats, 'GradePercentTier02'),
+					gm(theme, stats, 'GradePercentTier03'),
+					gm(theme, stats, 'GradePercentTier04'),
+					gm(theme, stats, 'GradePercentTier05'),
+					gm(theme, stats, 'GradePercentTier06'),
+					gm(theme, stats, 'GradePercentTier07'),
+					gm(theme, stats, 'GradePercentTier08'),
+					gm(theme, stats, 'GradePercentTier09'),
+					gm(theme, stats, 'GradePercentTier10'),
+					gm(theme, stats, 'GradePercentTier11'),
+					gm(theme, stats, 'GradePercentTier12'),
+					gm(theme, stats, 'GradePercentTier13'),
+					gm(theme, stats, 'GradePercentTier14'),
+					gm(theme, stats, 'GradePercentTier15'),
+					gm(theme, stats, 'GradePercentTier16'),
+					gm(theme, stats, 'GradePercentTier17'),
+				}
+
+				-- remove comments from metric string
+				for i = 1, #tiermap do
+					tiermap[i] = tonumber(string.gsub(tiermap[i], '/.+', ''), 10) * 100
+				end
+
+				for p = 1, 2 do
+					local score = p == 1 and scorep1 or scorep2
+					score = tonumber(string.gsub(score, '%%', ''), 10)
+					for i, v in ipairs(tiermap) do
+						if score >= v then
+							grade[p] = parent('Tier' .. i)
+							break
+						end
+					end
+					grade[p]:zoom(0.50)
+					grade[p]:y(scy - 140)
+				end
+			end
+
+			local percentstr = percent('PercentP' .. pn)
+			local combinedpercent = percentstr:GetText()
+			parent:SetDrawFunction(function()
+				lifequad:Draw()
+				extendlabelsquad:Draw()
+				labelsquad:Draw()
+				poptionsquad:Draw()
+				scorequad:Draw()
+				scatterplot:Draw()
+				percent:diffuse(hex(p1color))
+				percent:x(leftside + 28)
+				percentstr:settext(scorep1)
+				percent:Draw()
+				percent:diffuse(hex(p2color))
+				percent:x(scx + 28)
+				percentstr:settext(scorep2)
+				percent:Draw()
+				percent:diffuse(1, 1, 1, 1)
+				if curcard[pn] == 0 then
+					percent:x(rightside + 28)
+					percentstr:settext(combinedpercent)
+					percent:Draw()
+				end
+				grade[1]:diffuse(hex(p1color))
+				grade[1]:x(leftside - 70)
+				grade[1]:Draw()
+				grade[2]:diffuse(hex(p2color))
+				grade[2]:x(rightside + 70)
+				grade[2]:Draw()
+				lifegraph:Draw()
+				combograph:Draw()
+				playeroptions:Draw()
+				for i, v in ipairs(labels:GetChildren()) do v:Draw() end
+				for i, v in ipairs(numbers[1]:GetChildren()) do v:Draw() end
+				for i, v in ipairs(numbers[2]:GetChildren()) do v:Draw() end
+
+				if disqualified then disqualified:Draw() end
+			end)
+		end)
+		self:queuecommand'ForceObjects'
 	end" />
 	
-	<Layer Type="Quad"
-		OnCommand="diffuse,#1E282F;stretchto,SCREEN_CENTER_X-310,409,SCREEN_CENTER_X+310,443"
-	/>
-	<Layer Type="Quad"
-		OnCommand="diffuse,#1E282F59;stretchto,SCREEN_CENTER_X-310,320,SCREEN_CENTER_X+310,409"
-	/>	
-
-	<Layer Type="Quad"
-		OnCommand="diffuse,#1E282F;stretchto,SCREEN_CENTER_X-310,180,SCREEN_CENTER_X+310,355"
-	/>
-
-	<Layer 
-		Type="BitmapText" 
-		File="_misoreg small.ini" 
-		Text="playeroptions"
-		InitCommand="shadowlength,0;xy,SCREEN_CENTER_X - 300,SCREEN_BOTTOM - 60;zoom,0.5;WrapWidthPixels,595;ShadowLength,0;horizalign,left;queuecommand,Set;" 
-		SetCommand="%function(self) self:settext(SCREENMAN('PlayerOptionsP1') and SCREENMAN('PlayerOptionsP1'):GetText() or SCREENMAN('PlayerOptionsP2'):GetText()) end"
-	/>
-	<!--detect if using couples noteskin, and doubles-->
-	<Layer Type="ActorFrame" OnCommand="xy,SCREEN_CENTER_X+155,SCREEN_CENTER_Y+10;zoom,.88" ><children>
-	
-		<!--<Layer Type="Quad"
-			OnCommand="diffuse,#1E282F;y,20;zoomto,200,200;"
-		/>-->
-		
-		<Layer
-			Type="BitmapText" 
-			File="_misoreg white.ini" 
-			InitCommand="shadowlength,0;zoom,.35;xy,0,-63 + 27*0;settext,Fantastic" 
-		/>
-		<Layer
-			Type="BitmapText" 
-			File="_misoreg white.ini" 
-			InitCommand="shadowlength,0;zoom,.35;xy,0,-63 + 27*1;settext,Excellent" 
-		/>
-		<Layer
-			Type="BitmapText" 
-			File="_misoreg white.ini" 
-			InitCommand="shadowlength,0;zoom,.35;xy,0,-63 + 27*2;settext,Great" 
-		/>
-		<Layer
-			Type="BitmapText" 
-			File="_misoreg white.ini" 
-			InitCommand="shadowlength,0;zoom,.35;xy,0,-63 + 27*3;settext,Decent" 
-		/>
-		<Layer
-			Type="BitmapText" 
-			File="_misoreg white.ini" 
-			InitCommand="shadowlength,0;zoom,.35;xy,0,-63 + 27*4;settext,Way Off" 
-		/>
-		<Layer
-			Type="BitmapText" 
-			File="_misoreg white.ini" 
-			InitCommand="shadowlength,0;zoom,.35;xy,0,-63 + 27*5;settext,Miss" 
-		/>
-		<Layer
-			Type="BitmapText" 
-			File="_misoreg white.ini" 
-			InitCommand="shadowlength,0;zoom,.35;xy,0,-63 + 27*6;settext,Mines" 
-		/>
-		
-		<Layer 
-			Type="BitmapText" 
-			File="_wendywhite numbers.ini" 
-			Text="fa"
-			InitCommand="shadowlength,0;zoom,.35;xy,-40,-60 + 27*0;horizalign,right;diffuse,1,0.4,0.4,1;playcommand,Set;" 
-			SetCommand="%function(self) self:settext(GetNotesFantasticHitCouples(self,PLAYER_1)) end"
-		/>
-		<Layer 
-			Type="BitmapText" 
-			File="_wendywhite numbers.ini" 
-			Text="ex"
-			InitCommand="shadowlength,0;zoom,.35;xy,-40,-60 + 27*1;horizalign,right;diffuse,1,0.4,0.4,1;playcommand,Set;" 
-			SetCommand="%function(self) self:settext(GetNotesExcellentHitCouples(self,PLAYER_1)) end"
-		/>
-		<Layer 
-			Type="BitmapText" 
-			File="_wendywhite numbers.ini" 
-			Text="gr"
-			InitCommand="shadowlength,0;zoom,.35;xy,-40,-60 + 27*2;horizalign,right;diffuse,1,0.4,0.4,1;playcommand,Set;" 
-			SetCommand="%function(self) self:settext(GetNotesGreatHitCouples(self,PLAYER_1)) end"
-		/>
-		<Layer 
-			Type="BitmapText" 
-			File="_wendywhite numbers.ini" 
-			Text="de"
-			InitCommand="shadowlength,0;zoom,.35;xy,-40,-60 + 27*3;horizalign,right;diffuse,1,0.4,0.4,1;playcommand,Set;" 
-			SetCommand="%function(self) self:settext(GetNotesDecentHitCouples(self,PLAYER_1)) end"
-		/>
-		<Layer 
-			Type="BitmapText" 
-			File="_wendywhite numbers.ini" 
-			Text="wo"
-			InitCommand="shadowlength,0;zoom,.35;xy,-40,-60 + 27*4;horizalign,right;diffuse,1,0.4,0.4,1;playcommand,Set;" 
-			SetCommand="%function(self) self:settext(GetNotesWayOffHitCouples(self,PLAYER_1)) end"
-		/>
-		<Layer 
-			Type="BitmapText" 
-			File="_wendywhite numbers.ini" 
-			Text="mi"
-			InitCommand="shadowlength,0;zoom,.35;xy,-40,-60 + 27*5;horizalign,right;diffuse,1,0.4,0.4,1;playcommand,Set;" 
-			SetCommand="%function(self) self:settext(GetNotesMissedCouples(self,PLAYER_1)) end"
-		/>
-		<Layer 
-			Type="BitmapText" 
-			File="_wendywhite numbers.ini" 
-			Text="mn"
-			InitCommand="shadowlength,0;zoom,.35;xy,-40,-60 + 27*6;horizalign,right;diffuse,1,0.4,0.4,1;playcommand,Set;" 
-			SetCommand="%function(self) self:settext(GetMinesHitCouples(self,PLAYER_1)) end"
-		/>
-		
-		<Layer 
-			Type="BitmapText" 
-			File="_wendywhite numbers.ini" 
-			Text="fa"
-			InitCommand="shadowlength,0;zoom,.35;xy,40,-60 + 27*0;horizalign,left;diffuse,0.4,0.4,1,1;playcommand,Set;" 
-			SetCommand="%function(self) self:settext(GetNotesFantasticHitCouples(self,PLAYER_2)) end"
-		/>
-		<Layer 
-			Type="BitmapText" 
-			File="_wendywhite numbers.ini" 
-			Text="ex"
-			InitCommand="shadowlength,0;zoom,.35;xy,40,-60 + 27*1;horizalign,left;diffuse,0.4,0.4,1,1;playcommand,Set;" 
-			SetCommand="%function(self) self:settext(GetNotesExcellentHitCouples(self,PLAYER_2)) end"
-		/>
-		<Layer 
-			Type="BitmapText" 
-			File="_wendywhite numbers.ini" 
-			Text="gr"
-			InitCommand="shadowlength,0;zoom,.35;xy,40,-60 + 27*2;horizalign,left;diffuse,0.4,0.4,1,1;playcommand,Set;" 
-			SetCommand="%function(self) self:settext(GetNotesGreatHitCouples(self,PLAYER_2)) end"
-		/>
-		<Layer 
-			Type="BitmapText" 
-			File="_wendywhite numbers.ini" 
-			Text="de"
-			InitCommand="shadowlength,0;zoom,.35;xy,40,-60 + 27*3;horizalign,left;diffuse,0.4,0.4,1,1;playcommand,Set;" 
-			SetCommand="%function(self) self:settext(GetNotesDecentHitCouples(self,PLAYER_2)) end"
-		/>
-		<Layer 
-			Type="BitmapText" 
-			File="_wendywhite numbers.ini" 
-			Text="wo"
-			InitCommand="shadowlength,0;zoom,.35;xy,40,-60 + 27*4;horizalign,left;diffuse,0.4,0.4,1,1;playcommand,Set;" 
-			SetCommand="%function(self) self:settext(GetNotesWayOffHitCouples(self,PLAYER_2)) end"
-		/>
-		<Layer 
-			Type="BitmapText" 
-			File="_wendywhite numbers.ini" 
-			Text="mi"
-			InitCommand="shadowlength,0;zoom,.35;xy,40,-60 + 27*5;horizalign,left;diffuse,0.4,0.4,1,1;playcommand,Set;" 
-			SetCommand="%function(self) self:settext(GetNotesMissedCouples(self,PLAYER_2)) end"
-		/>
-		<Layer 
-			Type="BitmapText" 
-			File="_wendywhite numbers.ini" 
-			Text="mn"
-			InitCommand="shadowlength,0;zoom,.35;xy,40,-60 + 27*6;horizalign,left;diffuse,0.4,0.4,1,1;playcommand,Set;" 
-			SetCommand="%function(self) self:settext(GetMinesHitCouples(self,PLAYER_2)) end"
-		/>
-	
+	<Layer Type="Quad" Name="labelsquad" />
+	<Layer Type="Quad" Name="extendlabelsquad" />
+	<Layer Type="Quad" Name="poptionsquad" />
+	<Layer Type="Quad" Name="lifequad" />
+	<Layer Type="Quad" Name="scorequad" />
+	<Layer Type="ActorFrame" Name="labels" ><children>
+		<Layer Type="BitmapText" File="_misoreg white.ini" Name="Fantastic" />
+		<Layer Type="BitmapText" File="_misoreg white.ini" Name="Excellent" />
+		<Layer Type="BitmapText" File="_misoreg white.ini" Name="Great" />
+		<Layer Type="BitmapText" File="_misoreg white.ini" Name="Decent" />
+		<Layer Type="BitmapText" File="_misoreg white.ini" Name="Way Off" />
+		<Layer Type="BitmapText" File="_misoreg white.ini" Name="Miss" />
+		<Layer Type="BitmapText" File="_misoreg white.ini" Name="Mines" />
+		<Layer Type="BitmapText" File="_misoreg white.ini" Name="Holds" />
+		<Layer Type="BitmapText" File="_misoreg white.ini" Name="Dropped" />
 	</children></Layer>
-	
+
+	<Layer Type="ActorFrame" Name="numbersp1" ><children>
+		<Layer Type="BitmapText" File="_wendywhite numbers.ini" Name="Fantastic" />
+		<Layer Type="BitmapText" File="_wendywhite numbers.ini" Name="Excellent" />
+		<Layer Type="BitmapText" File="_wendywhite numbers.ini" Name="Great" />
+		<Layer Type="BitmapText" File="_wendywhite numbers.ini" Name="Decent" />
+		<Layer Type="BitmapText" File="_wendywhite numbers.ini" Name="Way Off" />
+		<Layer Type="BitmapText" File="_wendywhite numbers.ini" Name="Miss" />
+		<Layer Type="BitmapText" File="_wendywhite numbers.ini" Name="Mines" />
+		<Layer Type="BitmapText" File="_wendywhite numbers.ini" Name="Holds" />
+		<Layer Type="BitmapText" File="_wendywhite numbers.ini" Name="Dropped" />
+	</children></Layer>
+
+	<Layer Type="ActorFrame" Name="numbersp2" ><children>
+		<Layer Type="BitmapText" File="_wendywhite numbers.ini" Name="Fantastic" />
+		<Layer Type="BitmapText" File="_wendywhite numbers.ini" Name="Excellent" />
+		<Layer Type="BitmapText" File="_wendywhite numbers.ini" Name="Great" />
+		<Layer Type="BitmapText" File="_wendywhite numbers.ini" Name="Decent" />
+		<Layer Type="BitmapText" File="_wendywhite numbers.ini" Name="Way Off" />
+		<Layer Type="BitmapText" File="_wendywhite numbers.ini" Name="Miss" />
+		<Layer Type="BitmapText" File="_wendywhite numbers.ini" Name="Mines" />
+		<Layer Type="BitmapText" File="_wendywhite numbers.ini" Name="Holds" />
+		<Layer Type="BitmapText" File="_wendywhite numbers.ini" Name="Dropped" />
+	</children></Layer>
+	<Layer
+		Name="Tier1"
+		Type="AutoActor" 
+		File="@THEME:GetPath(EC_GRAPHICS,'ScreenEvaluation','grade Tier01')"
+	/>
+	<Layer
+		Name="Tier2"
+		Type="AutoActor"
+		File="@THEME:GetPath(EC_GRAPHICS,'ScreenEvaluation','grade Tier02')" 
+	/>
+	<Layer
+		Name="Tier3"
+		Type="AutoActor" 
+		File="@THEME:GetPath(EC_GRAPHICS,'ScreenEvaluation','grade Tier03')" 
+	/>
+	<Layer
+		Name="Tier4"
+		Type="AutoActor" 
+		File="@THEME:GetPath(EC_GRAPHICS,'ScreenEvaluation','grade Tier04')" 
+	/>
+	<Layer
+		Name="Tier5"
+		Type="AutoActor" 
+		File="@THEME:GetPath(EC_GRAPHICS,'ScreenEvaluation','grade Tier05')" 
+	/>
+	<Layer
+		Name="Tier6"
+		Type="AutoActor" 
+		File="@THEME:GetPath(EC_GRAPHICS,'ScreenEvaluation','grade Tier06')"
+	/>
+	<Layer
+		Name="Tier7"
+		Type="AutoActor" 
+		File="@THEME:GetPath(EC_GRAPHICS,'ScreenEvaluation','grade Tier07')"
+	/>
+	<Layer
+		Name="Tier8"
+		Type="AutoActor" 
+		File="@THEME:GetPath(EC_GRAPHICS,'ScreenEvaluation','grade Tier08')" 
+	/>
+	<Layer
+		Name="Tier9"
+		Type="AutoActor" 
+		File="@THEME:GetPath(EC_GRAPHICS,'ScreenEvaluation','grade Tier09')" 
+	/>
+	<Layer
+		Name="Tier10"
+		Type="AutoActor" 
+		File="@THEME:GetPath(EC_GRAPHICS,'ScreenEvaluation','grade Tier10')" 
+	/>
+	<Layer
+		Name="Tier11"
+		Type="AutoActor" 
+		File="@THEME:GetPath(EC_GRAPHICS,'ScreenEvaluation','grade Tier11')" 
+	/>
+	<Layer
+		Name="Tier12"
+		Type="AutoActor" 
+		File="@THEME:GetPath(EC_GRAPHICS,'ScreenEvaluation','grade Tier12')" 
+	/>
+	<Layer
+		Name="Tier13"
+		Type="AutoActor" 
+		File="@THEME:GetPath(EC_GRAPHICS,'ScreenEvaluation','grade Tier13')" 
+	/>
+	<Layer
+		Name="Tier14"
+		Type="AutoActor" 
+		File="@THEME:GetPath(EC_GRAPHICS,'ScreenEvaluation','grade Tier14')" 
+	/>
+	<Layer
+		Name="Tier15"
+		Type="AutoActor" 
+		File="@THEME:GetPath(EC_GRAPHICS,'ScreenEvaluation','grade Tier15')" 
+	/>
+	<Layer
+		Name="Tier16"
+		Type="AutoActor" 
+		File="@THEME:GetPath(EC_GRAPHICS,'ScreenEvaluation','grade Tier16')" 
+	/>
+	<Layer
+		Name="Tier17"
+		Type="AutoActor" 
+		File="@THEME:GetPath(EC_GRAPHICS,'ScreenEvaluation','grade Tier17')" 
+	/>
 </children></Layer>

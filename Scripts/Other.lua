@@ -1,57 +1,116 @@
 -- Override these in other themes.
 function Platform() return "arcade" end
-function IsHomeMode() return false end
 
 command = {}
 for i = 1,42 do command[i] = '' end
 
-command[1]='Up,Up'
-command[2]='MenuUp,MenuUp'
-command[3]='Down,Down'
-command[4]='MenuDown,MenuDown'
-
-command[9]='MenuLeft-MenuRight-Start'
-command[10]='Up,Down,Up,Down'
-
-command[38]='Left,Right,Left,Right,Left,Right'
-command[39]='MenuLeft,MenuLeft,MenuRight,MenuRight,MenuLeft,MenuLeft,MenuRight,MenuRight'
-command[40]='MenuLeft+MenuRight'
-command[41]='Select'
+command[1] = 'Up,Up' -- Easier1
+command[2] = 'MenuUp,MenuUp' -- Easier 2
+command[3] = 'Down,Down' -- Harder1
+command[4] = 'MenuDown,MenuDown' -- Harder2
+-- NextSort1
+-- NextSort2
+-- NextSort3
+-- NextSort4
+command[9] = 'MenuLeft-MenuRight-Start' -- ModeMenu1
+command[10] = 'Up,Down,Up,Down' -- ModeMenu2
+-- Mirror
+-- Left
+-- Right
+-- Shuffle
+-- SuperShuffle
+-- NextTransform
+-- NextScrollSpeed
+-- PreviousScrollSpeed
+-- NextAccel
+-- NextEffect
+-- NextAppearance
+-- NextTurn
+-- Reverse
+local directions = {'Left','Down','Up','Right'}
+local cmd = ''
+for i = 1, 3 do
+	local r = math.random(1, table.getn(directions))
+	cmd = cmd .. directions[r] .. ','
+	table.remove(directions, r)
+end
+-- remove trailing comma from command
+command[24] = string.sub(cmd, 1, string.len(cmd) - 1) -- HoldNotes
+-- Mines
+-- Dark
+-- CancelAll
+-- NextTheme
+-- NextTheme2
+-- NextAnnouncer
+-- NextAnnouncer2
+-- NextGame
+-- NextGame2
+-- NextBannerGroup
+-- NextBannerGroup2
+-- Hidden
+command[37] = 'Right,Left,Right,Down,Right,Left,Right,Up' -- RandomVanish
+command[38] = 'Left,Right,Left,Right,Left,Right' -- CancelAllPlayerOptions
+--command[39] = 'MenuLeft,MenuLeft,MenuRight,MenuRight,MenuLeft,MenuLeft,MenuRight,MenuRight' -- BackInEventMode
+command[39] = '' -- BackInEventMode
+command[40] = 'MenuLeft+MenuRight' -- SaveScreenShot1
+command[41] = 'Select' -- ScaveScreenShot2
 
 
 function ModeLoop(self) self:linear((53+self:GetY())/75) self:y(-53); self:sleep(0) self:addy(150) self:queuecommand('Loop') end
 function ModeLoop2(self) self:decelerate((53+self:GetY())/75) self:y(-53); self:sleep(0) self:addy(150) self:queuecommand('Loop') end
-function ModeColor(self) local a = self:getaux(); a = math.mod(a+6,12) self:aux(a) if self:GetZ() == 0 then self:diffuse(ColorRGB(a)) end end
+function ModeColor(self) local a = self:getaux(); a = math.mod(a+6,12) self:aux(a) if self:GetZ() == 0 then self:diffuse(ColorRGB(a, true)) end end
 function ModeColorOn(self) self:z(0) if self:getaux() < 0 then self:diffuse(1,1,1,1) else self:queuecommand('Loop') end end
 function ModeColorOff(self) self:diffuse(0.20,0.24,0.26,1) self:z(1) end
 
-File = 'loveheart'
+-- local File = 'loveheart'
 function BGShape() 
-	if not BGnum then BGnum = 1 end
-	path = THEME:GetPath( EC_BGANIMATIONS,'','_shared background images')
-	path = path .. '/' .. File
-	return path
+	-- if not BGnum then BGnum = 1 end
+	-- local path = THEME:GetPath( EC_BGANIMATIONS,'','_shared background images')
+	-- path = path .. '/' .. File
+	return THEME:GetPath( EC_BGANIMATIONS,'','_shared background images') .. '/loveheart'
 end
 
-function DifficultyListCommand(self,t) i = self:getaux() self:y((i-1)*(19.3)) self:shadowlength(0) if t == 'meter' then self:x(-16) self:zoom(.28) else self:horizalign('left') end DifficultyListRow(self,i,t) end
+function DifficultyListCommand(self,name)
+	local row = self:getaux()
+	local scale = 19.3
+	self:y((row-1)*(scale))
+	self:shadowlength(0)
+	if name == 'meter' then
+		self:x(-28)
+		self:zoom(.25)
+	elseif name == 'metermods' then
+		self:x(222)
+		-- self:addy(-50)
+		self:zoom(.25)
+	elseif name == 'blanksteps' or name == 'feetsteps' then
+		self:horizalign('left')
+		self:addy(-scale / 4 + scale / 16)
+	elseif name == 'blankmods' or name == 'feetmods' then
+		self:horizalign('left')
+		self:addy(scale / 4 - scale / 16)
+		self:rotationz(180)
+	end
+	DifficultyListRow(self,row,name)
+end
 
 function TitleMenuOut(self) self:sleep(.2) self:linear(.5) self:diffusealpha(0) end
 function OutCommand(self) self:linear(.5) self:diffusealpha(0) end
 function FadeIn(self) self:diffusealpha(0) self:sleep(.2) self:linear(.5) self:diffusealpha(1) end
 function FadeIn2(self) self:ztest(1) self:diffusealpha(0) self:sleep(.2) self:linear(.5) self:diffusealpha(1) end
 
+local function TechnoPrefs()
+	PREFSMAN:SetPreference('AutogenSteps',true)
+	PREFSMAN:SetPreference('ComboContinuesBetweenSongs',false)
+	PREFSMAN:SetPreference('BGBrightness',0.01)
+	PREFSMAN:SetPreference('SoloSingle',true)
+end
+
+local game
 function DetectGame()
 	local w = SCREENMAN:GetTopScreen():GetChild('Logo'):GetWidth()
 	if w == 640 then game = 'dance'; PREFSMAN:SetPreference('AutogenSteps',false) end
 	if w == 642 then game = 'pump'; PREFSMAN:SetPreference('AutogenSteps',false) end
 	if w == 644 then game = 'techno'; TechnoPrefs() end
-end
-
-function TechnoPrefs()
-	PREFSMAN:SetPreference('AutogenSteps',true)
-	PREFSMAN:SetPreference('ComboContinuesBetweenSongs',false)
-	PREFSMAN:SetPreference('BGBrightness',0.01)
-	PREFSMAN:SetPreference('SoloSingle',true)
 end
 
 function StyleIcon()
@@ -98,14 +157,9 @@ function GetStepsDescriptionText(n)
 	else
 		text = steps:GetDescription()
 	end
-	if string.lower(text) == 'blank' then text = '' end
+	-- if string.lower(text) == 'blank' then text = '' end
 	return text
 end
-
-function SelectButtonAvailable()
-	return true
-end
-
 
 function ScreenEndingGetDisplayName( pn )
 	if PROFILEMAN:IsPersistentProfile(pn) then return GAMESTATE:GetPlayerDisplayName(pn) end
@@ -134,27 +188,8 @@ function StopCourseEarly()
 	return "1"
 end
 
-
-function SetDifficultyFrameFromSteps( Actor, pn )
-	Trace( "SetDifficultyFrameFromSteps" )
-	local steps = GAMESTATE:GetCurrentSteps( pn );
-	if steps then 
-		Actor:setstate(steps:GetDifficulty()) 
-	end
-end
-
-function SetDifficultyFrameFromGameState( Actor, pn )
-	Trace( "SetDifficultyFrameFromGameState" )
-	local trail = GAMESTATE:GetCurrentTrail( pn );
-	if trail then 
-		Actor:setstate(trail:GetDifficulty()) 
-	else
-		SetDifficultyFrameFromSteps( Actor, pn )
-	end
-end
-
 function SetFromSongTitleAndCourseTitle( actor )
-	Trace( "SetFromSongTitleAndCourseTitle" )
+	-- Trace( "SetFromSongTitleAndCourseTitle" )
 	local song = GAMESTATE:GetCurrentSong();
 	local course = GAMESTATE:GetCurrentCourse();
 	local text = ""
@@ -267,10 +302,10 @@ function Get2PlayerJoinMessage()
 end
 
 function Spin(self) 
-	r = math.min(math.random(3,51),36)
-	s = math.random()*7+1 
-	z = self:GetZ();  
-	l = r/36; 
+	local r = math.min(math.random(3,51),36)
+	local s = math.random()*7+1 
+	local z = self:GetZ();  
+	local l = r/36; 
 	if z >= 36 then  
 		z = z-36
 		self:z(z)
@@ -284,7 +319,7 @@ function Spin(self)
 	self:queuecommand('Spin')
 end
 
-function NonCombos()
+--[[ function NonCombos()
 	local t = OptionRowBase('NonCombos')
 	t.OneChoiceForAllPlayers = true
 	t.Choices = { "On", "Decents Only", "Off" }
@@ -298,4 +333,4 @@ function NonCombos()
 end
 
 function Decents() if math.abs(PREFSMAN:GetPreference('JudgeWindowSecondsGood') - 0.135) < .001 then return true end end
-function WayOffs() if math.abs(PREFSMAN:GetPreference('JudgeWindowSecondsBoo') - 0.180) < .001 then return true end end
+function WayOffs() if math.abs(PREFSMAN:GetPreference('JudgeWindowSecondsBoo') - 0.180) < .001 then return true end end]]

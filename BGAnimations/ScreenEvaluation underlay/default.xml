@@ -1,18 +1,53 @@
 <ActorFrame><children>
 	<ActorFrame InitCommand="%EvaluationInit" FirstUpdateCommand="%Evaluation" />
 	<ActorFrame Command="queuecommand,Icon" IconCommand="%function() StyleIcon() end" />
+	<!-- handle judgment text logic -->
+	<Layer
+		Type="ActorFrame"
+		InitCommand="queuecommand,Set"
+		SetCommand="%function(self)
+			for pn = 1, 2 do
+				if GAMESTATE:IsPlayerEnabled(pn - 1) then
+					local gradeframe = SCREENMAN('GradeFrameP' .. pn) -- where did JudgmentInfo go????
+					local judgments = gradeframe'Judgments'
+					local radarvalues = gradeframe'Radar'
+					local actors = {
+						W1 =	{text = judgments'W1',		number = SCREENMAN('MarvelousNumberP' .. pn),	index = 0, color = _SL.CommonColors.W1},
+						W2 =	{text = judgments'W2',		number = SCREENMAN('PerfectNumberP' .. pn),		index = 1, color = _SL.CommonColors.W2},
+						W3 =	{text = judgments'W3',		number = SCREENMAN('GreatNumberP' .. pn),		index = 2, color = _SL.CommonColors.W3},
+						W4 =	{text = judgments'W4',		number = SCREENMAN('GoodNumberP' .. pn),		index = 3, color = _SL.CommonColors.W4},
+						W5 =	{text = judgments'W5',		number = SCREENMAN('BooNumberP' .. pn),			index = 4, color = _SL.CommonColors.W5},
+						W6 =	{text = judgments'W6',		number = SCREENMAN('MissNumberP' .. pn),		index = 5, color = _SL.CommonColors.W6},
+						Holds = {text = radarvalues'Holds', number = SCREENMAN('HoldsTextP' .. pn),			index = 0, color = _SL.CommonColors.White},
+						Mines = {text = radarvalues'Mines', number = SCREENMAN('MinesTextP' .. pn),			index = 1, color = _SL.CommonColors.White},
+						Hands = {text = radarvalues'Hands', number = SCREENMAN('HandsTextP' .. pn),			index = 2, color = _SL.CommonColors.White},
+						Rolls = {text = radarvalues'Rolls', number = SCREENMAN('RollsTextP' .. pn),			index = 3, color = _SL.CommonColors.White},
+					}
+
+					judgments:xy(pn == 1 and 190 or -200, -275)
+					radarvalues:xy(pn == 1 and -300 or 195, -125)
+
+					for i, actor in pairs(actors) do
+						actor.text:y(77 * actor.index):shadowlength(0):horizalign'right'
+						actor.text:diffuse(_SL.HexToRGB(actor.color))
+						actor.number:diffuse(_SL.HexToRGB(actor.color))
+					end
+
+					local w5count = tonumber(actors.W5.number:GetText(), 10)
+					if w5count > 0 then actors.W5.text:settext'pad' end
+
+					if not Decents() then actors.W4.number:settext('    ') end
+					if not WayOffs() then actors.W5.number:settext('    ') end
+				end
+			end
+		end"
+	/>
 	<ActorFrame
 		Condition="GAMESTATE:IsPlayerEnabled(PLAYER_1) and not SL_IsCouples(0)"
 		Command="x,DoublesOffset()"
+		InitCommand="queuecommand,Set"
 		Name="GradePaneP1"
 	><children>
-		<ActorFrame Command="queuecommand,NonCombos"
-			NonCombosCommand="%function() 
-				if not WayOffs() then SCREENMAN:GetTopScreen():GetChild('BooNumberP1'):settext('    ') end 
-				if not Decents() then SCREENMAN:GetTopScreen():GetChild('GoodNumberP1'):settext('    ') end
-			end"
-		/>
-
 		<Layer Type="Quad"
 			OnCommand="diffuse,#1E282F;stretchto,SCREEN_CENTER_X-310,409,SCREEN_CENTER_X-5,443"
 		/>	
@@ -32,13 +67,6 @@
 		Command="x,DoublesOffset()"
 		Name="GradePaneP2"
 	><children>
-		<ActorFrame Command="queuecommand,NonCombos"
-			NonCombosCommand="%function() 
-				if not WayOffs() then SCREENMAN:GetTopScreen():GetChild('BooNumberP2'):settext('    ') end 
-				if not Decents() then SCREENMAN:GetTopScreen():GetChild('GoodNumberP2'):settext('    ') end
-			end"
-		/>
-
 		<Layer Type="Quad"
 			OnCommand="diffuse,#1E282F;stretchto,SCREEN_CENTER_X+5,409,SCREEN_CENTER_X+310,443"
 		/>	

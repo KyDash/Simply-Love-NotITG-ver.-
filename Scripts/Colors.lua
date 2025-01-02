@@ -1,7 +1,7 @@
 function PlayerColor( pn )
 	if pn == PLAYER_1 then return DifficultyColor(3) end
 	if pn == PLAYER_2 then return DifficultyColor(1) end
-	return "HexToRGB(GlobalColors.White)"
+	return "_SL.HexToRGB(_SL.CommonColors.White)"
 end
 
 function DefaultColor()
@@ -31,18 +31,30 @@ function IconCrop(self)
 	self:cropbottom(1-Color()/12)
 end
 
-local function HexToRGB(hexStr)
-	if type(hexStr) ~= 'string' then return 1, 1, 1, 1 end
+local colorcache = {}
+
+function _SL.HexToRGB(hexStr)
+	if type(hexStr) ~= 'string' then print('_SL.HexToRGB did not receive a string!') return 1, 1, 1, 1 end
+	if colorcache[hexStr] then local color = colorcache[hexStr] return color.r, color.g, color.b, color.a end
 	local channels = {} string.gsub(hexStr, '%x%x', function(c) table.insert(channels, tonumber(c, 16)) return channels end)
-	return channels[1] / 255, channels[2] / 255, channels[3] / 255, (channels[4] or 255) / 255
+	local r, g, b, a = channels[1] / 255, channels[2] / 255, channels[3] / 255, (channels[4] or 255) / 255
+	colorcache[hexStr] = {r = r, g = g, b = b, a = a}
+	return r, g, b, a
 end
 
 -- names taken from https://colordesigner.io/color-name-finder
 -- common colours that do not change depending on initial color selection
-local GlobalColors = {
-	Edit = "#B4B7BA", -- Silver
-	White = "#FFFFFF", -- White
-	Black = "#000000", -- Black
+-- names may overlap when colours are close together
+_SL.CommonColors = {
+	Edit = 	"#B4B7BA",	-- Silver
+	White = "#FFFFFF",	-- White
+	Black = "#000000",	-- Black
+	W1 = 	"#21CCE8",	-- Dark Turquoise
+	W2 = 	"#E29C18",	-- Golden Rod
+	W3 = 	"#66C955",	-- Light Green
+	W4 = 	"#A272D5",	-- Medium Purple
+	W5 = 	"#C9855E",	-- Dark Salmon
+	W6 = 	"#FF3030",	-- Red
 }
 
 -- colours that the theme will use, either for text on dark backgrounds or background featuring dark text
@@ -79,13 +91,14 @@ local DecorativeColors = {
 	"#FFBE00", -- Gold
 }
 
+
 function DifficultyColor( dc, decorative )
-	if dc == DIFFICULTY_EDIT then return GlobalColors.Edit end
+	if dc == DIFFICULTY_EDIT then return _SL.CommonColors.Edit end
 	local colorIndex = dc + Color() + 10
 	colorIndex = math.mod(colorIndex-1,12)+1
 	local colorTable = decorative and DecorativeColors or Colors
 	if colorTable[colorIndex] then return colorTable[colorIndex] end
-	return GlobalColors.White
+	return _SL.CommonColors.White
 end
 
 function BubbleColorRGB ( pn, decorative )
@@ -93,17 +106,17 @@ function BubbleColorRGB ( pn, decorative )
 		local steps = GAMESTATE:GetCurrentSteps( pn )
 		if not steps then return 1,1,1,0 end
 		steps = steps:GetDifficulty()
-		if steps == DIFFICULTY_EDIT	then return HexToRGB(GlobalColors.Edit) end
+		if steps == DIFFICULTY_EDIT	then return _SL.HexToRGB(_SL.CommonColors.Edit) end
 		return ColorRGB(steps-2, decorative)
 	end
-	return HexToRGB(GlobalColors.White)
+	return _SL.HexToRGB(_SL.CommonColors.White)
 end
 
 function DifficultyColorRGB( n, decorative )
 	if n < 5 then
 		return ColorRGB( n - 2, decorative )
 	else
-		return HexToRGB(GlobalColors.Edit)
+		return _SL.HexToRGB(_SL.CommonColors.Edit)
 	end
 end
 
@@ -111,41 +124,41 @@ function ColorRGB ( n, decorative )
 	local colorIndex = n + Color() + 12
 	colorIndex = math.mod(colorIndex-1,12)+1
 	local colorTable = decorative and DecorativeColors or Colors
-	if colorTable[colorIndex] then return HexToRGB(colorTable[colorIndex]) end
-	return HexToRGB(GlobalColors.White)
+	if colorTable[colorIndex] then return _SL.HexToRGB(colorTable[colorIndex]) end
+	return _SL.HexToRGB(_SL.CommonColors.White)
 end
 
 -- Get a color to show text on top of difficulty frames.
 function ContrastingDifficultyColor( dc )
-	if dc == DIFFICULTY_BEGINNER	then return GlobalColors.Black end
-	if dc == DIFFICULTY_EASY		then return GlobalColors.Black end
-	if dc == DIFFICULTY_MEDIUM		then return GlobalColors.Black end
-	if dc == DIFFICULTY_HARD		then return GlobalColors.Black end
-	if dc == DIFFICULTY_CHALLENGE	then return GlobalColors.Black end
-	if dc == DIFFICULTY_EDIT		then return GlobalColors.Black end
-	return GlobalColors.White
+	if dc == DIFFICULTY_BEGINNER	then return _SL.CommonColors.Black end
+	if dc == DIFFICULTY_EASY		then return _SL.CommonColors.Black end
+	if dc == DIFFICULTY_MEDIUM		then return _SL.CommonColors.Black end
+	if dc == DIFFICULTY_HARD		then return _SL.CommonColors.Black end
+	if dc == DIFFICULTY_CHALLENGE	then return _SL.CommonColors.Black end
+	if dc == DIFFICULTY_EDIT		then return _SL.CommonColors.Black end
+	return _SL.CommonColors.White
 end
 
 function TextOnColor (n, decorative)
-	if not decorative then return HexToRGB(GlobalColors.Black) end
+	if not decorative then return _SL.HexToRGB(_SL.CommonColors.Black) end
 	local colorIndex = Color() + 12
 	if n then colorIndex = colorIndex + n end
 	colorIndex = math.mod(colorIndex-1,12)+1
-	if colorIndex >= 9 then return HexToRGB(GlobalColors.Black) end
-	return HexToRGB(GlobalColors.White)
+	if colorIndex >= 9 then return _SL.HexToRGB(_SL.CommonColors.Black) end
+	return _SL.HexToRGB(_SL.CommonColors.White)
 end
 
 function BubbleColorText ( pn, decorative )
-	if not decorative then return HexToRGB(GlobalColors.Black) end
+	if not decorative then return _SL.HexToRGB(_SL.CommonColors.Black) end
 	if GAMESTATE:IsPlayerEnabled( pn ) then
 		local steps = GAMESTATE:GetCurrentSteps( pn )
-		if not steps then return HexToRGB('#FFFFFF00') end
+		if not steps then return _SL.HexToRGB('#FFFFFF00') end
 		steps = steps:GetDifficulty()
-		if steps == DIFFICULTY_EDIT	then return HexToRGB(GlobalColors.Black) end
+		if steps == DIFFICULTY_EDIT	then return _SL.HexToRGB(_SL.CommonColors.Black) end
 		local colorIndex = Color() + 10 + steps
 		colorIndex = math.mod(colorIndex-1,12)+1
-		-- if colorIndex >= 9 then return HexToRGB('#333D42') end
-		if colorIndex >= 9 then return HexToRGB(GlobalColors.Black) end
+		-- if colorIndex >= 9 then return _SL.HexToRGB('#333D42') end
+		if colorIndex >= 9 then return _SL.HexToRGB(_SL.CommonColors.Black) end
 	end
-	return HexToRGB(GlobalColors.White)
+	return _SL.HexToRGB(_SL.CommonColors.White)
 end

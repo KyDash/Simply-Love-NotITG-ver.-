@@ -165,12 +165,11 @@ end
 	judgeGraphHeight = 20
 
 -- Used with Synthetic Difficulty List
-	twoDifficultyListRows = false
 	maxRows = 5
 	blankMeter = '?'
 	maxFeet = 20
 	minFeet = 0
-	feetBaseZoom = 1
+	feetBaseZoom = 0.275
 
 -- Judgment Font List
 	judgmentFontList = { 'Default' , 'Love' , 'Tactics', 'Chromatic', 'Deco', 'GrooveNights', 'ITG2' }
@@ -206,7 +205,7 @@ end
 	speedMin = 5
 
 -- These will be the option rows available on the [nth] option screen. The 'NextScreen' row will be automatically added as long as there is more than 1 option screen.
--- ACTUALLY CONTAINED IN THEME.LUA
+
 	playerOptions = {}
 	playerOptions[1] = { 'SpeedType','SpeedNumber','Mini','Perspective','NoteSkin','Turn','JudgmentFont','LifeBar','Compare','Rate' }
 	if FUCK_EXE and tonumber(GAMESTATE:GetVersionDate()) >= 20210420 then -- v4.2.0
@@ -1532,10 +1531,10 @@ listPointerY = {}
 
 function DifficultyList()
 	difficultyList = {}
-	local r = maxRows or (not maxRows and 5)
-	local a = math.floor(r/4) + 1
-	local b = r+1-a
-	local c = math.floor(r/2) + 1
+	-- local maxRows = 5
+	local maxLowerRow = math.floor(maxRows / 4) + 1
+	local minUpperRow = maxRows + 1 - maxLowerRow
+	local middleRow = math.floor(maxRows / 2) + 1
 	if not GAMESTATE:GetCurrentSong() then
 		for pn=1,2 do
 			if Player(pn) then
@@ -1548,142 +1547,293 @@ function DifficultyList()
 		end
 		return
 	end
-	if FixedDifficultyRows() then
-		for i,v in ipairs(steps) do
-			q = v:GetDifficulty()+1
-			if q < 6 then
-				difficultyList[q] = v
+
+	--  maxChartIndex is the index of the last entry of difficultyList. We need to save this instead of using table.getn because when you have "FixedDifficultyRows" you often have nil values in the middle of the table.
+	local maxChartIndex
+	local fixedRows = FixedDifficultyRows()
+	if fixedRows then
+		-- steps set from CaptureSteps(), line 805
+		for i, chart in ipairs(steps) do
+			maxChartIndex = chart:GetDifficulty() + 1
+			difficultyList[maxChartIndex] = chart
+
+			-- FixedDifficultyRows should never pass when an expert or edit chart exists
+			-- so the maximum that we should see is 5
+			--[[if maxChartIndex < 6 then
+				difficultyList[maxChartIndex] = chart
 			else
-				for k=1,table.getn(steps) do q = 5+k if not difficultyList[q] then difficultyList[q] = v break end end
-			end
+				for k=1,table.getn(steps) do
+					maxChartIndex = 5+k
+					if not difficultyList[maxChartIndex] then
+						difficultyList[maxChartIndex] = chart
+						break
+					end
+				end
+			end]]
 		end
 	else
 		difficultyList = steps
-		q = table.getn(steps or {})
+		maxChartIndex = table.getn(steps or {})
 	end
---  q is the index of the last entry of difficultyList. We need to save this instead of using table.getn because when you have "FixedDifficultyRow" you often have nil values in the middle of the table.
-	for n=1,2 do if Player(n) then
-		if q > 0 then
-			for i=1,q do
-				if difficultyList[i] == GAMESTATE:GetCurrentSteps(n-1) then
-					listPointer[n] = i
+	for pn=1,2 do
+		if Player(pn) then
+			-- if we are hovering over a song, set the pointer to the current selected difficulty from a player
+			if maxChartIndex > 0 then
+				for row = 1, maxChartIndex do
+					if difficultyList[row] == GAMESTATE:GetCurrentSteps(pn-1) then
+						listPointer[pn] = row
+					end
 				end
+			else
+				-- when maxChartIndex is 0, we are hovering over a an item on the song wheel that doesn't have charts
+				-- for example: a pack folder
+				-- in this case set the pointer to be at the 5th row (lowest row on screen)
+				listPointer[pn] = 5
 			end
-		else
-			listPointer[n] = 5
+			-- middleRow == 3
+			-- it's possible that our song list contains more charts than we can display at once
+			-- meaning that we're going to need to scroll our list
+			-- our current pointer points to a chart that is a medium or easier (< 3)
+			-- in which case these difficulties will always be at the top if a player has it selected
+			if listPointer[pn] <= middleRow then
+				listPointerY[pn] = listPointer[pn]
+			-- when our pointer is on the second to last or last possible chart index we want to shift the list upwards
+			-- so the actual cursor is still in our view of charts 
+			-- elseif listPointer[pn] >= (maxChartIndex + 1) - (maxRows - middleRow) then
+			elseif listPointer[pn] >= maxChartIndex - 1 then
+				listPointerY[pn] = listPointer[pn] - maxChartIndex + maxRows
+			else
+				listPointerY[pn] = middleRow
+			end
+			if fixedRows then
+				listPointerY[pn] = listPointer[pn]
+			end
 		end
-		if listPointer[n] <= c then
-			listPointerY[n] = listPointer[n]
-		elseif listPointer[n] >= (q+1)-(r-c) then
-			listPointerY[n] = listPointer[n]-q+r
-		else
-			listPointerY[n] = c
-		end
-		if FixedDifficultyRows() then listPointerY[n] = listPointer[n] end
-	end end
-	if not twoDifficultyListRows and GAMESTATE:GetNumPlayersEnabled() == 2 and q > r then
-		listPointerY[1] = math.max(math.min(math.ceil((r+listPointer[1]-listPointer[2])/2),b),a)
-		listPointerY[2] = math.max(math.min(math.ceil((r+listPointer[2]-listPointer[1])/2),b),a)
-		if listPointer[1] + listPointer[2] < r+2 and listPointer[1] <= b and listPointer[2] <= b then
+	end
+	if GAMESTATE:GetNumPlayersEnabled() == 2 and maxChartIndex > maxRows then
+		-- clamp the cursor positions within our 5 rows if they are far enough
+		-- ie: one player picked an easy chart, and the other picked an edit chart 
+		listPointerY[1] = math.max(math.min(math.ceil((maxRows+listPointer[1]-listPointer[2])/2),minUpperRow),maxLowerRow)
+		listPointerY[2] = math.max(math.min(math.ceil((maxRows+listPointer[2]-listPointer[1])/2),minUpperRow),maxLowerRow)
+		-- if the combined total that the charts to our pointers is smaller than 7, and they are both smaller than the middle row
+		-- don't shift nor split
+		local totalPos =  listPointer[1] + listPointer[2]
+		if totalPos < maxRows + 2 and listPointer[1] <= minUpperRow and listPointer[2] <= minUpperRow then
 			listPointerY[1] = listPointer[1]
 			listPointerY[2] = listPointer[2]
 		end
-		if listPointer[1] + listPointer[2] > 2*(q+1)-(r+2) and listPointer[1] >= (q+1)-b and listPointer[2] >= (q+1)-b then
-			listPointerY[1] = listPointer[1]-q+r
-			listPointerY[2] = listPointer[2]-q+r
+
+		-- if both players picked charts that are edits, and when shifted are above where the middle row would be,
+		-- offset the y position of the pointer to line back up with it's intended row
+		local bound = (maxChartIndex + 1) - minUpperRow
+		if totalPos > 2 * (maxChartIndex + 1) - (maxRows + 2) and listPointer[1] >= bound and listPointer[2] >= bound then
+			listPointerY[1] = listPointer[1]-maxChartIndex+maxRows
+			listPointerY[2] = listPointer[2]-maxChartIndex+maxRows
 		end
+		-- offset pointer on the second half of rows when a player has an edit chart
 		for i=1,2 do
-			if listPointer[i] <= a then
+			if listPointer[i] <= maxLowerRow then
 				listPointerY[i] = listPointer[i]
-			elseif listPointer[i] >= (q+1)-a then
-				listPointerY[i] = listPointer[i]-q+r
+			elseif listPointer[i] >= (maxChartIndex+1)-maxLowerRow then
+				listPointerY[i] = listPointer[i] - maxChartIndex + maxRows
 			end
 		end
 	end
 end
 
-function DifficultyListRow(self,k,t,pn)
-	local r = maxRows or (not maxRows and 5)
-	local b = blankMeter or (not blankMeter and '?')
-	local m = maxFeet or (not maxFeet and 20)
-	local n = minFeet or (not minFeet and 0)
-	local z = feetBaseZoom or (not feetBaseZoo and 1)
-	local d = {}
-	
-	self:stopeffect()
+function DifficultyListRow(self,row,name,pn)
+	-- takes the global version at line 87
+	-- local maxRows = 5
+	-- local blankMeter = '?'
+	-- local maxFeet = 20
+	-- local minFeet = 0
+	local cursorPosition = {}
+
+	if name == 'blanksteps' or name == 'blankmods' then
+		self:diffuse(0.1, 0.1, 0.1, 1)
+		return
+	else
+		self:diffuse(DifficultyColorRGB( row - 1 ))
+	end
 	
 	if Player(1) and listPointer[1] then
-		d[1] = k+listPointer[1]-listPointerY[1]
+		cursorPosition[1] = row+listPointer[1]-listPointerY[1]
 	else
-		d[1] = 0
+		cursorPosition[1] = 0
 	end
 	if Player(2) and listPointer[2] then
-		d[2] = k+listPointer[2]-listPointerY[2]
+		cursorPosition[2] = row+listPointer[2]-listPointerY[2]
 	else
-		d[2] = 0
+		cursorPosition[2] = 0
 	end
 	if not GAMESTATE:GetCurrentSong() then
-		if t == 'difficulty' then if k - 1 < 5 then self:settext(string.upper(DifficultyToThemedString( k - 1 ))) self:diffuse(DifficultyColorRGB( k - 1 )) else self:settext('') end end
-		if t == 'meter' then if k - 1 < 5 then self:settext(b) self:diffuse(DifficultyColorRGB( k - 1 )) else self:settext('') end end
-		if t == 'feet' then self:zoomy(z) self:zoomx(n*z) self:customtexturerect(0,0,n,1/8) end
+		if name == 'difficulty' then
+			if row - 1 < 5 then
+				self:settext(string.upper(DifficultyToThemedString( row - 1 )))
+			else
+				self:settext('')
+			end
+		elseif name == 'meter' or name == 'metermods' then
+			if row - 1 < 5 then
+				self:settext(blankMeter)
+			else
+				self:settext('')
+			end
+		elseif name == 'feetsteps' or name == 'feetmods' then
+			self:zoomy(feetBaseZoom)
+			self:zoomx(minFeet*feetBaseZoom)
+			self:customtexturerect(0,0,minFeet,1)
+		end
 	elseif FixedDifficultyRows() then
-		s = difficultyList[k]
-		if s then
-			if t == 'difficulty' then if k - 1  < 5 then self:settext(string.upper(DifficultyToThemedString( k - 1 ))) else self:settext(s:GetDescription()) end self:diffuse(DifficultyColorRGB( k - 1 )) end
-			if t == 'meter' then self:settext(s:GetMeter()) self:diffuse(DifficultyColorRGB( k - 1 )) end
-			if t == 'feet' then self:zoomy(z) self:zoomx(math.min(s:GetMeter(),m)*z) self:customtexturerect(0,k/8,math.min(s:GetMeter(),m),(k+1)/8) end
+		local selection = difficultyList[row]
+		if selection then
+			local meter = selection:GetMeter()
+			local metermods = selection:GetMeterMods()
+			local difficulty = selection:GetDifficulty()
+			local description = selection:GetDescription()
+			local color = {DifficultyColorRGB( difficulty )}
+			self:diffuse(unpack(color))
+			if name == 'difficulty' then
+				if row - 1  < 5 then
+					self:settext(string.upper(DifficultyToThemedString( row - 1 )))
+				else
+					self:settext(description)
+				end
+			elseif name == 'meter' then
+				self:settext(meter)
+			elseif name == 'metermods' then
+				self:settext(metermods)
+			elseif name == 'feetsteps' then
+				local bound = math.max(math.min(meter,maxFeet), 0)
+				self:zoomy(feetBaseZoom)
+				self:zoomx(bound*feetBaseZoom)
+				self:customtexturerect(0,0,bound,1)
+			elseif name == 'feetmods' then
+				local bound = math.max(math.min(metermods,maxFeet), 0)
+				self:zoomy(feetBaseZoom)
+				self:zoomx(bound*feetBaseZoom)
+				self:customtexturerect(0,0,bound,1)
+			end
 			if Song.GetUnlockMethod then
-				if t and GAMESTATE:GetCurrentSong():GetUnlockMethod(s:GetDifficulty()) ~= '' then
-					self:glowshift() self:effectcolor1(1,.8,0,1) self:effectcolor2(1,.8,0,0) self:effectclock('bgm') self:effectperiod(1)
-					--Trace('fixed '..t)
+				if name ~= 'blanksteps' and name ~= 'blankmods' and GAMESTATE:GetCurrentSong():GetUnlockMethod(difficulty) ~= '' then
+					self:glowshift()
+					self:effectcolor1(1,.8,0,1)
+					self:effectcolor2(1,.8,0,0)
+					self:effectclock('bgm')
+					self:effectperiod(1)
+					--Trace('fixed '..name)
 				else
 					self:stopeffect()
 				end
 			end
 		else
-			if t == 'difficulty' then if k - 1 < 5 then self:settext(string.upper(DifficultyToThemedString( k - 1 ))) else self:settext('') end self:diffuse(DifficultyColorRGB()) end
-			if t == 'meter' then self:settext('') self:diffuse(DifficultyColorRGB( k - 1 )) end
-			if t == 'feet' then self:zoomy(z) self:zoomx(n*z) self:customtexturerect(0,0,n,1/8) end
-			self:stopeffect()
+			local color = {DifficultyColorRGB( row - 1 )}
+			self:diffuse(unpack(color))
+			if name == 'difficulty' then
+				if row - 1 < 5 then
+					self:settext(string.upper(DifficultyToThemedString( row - 1 )))
+				else
+					self:settext('')
+				end
+			elseif name == 'meter' or name == 'metermods' then
+				self:settext('')
+			elseif name == 'feetsteps' or name == 'feetmods' then
+				self:zoomy(feetBaseZoom)
+				self:zoomx(minFeet*feetBaseZoom)
+				self:customtexturerect(0,0,minFeet,1)
+			end
 		end
 	else
-		if pn then s = d[pn]
-		elseif not Player(2) then s = d[1]
-		elseif not Player(1) then s = d[2]
-		elseif k <= math.floor(r/2) then
-			if listPointer[1] <= listPointer[2] then s = d[1] else s = d[2] end
+		if pn then
+			row = cursorPosition[pn]
+		elseif not Player(2) then
+			row = cursorPosition[1]
+		elseif not Player(1) then
+			row = cursorPosition[2]
+		elseif row <= math.floor(maxRows/2) then
+			if listPointer[1] <= listPointer[2] then
+				row = cursorPosition[1]
+			else
+				row = cursorPosition[2]
+			end
 		else
-			if listPointer[1] >= listPointer[2] then s = d[1] else s = d[2] end
+			if listPointer[1] >= listPointer[2] then
+				row = cursorPosition[1]
+			else
+				row = cursorPosition[2]
+			end
 		end
-		s = difficultyList[s]
-		if s then
-			if t == 'difficulty' then if s:GetDifficulty() < 5 then self:settext(string.upper(DifficultyToThemedString(s:GetDifficulty()))) else self:settext(s:GetDescription()) end self:diffuse(DifficultyColorRGB( s:GetDifficulty() )) end
-			if t == 'meter' then self:settext(s:GetMeter()) self:diffuse(DifficultyColorRGB( s:GetDifficulty() )) end
-			if t == 'feet' then self:zoomy(z) self:zoomx(math.min(s:GetMeter(),m)*z) self:customtexturerect(0,(s:GetDifficulty()+1)/8,math.min(s:GetMeter(),m),(s:GetDifficulty()+2)/8) end
+
+		local selection = difficultyList[row]
+		if selection then
+			local meter = selection:GetMeter()
+			local metermods = selection:GetMeterMods()
+			local difficulty = selection:GetDifficulty()
+			local description = selection:GetDescription()
+			local color = {DifficultyColorRGB( difficulty )}
+			self:diffuse(unpack(color))
+
+			if name == 'difficulty' then
+				if difficulty < 5 then
+					self:settext(string.upper(DifficultyToThemedString(difficulty)))
+				else
+					self:settext(description)
+				end
+			elseif name == 'meter' then
+				self:settext(meter)
+			elseif name == 'metermods' then
+				self:settext(metermods)
+			elseif name == 'feetsteps' then
+				local bound = math.max(math.min(meter,maxFeet), 0)
+				self:zoomy(feetBaseZoom)
+				self:zoomx(bound*feetBaseZoom)
+				self:customtexturerect(0,0,bound,1)
+			elseif name == 'feetmods' then
+				local bound = math.max(math.min(metermods,maxFeet), 0)
+				self:zoomy(feetBaseZoom)
+				self:zoomx(bound*feetBaseZoom)
+				self:customtexturerect(0,0,bound,1)
+			end
+
 			if Song.GetUnlockMethod then
-				if t and GAMESTATE:GetCurrentSong():GetUnlockMethod(s:GetDifficulty()) ~= '' then
-					self:glowshift() self:effectcolor1(1,.8,0,1) self:effectcolor2(1,.8,0,0) self:effectclock('bgm') self:effectperiod(1)
-					--Trace('nofixed '..t)
+				if name ~= 'blanksteps' and name ~= 'blankmods' and GAMESTATE:GetCurrentSong():GetUnlockMethod(difficulty) ~= '' then
+					self:glowshift()
+					self:effectcolor1(1,.8,0,1)
+					self:effectcolor2(1,.8,0,0)
+					self:effectclock('bgm')
+					self:effectperiod(1)
+					--Trace('nofixed '..name)
 				else
 					self:stopeffect()
 				end
 			end
 		else
-			if t == 'difficulty' then self:settext('') end
-			if t == 'meter' then self:settext('') end
-			if t == 'feet' then self:zoom(0) end
+			if name == 'difficulty' then
+				self:settext('')
+			elseif name == 'meter' or name == 'metermods' then
+				self:settext('')
+			elseif name == 'feetsteps' or name == 'feetmods' then
+				self:zoom(0)
+			end
 			self:stopeffect()
 		end
 	end
 end
 
+-- we have 5 rows to display charts
+-- check and see if they need to be displayed statically (ie: don't have a chart on the 5th row)
 function FixedDifficultyRows()
 	if not steps then return false end
-	l = table.getn(steps)
+	local l = table.getn(steps)
+	-- do we have less than 5 charts?
 	if l > 5 then return false end
+	-- we have less than 5 charts, but are any of them an expert / edit?
 	for i,v in ipairs(steps) do
 		if v:GetDifficulty() > 4 then return false end
 	end
+	-- having two charts of the same difficulty shouldn't be able to happen unless they are both edits
+	-- which we already check for above
+	-- todo understand this code better
 	for i=1,l-1 do
 		for j=i+1,l do
 			if steps[i]:GetDifficulty() == steps[j]:GetDifficulty() then return false end

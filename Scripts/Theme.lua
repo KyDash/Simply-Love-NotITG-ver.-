@@ -1,5 +1,3 @@
-
-feetBaseZoom = .275
 JudgeY = 20
 
 lifeBarSizeAdd.Height = lifeBarSizeAdd.Height - 80

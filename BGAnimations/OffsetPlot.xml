@@ -80,7 +80,7 @@
 		if not yo then yo = 0 end
 		return -1*y/oplot_maxOffset*h/2 + yo
 	end
-
+	
 	oplot_hidden = {1,1}
 	curcard = {0,0}
 	
@@ -154,7 +154,7 @@ end"><children>
 	<!-- P1 -->
 	<Layer Condition="GAMESTATE:IsPlayerEnabled(PLAYER_1)" Type="ActorFrame" OnCommand="xy,SCREEN_WIDTH*0.5-157,SCREEN_HEIGHT*0.5+72-14;queuecommand,Set"
 		SetCommand="%function(self)
-			if SL_IsCouples() then
+			if _SL.IsCouples() then
 				self:hidden(0)
 			else
 				self:hidden(1)
@@ -165,7 +165,7 @@ end"><children>
 	StepP1LeftPressMessageCommand="%function(self)
 		local pn = 1
 		curcard[pn] = 0;
-		if not SL_IsCouples() then
+		if not _SL.IsCouples() then
 			if oplot_hidden[pn] == 1 then
 				self:hidden(0)
 			else
@@ -178,7 +178,7 @@ end"><children>
 	StepP2LeftPressMessageCommand="%function(self)
 		local pn = 1
 		curcard[pn] = 0;
-		if not SL_IsCouples() then
+		if not _SL.IsCouples() then
 			if oplot_hidden[pn] == 1 then
 				self:hidden(0)
 			else
@@ -698,7 +698,7 @@ end"><children>
 	<!-- P2 -->
 	<Layer Condition="GAMESTATE:IsPlayerEnabled(PLAYER_2)" Type="ActorFrame" OnCommand="xy,SCREEN_WIDTH*0.5+157,SCREEN_HEIGHT*0.5+72-14;queuecommand,Set"
 		SetCommand="%function(self)
-			if SL_IsCouples() then
+			if _SL.IsCouples() then
 				self:hidden(0)
 				self:x(SCREEN_WIDTH*0.5-157)
 			else
@@ -711,7 +711,7 @@ end"><children>
 	StepP1RightPressMessageCommand="%function(self)
 		local pn = 2
 		curcard[pn] = 0;
-		if not SL_IsCouples() then
+		if not _SL.IsCouples() then
 			if oplot_hidden[pn] == 1 then
 				self:hidden(0)
 			else
@@ -724,7 +724,7 @@ end"><children>
 	StepP2RightPressMessageCommand="%function(self)
 		local pn = 2
 		curcard[pn] = 0;
-		if not SL_IsCouples() then
+		if not _SL.IsCouples() then
 			if oplot_hidden[pn] == 1 then
 				self:hidden(0)
 			else

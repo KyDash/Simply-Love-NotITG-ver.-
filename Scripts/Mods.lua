@@ -939,12 +939,6 @@ function GetScore(pn)
 	
 end
 
-function ModPulse(self,mod)
-	for pn=0,1 do if CheckMod(pn,mod) then ApplyMod('no '..mod,pn+1); modPulsePlayer = pn self:playcommand('Mod') end end
-	self:sleep(.1)
-	self:queuecommand('Pulse')
-end
-
 -------------------------------------
 -- BPM format and display functions
 -------------------------------------

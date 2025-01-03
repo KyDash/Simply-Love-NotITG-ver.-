@@ -1,5 +1,5 @@
 <ActorFrame> <children>
-	<ActorFrame InitCommand="%function() file() end" />
+	<ActorFrame InitCommand="%function() _SL.CycleSpecialFile() end" />
 	<Layer Type="ActorFrame"
 		Condition="GAMESTATE:IsHumanPlayer(PLAYER_1) and PROFILEMAN:IsPersistentProfile(PLAYER_1) and not GAMESTATE:IsCourseMode()"
 		OnCommand="x,SCREEN_LEFT+74;y,SCREEN_CENTER_Y+21"

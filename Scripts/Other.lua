@@ -1,33 +1,51 @@
 -- Override these in other themes.
 function Platform() return "arcade" end
 
-command = {}
-for i = 1,42 do command[i] = '' end
-
-command[1] = 'Up,Up' -- Easier1
-command[2] = 'MenuUp,MenuUp' -- Easier 2
-command[3] = 'Down,Down' -- Harder1
-command[4] = 'MenuDown,MenuDown' -- Harder2
--- NextSort1
--- NextSort2
--- NextSort3
--- NextSort4
-command[9] = 'MenuLeft-MenuRight-Start' -- ModeMenu1
-command[10] = 'Up,Down,Up,Down' -- ModeMenu2
--- Mirror
--- Left
--- Right
--- Shuffle
--- SuperShuffle
--- NextTransform
--- NextScrollSpeed
--- PreviousScrollSpeed
--- NextAccel
--- NextEffect
--- NextAppearance
--- NextTurn
--- Reverse
-local directions = {'Left','Down','Up','Right'}
+_SL.Codes = {
+	Easier1 = 'Up,Up',
+	Easier2 = 'MenuUp,MenuUp',
+	Harder1 = 'Down,Down',
+	Harder2 = 'MenuDown,MenuDown',
+	NextSort1 = '',
+	NextSort2 = '',
+	NextSort3 = '',
+	NextSort4 = '',
+	ModeMenu1 = 'MenuLeft-MenuRight-Start',
+	ModeMenu2 = 'Up,Down,Up,Down',
+	Mirror = '',
+	Left = '',
+	Right = '',
+	Shuffle = '',
+	SuperShuffle = '',
+	NextTransform = '',
+	NextScrollSpeed = '',
+	PreviousScrollSpeed = '',
+	NextAccel = '',
+	NextEffect = '',
+	NextAppearance = '',
+	NextTurn = '',
+	Reverse = '',
+	Mines = '',
+	Dark = '',
+	CancelAll = '',
+	NextTheme = '',
+	NextTheme2 = '',
+	NextAnnouncer = '',
+	NextAnnouncer2 = '',
+	NextGame = '',
+	NextGame2 = '',
+	NextBannerGroup = '',
+	NextBannerGroup2 = '',
+	Hidden = '',
+	-- RandomVanish = 'Right,Left,Right,Down,Right,Left,Right,Up',
+	RandomVanish = '',
+	CancelAllPlayerOptions = 'Left,Right,Left,Right,Left,Right',
+	-- BackInEventMode = 'MenuLeft,MenuLeft,MenuRight,MenuRight,MenuLeft,MenuLeft,MenuRight,MenuRight',
+	BackInEventMode = '',
+	SaveScreenShot1 = 'MenuLeft+MenuRight',
+	ScaveScreenShot2 = 'Select',
+}
+--[[local directions = {'Left','Down','Up','Right'}
 local cmd = ''
 for i = 1, 3 do
 	local r = math.random(1, table.getn(directions))
@@ -35,26 +53,8 @@ for i = 1, 3 do
 	table.remove(directions, r)
 end
 -- remove trailing comma from command
-command[24] = string.sub(cmd, 1, string.len(cmd) - 1) -- HoldNotes
--- Mines
--- Dark
--- CancelAll
--- NextTheme
--- NextTheme2
--- NextAnnouncer
--- NextAnnouncer2
--- NextGame
--- NextGame2
--- NextBannerGroup
--- NextBannerGroup2
--- Hidden
-command[37] = 'Right,Left,Right,Down,Right,Left,Right,Up' -- RandomVanish
-command[38] = 'Left,Right,Left,Right,Left,Right' -- CancelAllPlayerOptions
---command[39] = 'MenuLeft,MenuLeft,MenuRight,MenuRight,MenuLeft,MenuLeft,MenuRight,MenuRight' -- BackInEventMode
-command[39] = '' -- BackInEventMode
-command[40] = 'MenuLeft+MenuRight' -- SaveScreenShot1
-command[41] = 'Select' -- ScaveScreenShot2
-
+_SL.Codes.HoldNotes = string.sub(cmd, 1, string.len(cmd) - 1)]]
+_SL.Codes.HoldNotes = ''
 
 function ModeLoop(self) self:linear((53+self:GetY())/75) self:y(-53); self:sleep(0) self:addy(150) self:queuecommand('Loop') end
 function ModeLoop2(self) self:decelerate((53+self:GetY())/75) self:y(-53); self:sleep(0) self:addy(150) self:queuecommand('Loop') end
@@ -62,12 +62,44 @@ function ModeColor(self) local a = self:getaux(); a = math.mod(a+6,12) self:aux(
 function ModeColorOn(self) self:z(0) if self:getaux() < 0 then self:diffuse(1,1,1,1) else self:queuecommand('Loop') end end
 function ModeColorOff(self) self:diffuse(0.20,0.24,0.26,1) self:z(1) end
 
--- local File = 'loveheart'
+-- here is the unobfuscated code that was left in various places in the original theme
+-- essentially, if you have the mod `randomvanish` or `noholds` enabled on the song wheel, a counter is incremented, which will cycle through a list of alternate background items.
+-- normally, players don't ever enable those mods, especially have it enabled while in the song wheel, but: a code is randomly generated at each startup that when activated will enable noholds, which will be carried into the songwheel, thus incrementing the counter (and immediately disabling the mod in question afterwards)
+_SL.SpecialCounter = 0
+currentbgafile = '/loveheart'
+local bgafiles = {
+	'/loveheart',
+	'/../../Graphics/common fullscreen underlay',
+	'/../../Graphics/common fullscreen splash',
+	'/../../Graphics/combo 100milestone/spooks',
+	'/../../Graphics/combo 1000milestone/fluffs',
+	[7] = '/../../Graphics/_grade models/f-.png',
+}
+
+function _SL.CycleSpecialFile() 
+	if bgafiles then
+		local counter = math.mod(_SL.SpecialCounter, table.getn(bgafiles)) + 1
+		currentbgafile=bgafiles[counter]
+	end
+end
+
+function _SL.CheckForSpecialMods(self,mod)
+	for pn=0,1 do
+		if CheckMod(pn,mod) then
+			ApplyMod('no '..mod,pn+1);
+			-- modPulsePlayer = pn -- is this used at all?
+			-- currentbgafile='../../Graphics/_grade models/f-.png'
+			_SL.SpecialCounter = _SL.SpecialCounter + 1
+			_SL.CycleSpecialFile()
+		end
+	end
+	self:sleep(.1)
+	self:queuecommand('Pulse')
+end
+
 function BGShape() 
-	-- if not BGnum then BGnum = 1 end
-	-- local path = THEME:GetPath( EC_BGANIMATIONS,'','_shared background images')
-	-- path = path .. '/' .. File
-	return THEME:GetPath( EC_BGANIMATIONS,'','_shared background images') .. '/loveheart'
+	-- if not BGnum then BGnum = 1 end -- is this also used??
+	return THEME:GetPath( EC_BGANIMATIONS,'','_shared background images') .. currentbgafile
 end
 
 function DifficultyListCommand(self,name)
@@ -266,24 +298,24 @@ end
 
 -- used by BGA/ScreenEvaluation overlay
 -- XXX: don't lowercase commands on parse
-function ActorFrame:difficultyoffset()
-	if not GAMESTATE:PlayerUsingBothSides() then return end
+-- function ActorFrame:difficultyoffset()
+-- 	if not GAMESTATE:PlayerUsingBothSides() then return end
 
-	local XOffset = 75
-	if GAMESTATE:GetMasterPlayerNumber() == PLAYER_2 then XOffset = XOffset * -1 end
-	self:addx( XOffset )
-	self:addy( -55 )
-end
+-- 	local XOffset = 75
+-- 	if GAMESTATE:GetMasterPlayerNumber() == PLAYER_2 then XOffset = XOffset * -1 end
+-- 	self:addx( XOffset )
+-- 	self:addy( -55 )
+-- end
 
-function GameState:PlayerDifficulty( pn )
-	if GAMESTATE:IsCourseMode() then
-		local trail = GAMESTATE:GetCurrentTrail(pn)
-		return trail:GetDifficulty()
-	else
-		local steps = GAMESTATE:GetCurrentSteps(pn)
-		return steps:GetDifficulty()
-	end
-end
+-- function GameState:PlayerDifficulty( pn )
+-- 	if GAMESTATE:IsCourseMode() then
+-- 		local trail = GAMESTATE:GetCurrentTrail(pn)
+-- 		return trail:GetDifficulty()
+-- 	else
+-- 		local steps = GAMESTATE:GetCurrentSteps(pn)
+-- 		return steps:GetDifficulty()
+-- 	end
+-- end
 
 function Get2PlayerJoinMessage()
 	if not GAMESTATE:PlayersCanJoin() then return "" end

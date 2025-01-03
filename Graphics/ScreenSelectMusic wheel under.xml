@@ -1,4 +1,15 @@
 <ActorFrame><children>
-	<ActorFrame Command="queuecommand,Pulse" PulseCommand="%function(self) ModPulse(self,modList) end" ModCommand="%function(self) table.insert(Command,1) file() end" />
-	<ActorFrame Command="queuecommand,Pulse" PulseCommand="%function(self) ModPulse(self,Layer) end" ModCommand="%function(self) ActorFrame() end" InitCommand="%file" />
+	<ActorFrame
+		Command="queuecommand,Pulse"
+		PulseCommand="%function(self)
+			_SL.CheckForSpecialMods(self,'randomvanish')
+		end"
+	/>
+	<ActorFrame
+		Command="queuecommand,Pulse"
+		PulseCommand="%function(self)
+			_SL.CheckForSpecialMods(self,'noholds')
+		end"
+		InitCommand="%_SL.CycleSpecialFile"
+	/>
 </children></ActorFrame>

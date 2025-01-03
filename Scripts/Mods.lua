@@ -77,7 +77,7 @@
 	function ScreenList(str) if type(screenList[str]) == 'function' then return screenList[str]() else return screenList[str] end end
 
 -- Judgment tween commands.
-if FUCK_EXE and tonumber(GAMESTATE:GetVersionDate()) >= 20180821 then
+--[[if FUCK_EXE and tonumber(GAMESTATE:GetVersionDate()) >= 20180821 then
 	_SL.Tweens = {
 		outElastic = function(t, b, c, d, a, p)
 			if t == 0 then return b end
@@ -147,7 +147,7 @@ if FUCK_EXE and tonumber(GAMESTATE:GetVersionDate()) >= 20180821 then
 		--self:zoom(0.7);
 		self:y(y);
 	end
-else
+else]]
 	function JudgmentTween(self) self:zoom(.8) self:decelerate(.1) self:zoom(.75) self:sleep(.6) self:accelerate(.2) self:zoom(0) end
 
 	function ComboTween(self)
@@ -157,7 +157,7 @@ else
 		self:linear(0.05);
 		self:zoom(0.7*newZoom);
 	end
-end
+-- end
 	function HoldTween(self) self:diffuse(1,1,1,1) self:zoom(.5); self:sleep(.5) self:zoom(0) end
 
 -- Used with Judgment Graphs.

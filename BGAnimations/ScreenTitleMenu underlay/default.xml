@@ -1,6 +1,10 @@
 <ActorFrame><children>
-	<ActorFrame InitCommand="%function() Profile(0).Love.Dir = ThemeName() end" />
-	<ActorFrame InitCommand="%function() if _SL.CycleSpecialFile then _SL.CycleSpecialFile() end end" />
+	<ActorFrame
+		InitCommand="%function()
+			Profile(0).Love.Dir = ThemeName()
+			_SL.CycleBGStyles()
+		end"
+	/>
 	<ActorFrame OffCommand="queuecommand,Out" OutCommand="%function() local s = SCREENMAN:GetTopScreen():GetChild('Logo') TitleMenuOut(s) end" />
 		<ActorFrame Command="queuecommand,Game" GameCommand="%DetectGame" />
 	

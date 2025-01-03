@@ -1,5 +1,5 @@
 <ActorFrame	OnCommand="x,SCREEN_CENTER_X;y,SCREEN_CENTER_Y;bob;EffectMagnitude,0,50,0;EffectPeriod,8"><children>
-	<ActorFrame Command="%function() crazy = 1 end" />
+	<ActorFrame Command="%function() _SL.Crazy = 1 end" />
 	<ActorFrame OnCommand="bob;EffectMagnitude,0,0,50;EffectPeriod,12"><children>
 		<ActorFrame FOV="90"><children>
 			<Layer File="@BGShape()" InitCommand="%function(self) self:diffuse(ColorRGB(1, true)) end" OnCommand="zoom,3;x,000;y,-000;z,-030;customtexturerect,0,0,1,1;texcoordvelocity,0.03,.04;diffusealpha,0.3" />

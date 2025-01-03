@@ -65,21 +65,21 @@ function ModeColorOff(self) self:diffuse(0.20,0.24,0.26,1) self:z(1) end
 -- here is the unobfuscated code that was left in various places in the original theme
 -- essentially, if you have the mod `randomvanish` or `noholds` enabled on the song wheel, a counter is incremented, which will cycle through a list of alternate background items.
 -- normally, players don't ever enable those mods, especially have it enabled while in the song wheel, but: a code is randomly generated at each startup that when activated will enable noholds, which will be carried into the songwheel, thus incrementing the counter (and immediately disabling the mod in question afterwards)
-_SL.SpecialCounter = 0
-currentbgafile = '/loveheart'
-local bgafiles = {
+bgstylecounter = 0
+currentbgstyle = '/loveheart'
+local bgstyles = {
 	'/loveheart',
-	'/../../Graphics/common fullscreen underlay',
-	'/../../Graphics/common fullscreen splash',
-	'/../../Graphics/combo 100milestone/spooks',
-	'/../../Graphics/combo 1000milestone/fluffs',
+	'/lovebear',
+	'/lovesplash',
+	'/lovebats',
+	'/loveclouds',
 	[7] = '/../../Graphics/_grade models/f-.png',
 }
 
-function _SL.CycleSpecialFile() 
-	if bgafiles then
-		local counter = math.mod(_SL.SpecialCounter, table.getn(bgafiles)) + 1
-		currentbgafile=bgafiles[counter]
+function _SL.CycleBGStyles() 
+	if bgstyles then
+		local counter = math.mod(bgstylecounter, table.getn(bgstyles)) + 1
+		currentbgstyle=bgstyles[counter]
 	end
 end
 
@@ -88,9 +88,8 @@ function _SL.CheckForSpecialMods(self,mod)
 		if CheckMod(pn,mod) then
 			ApplyMod('no '..mod,pn+1);
 			-- modPulsePlayer = pn -- is this used at all?
-			-- currentbgafile='../../Graphics/_grade models/f-.png'
-			_SL.SpecialCounter = _SL.SpecialCounter + 1
-			_SL.CycleSpecialFile()
+			bgstylecounter = bgstylecounter + 1
+			_SL.CycleBGStyles()
 		end
 	end
 	self:sleep(.1)
@@ -99,7 +98,7 @@ end
 
 function BGShape() 
 	-- if not BGnum then BGnum = 1 end -- is this also used??
-	return THEME:GetPath( EC_BGANIMATIONS,'','_shared background images') .. currentbgafile
+	return THEME:GetPath( EC_BGANIMATIONS,'','_shared background images') .. currentbgstyle
 end
 
 function DifficultyListCommand(self,name)

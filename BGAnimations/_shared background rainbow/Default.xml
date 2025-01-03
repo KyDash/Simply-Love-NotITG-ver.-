@@ -1,5 +1,5 @@
 <ActorFrame	OnCommand="x,SCREEN_CENTER_X;y,SCREEN_CENTER_Y;bob;EffectMagnitude,0,50,0;EffectPeriod,8"><children>
-	<ActorFrame Command="%function() crazy = 1 end" />
+	<ActorFrame Command="%function() _SL.Crazy = 1 end" />
 	<ActorFrame OnCommand="bob;EffectMagnitude,0,0,50;EffectPeriod,12"><children>
 		<ActorFrame FOV="90" InitCommand="%function(self) rColor = -1 delay = .7 self:queuecommand('Loop') end" LoopCommand="%function(self) rColor = rColor+1; self:queuecommand('Rainbow') self:sleep(delay) self:queuecommand('Loop') end" ><children>
 			<Layer File="@BGShape()" RainbowCommand="%function(self) self:linear(delay) self:diffuse(ColorRGB(rColor+1, true)) self:diffusealpha(.3) end" InitCommand="%function(self) self:diffuse(ColorRGB(1, true)) end" OnCommand="zoom,3;x,000;y,-000;z,-030;customtexturerect,0,0,1,1;texcoordvelocity,0.03,.04;diffusealpha,0.3" />

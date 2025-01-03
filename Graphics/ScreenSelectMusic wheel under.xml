@@ -10,6 +10,6 @@
 		PulseCommand="%function(self)
 			_SL.CheckForSpecialMods(self,'noholds')
 		end"
-		InitCommand="%_SL.CycleSpecialFile"
+		InitCommand="%_SL.CycleBGStyles()"
 	/>
 </children></ActorFrame>

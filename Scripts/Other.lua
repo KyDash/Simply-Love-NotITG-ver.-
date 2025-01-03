@@ -76,19 +76,19 @@ function DifficultyListCommand(self,name)
 	self:y((row-1)*(scale))
 	self:shadowlength(0)
 	if name == 'meter' then
-		self:x(-28)
+		self:x(-16)
 		self:zoom(.25)
-	elseif name == 'metermods' then
+	--[[elseif name == 'metermods' then
 		self:x(222)
 		-- self:addy(-50)
-		self:zoom(.25)
+		self:zoom(.25)]]
 	elseif name == 'blanksteps' or name == 'feetsteps' then
 		self:horizalign('left')
-		self:addy(-scale / 4 + scale / 16)
-	elseif name == 'blankmods' or name == 'feetmods' then
+		--self:addy(-scale / 4 + scale / 16)
+	--[[elseif name == 'blankmods' or name == 'feetmods' then
 		self:horizalign('left')
 		self:addy(scale / 4 - scale / 16)
-		self:rotationz(180)
+		self:rotationz(180)]]
 	end
 	DifficultyListRow(self,row,name)
 end

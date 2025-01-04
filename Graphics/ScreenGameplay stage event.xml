@@ -1,6 +1,6 @@
 <ActorFrame> <children>
 	<BitmapText
-		Text="event::mode" 
+		Text="" 
         Font="_wendy small" 
 		InitCommand="%function(self) 
 			self:shadowlength(0);

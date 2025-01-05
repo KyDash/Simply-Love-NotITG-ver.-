@@ -1348,7 +1348,7 @@ do
 			ApplyMod(s..'xmusic',pn+1)
 			MESSAGEMAN:Broadcast('RateModChanged')
 
-			if optionRowTextCache[t.Name] then
+			if optionRowTextCache and optionRowTextCache[t.Name] then
 				local text = optionRowText[ optionRowTextCache[t.Name] ][1]
 
 				text:settext('Music Rate\nBPM: ' .. DisplayOptionsBPM())

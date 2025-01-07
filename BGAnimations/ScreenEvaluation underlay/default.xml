@@ -64,38 +64,7 @@
 						local song = stats:GetPossibleSongs()[1]
 						local songlen = song:StepsLengthSeconds()
 						local pss = stats:GetPlayerStageStats(pn - 1)
-						local noteoffset = pss:GetOffsetVector()
-						local noterow = pss:GetNoteRowVector()
-						local minerow = pss:GetMineRowVector()
-						local holdresult = pss:GetHoldResultVector()
-						local holdrow = pss:GetHoldRowVector()
-						-- local songindexes = pss:GetNoteSongVector() -- this should be the same number throughout
-
-						local widestoffset = 0
-						local timingdata = {}
-						timingdata[0] = {beat = song:GetBeatFromElapsedTime(0), time = 0, offset = 0}
-						for i, row in ipairs(noterow) do
-							local beat = row / 48
-							local offset = noteoffset[i] / 1000
-							local absoffset = math.abs(offset)
-							local tns = offsettojudge(absoffset)
-							if tns ~= 'W6' and absoffset > widestoffset then widestoffset = absoffset end
-							local timinginfo = {beat = beat, time = song:GetElapsedTimeFromBeat(beat), offset = offset, tns = tns}
-							table.insert(timingdata,timinginfo)
-						end
-						for i, row in ipairs(minerow) do
-							local beat = row / 48
-							local timinginfo = {beat = beat, time = song:GetElapsedTimeFromBeat(beat), offset = 0, tns = 'MineHit'}
-							table.insert(timingdata,timinginfo)
-						end
-						for i, row in ipairs(holdrow) do
-							local beat = row / 48
-							local result = holdresult[i] and 'OK' or 'NG'
-							local timinginfo = {beat = beat, time = song:GetElapsedTimeFromBeat(beat), offset = 0, hns = result}
-							table.insert(timingdata,timinginfo)
-						end
-						table.insert(timingdata, {beat = song:GetBeatFromElapsedTime(songlen),time = songlen, offset = 0})
-						table.sort(timingdata, function(a, b) return a.time < b.time end)
+						local details = pss:GetDetailedStageStats()
 
 						local pane = SCREENMAN'Underlay'('GradePaneP' .. pn)
 						local lifebar = pane'LifeBar'
@@ -103,33 +72,36 @@
 
 						local panesize = {width = 305, height = 86}
 						local halfheight = panesize.height / 2
-						local datasize = #timingdata
+						local datasize = #details
 
-						lifebar:SetDrawMode'linestrip':SetNumVertices(datasize + 1)
-						scatterplot:SetDrawMode'quads':SetNumVertices((datasize + 1) * 4)
-						
-						for i = 0, datasize do
-							local data = timingdata[i]
-							-- we want to get the lifebar when the note was hit
-							-- `time` is where the note falls in the chart, but not when the player hit it
-							-- we can factor that in by adding `offset` to `time`
-							-- local when = data.time + data.offset
+						lifebar:SetDrawMode'linestrip':SetNumVertices(datasize + 2)
+						scatterplot:SetDrawMode'quads':SetNumVertices(datasize * 4)
+						local widestoffset = 0
+						do
+							-- add a point at song start to draw the lifebar
+							local when = 0
+							local life = pss:GetLifeRecordLerpAt(when)
+							local x = when / songlen * panesize.width
+							lifebar:SetVertexPosition(0, x, panesize.height - (life * panesize.height), 0)
+								   :SetVertexColor(0, 1, 1, 1, 0.75)
+								   :SetLineWidth(2) -- sorry intel users
+						end
+						for i, data in ipairs(details) do
+							-- main lifebar portion
 							local when = data.time
-							local life = pss:GetLifeRecordAt(when)
-							local x = data.time / songlen * panesize.width
+							local life = pss:GetLifeRecordLerpAt(when)
+							local x = when / songlen * panesize.width
 							lifebar:SetVertexPosition(i, x, panesize.height - (life * panesize.height), 0)
 								   :SetVertexColor(i, 1, 1, 1, 0.75)
 								   :SetLineWidth(2) -- sorry intel users
 
-							-- scatterplot
-							local index = i * 4
+							local index = (i - 1) * 4
 							local vert1, vert2, vert3, vert4 = index, index + 1, index + 2, index + 3
 							if data.tns then
 								local tns = data.tns
-								-- print(i, data.offset, data.tns)
-								if tns ~= 'MineHit' and tns ~= 'W6' then
-									local offset = (-data.offset / (widestoffset + 0.01)) * panesize.height / 2
-									local color = _SL.CommonColors[tns]
+								if tns ~= 'TNS_HitMine' and tns ~= 'TNS_Miss' and tns ~= 'TNS_AvoidMine' then
+									local offset = (-data.offset / (details.widestoffset + 0.01)) * panesize.height / 2
+									local color = _SL.CommonColors[string.sub(tns, 5)]
 									scatterplot:SetVertexPosition(vert1, x - 0.75, offset - 0.75, 0)
 											   :SetVertexPosition(vert2, x - 0.75, offset + 0.75, 0)
 											   :SetVertexPosition(vert3, x + 0.75, offset + 0.75, 0)
@@ -138,8 +110,8 @@
 											   :SetVertexColor(vert2, _SL.HexToRGB(color))
 											   :SetVertexColor(vert3, _SL.HexToRGB(color))
 											   :SetVertexColor(vert4, _SL.HexToRGB(color))
-								elseif tns == 'W6' then
-									local color = _SL.CommonColors[tns]
+								elseif tns == 'TNS_Miss' then
+									local color = _SL.CommonColors.W6
 									scatterplot:SetVertexPosition(vert1, x - 0.5, -halfheight, 0)
 											   :SetVertexPosition(vert2, x - 0.5, halfheight, 0)
 											   :SetVertexPosition(vert3, x + 0.5, halfheight, 0)
@@ -148,7 +120,7 @@
 											   :SetVertexColor(vert2, _SL.HexToRGB(color .. '80'))
 											   :SetVertexColor(vert3, _SL.HexToRGB(color .. '80'))
 											   :SetVertexColor(vert4, _SL.HexToRGB(color .. '80'))
-								else
+								elseif tns == 'TNS_HitMine' then
 									scatterplot:SetVertexPosition(vert1, x - 0.5, -halfheight, 0)
 											   :SetVertexPosition(vert2, x - 0.5, halfheight, 0)
 											   :SetVertexPosition(vert3, x + 0.5, halfheight, 0)
@@ -169,7 +141,16 @@
 										   :SetVertexColor(vert4, 1, 1, 1, 0)
 							end
 						end
-						-- spellcard regions
+						do
+							-- add a point at song end to draw the lifebar
+							local when = songlen
+							local life = pss:GetLifeRecordLerpAt(when)
+							local x = when / songlen * panesize.width
+							lifebar:SetVertexPosition(datasize + 1, x, panesize.height - (life * panesize.height), 0)
+								   :SetVertexColor(datasize + 1, 1, 1, 1, 0.75)
+								   :SetLineWidth(2) -- sorry intel users
+						end
+
 						local spellcardregion = pane'SpellCards'
 						local spellcards = song:GetSpellCards()
 						spellcardregion:SetDrawMode'quads':SetNumVertices(#spellcards * 8)
@@ -180,7 +161,6 @@
 							local left = song:GetElapsedTimeFromBeat(card.StartBeat) / songlen * panesize.width
 							local right = song:GetElapsedTimeFromBeat(card.EndBeat) / songlen * panesize.width
 							local color = card.Color
-							print(i, card.Name, card.StartBeat, card.EndBeat)
 							spellcardregion:SetVertexPosition(vert1, left, 0, 0)
 										:SetVertexPosition(vert2, left, panesize.height, 0)
 										:SetVertexPosition(vert3, right, panesize.height, 0)

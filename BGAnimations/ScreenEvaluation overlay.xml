@@ -136,6 +136,6 @@
 	
 	<!--<Layer File="Couples" Condition="_SL.IsCouples()"/>-->
 	<!-- <Layer File="OffsetPlot" /> -->
-	<Layer File="ScreenEvaluation widget pb" />
+	<!-- <Layer File="ScreenEvaluation widget pb" /> -->
 
 </children> </ActorFrame>

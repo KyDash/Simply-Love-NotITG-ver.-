@@ -548,23 +548,47 @@
             Quad = _SL.CommonColors.W1,
             Quint = '#B462B2',
         }
-		for i, af in ipairs(SCREENMAN'ListScoreRowItems':GetChildren()) do
+		for afi, af in ipairs(SCREENMAN'ListScoreRowItems':GetChildren()) do
             af'SongTitle':settext'[7] Disco Pop':x(-195)
-            for i, scores in ipairs(af:GetChildren()) do
+            local namecache = {}
+            local children = af:GetChildren()
+            for i, scores in ipairs(children) do
                 if scores:GetName() == 'StepsScore' then
-                    local idx = math.random(1, #names)
-                    local entry = names[idx]
+                    local color
+                    if #names > 0 then
+                        local idx = math.random(1, #names)
+                        local entry = names[idx]
+                        namecache[i] = {entry[1], entry[2]}
+                        color = cleartocolormap[entry[3]]
+                        table.remove(names, idx)
+                    else
+                        namecache[i] = {'Sorry, no more [7] Disco Pop', ':<'}
+                        color = _SL.CommonColors.White
+                        scores:rainbow():effectoffset((i / 7) + (afi / 6))
+                    end
                     scores:hidden(0)
                         :maxwidth(100)
                         :zoom(0.7)
                         :x((i - 1) * 80 - 300)
-                        :settext(entry[1] .. '\n' .. entry[2])
-                        :diffuse(_SL.HexToRGB(cleartocolormap[entry[3]]))
+                        :diffuse(_SL.HexToRGB(color))
                         :ztestmode'writeonpass'
                         :shadowlength(0)
-                    table.remove(names, idx)
                 end
             end
+            af:SetDrawFunction(function()
+                for i, text in ipairs(children) do
+                    if text:GetName() == 'StepsScore' then
+                        -- split text into two passes, one for the name, which needs to be resized if too long
+                        -- and the second for the score, which at it's longest is 100.00%, which can fit reasonably in a width of 100
+                        -- normally the score would also have the same compression ratio as the name
+                        -- which can look pretty weird in a row full of scores
+                        text:maxwidth(100):settext(namecache[i][1] .. '\n'):Draw()
+                            :maxwidth(0):settext('\n' .. namecache[i][2]):Draw()
+                    else
+                        text:Draw()
+                    end
+                end
+            end)
 		end
 	end"
 />

@@ -8,163 +8,213 @@
 		self:queuecommand'Set'
 	end"
 	SetCommand="%function(self)
-		StyleIcon()
 		CaptureJudgment()
 		AddScoreToListFromEval()
 		ApplyHideBG()
 		SaveToProfile()
+		if GAMESTATE:IsCourseMode() then return end
+
+		-- originally i wanted to make the column colors for the scatterplot be the ones being used in schall we step
+		-- turns out that those colours on small dots don't have enough contrast to easily make out from eachother
+		-- unfortunate!
+		--[[ local columncolors = {
+			[0] = '#FF9933',
+			'#FF66CC',
+			'#0099FF',
+			'33FF66',
+		}]]
+		local columncolors = {
+			[0] = '#ED1C24',
+			'#00AEEF',
+			'#39B54A',
+			'#FFF200',
+		}
 
 		for pn = 1, 2 do
 			if GAMESTATE:IsPlayerEnabled(pn - 1) then
-				do
-					-- judgment info logic
-					local gradeframe = SCREENMAN('GradeFrameP' .. pn)
-					local judgments = gradeframe'Judgments'
-					local radarvalues = gradeframe'Radar'
-					local actors = {
-						W1 =	{text = judgments'W1',		number = SCREENMAN('MarvelousNumberP' .. pn),	index = 0, color = _SL.CommonColors.W1},
-						W2 =	{text = judgments'W2',		number = SCREENMAN('PerfectNumberP' .. pn),		index = 1, color = _SL.CommonColors.W2},
-						W3 =	{text = judgments'W3',		number = SCREENMAN('GreatNumberP' .. pn),		index = 2, color = _SL.CommonColors.W3},
-						W4 =	{text = judgments'W4',		number = SCREENMAN('GoodNumberP' .. pn),		index = 3, color = _SL.CommonColors.W4},
-						W5 =	{text = judgments'W5',		number = SCREENMAN('BooNumberP' .. pn),			index = 4, color = _SL.CommonColors.W5},
-						W6 =	{text = judgments'W6',		number = SCREENMAN('MissNumberP' .. pn),		index = 5, color = _SL.CommonColors.W6},
-						Holds = {text = radarvalues'Holds', number = SCREENMAN('HoldsTextP' .. pn),			index = 0, color = _SL.CommonColors.White},
-						Mines = {text = radarvalues'Mines', number = SCREENMAN('MinesTextP' .. pn),			index = 1, color = _SL.CommonColors.White},
-						Hands = {text = radarvalues'Hands', number = SCREENMAN('HandsTextP' .. pn),			index = 2, color = _SL.CommonColors.White},
-						Rolls = {text = radarvalues'Rolls', number = SCREENMAN('RollsTextP' .. pn),			index = 3, color = _SL.CommonColors.White},
-					}
+				-- judgment info logic
+				local gradeframe = SCREENMAN('GradeFrameP' .. pn)
+				local judgments = gradeframe'Judgments'
+				local radarvalues = gradeframe'Radar'
+				local actors = {
+					W1 =	{text = judgments'W1',		number = SCREENMAN('MarvelousNumberP' .. pn),	index = 0, color = _SL.CommonColors.W1},
+					W2 =	{text = judgments'W2',		number = SCREENMAN('PerfectNumberP' .. pn),		index = 1, color = _SL.CommonColors.W2},
+					W3 =	{text = judgments'W3',		number = SCREENMAN('GreatNumberP' .. pn),		index = 2, color = _SL.CommonColors.W3},
+					W4 =	{text = judgments'W4',		number = SCREENMAN('GoodNumberP' .. pn),		index = 3, color = _SL.CommonColors.W4},
+					W5 =	{text = judgments'W5',		number = SCREENMAN('BooNumberP' .. pn),			index = 4, color = _SL.CommonColors.W5},
+					W6 =	{text = judgments'W6',		number = SCREENMAN('MissNumberP' .. pn),		index = 5, color = _SL.CommonColors.W6},
+					Holds = {text = radarvalues'Holds', number = SCREENMAN('HoldsTextP' .. pn),			index = 0, color = _SL.CommonColors.White},
+					Mines = {text = radarvalues'Mines', number = SCREENMAN('MinesTextP' .. pn),			index = 1, color = _SL.CommonColors.White},
+					Hands = {text = radarvalues'Hands', number = SCREENMAN('HandsTextP' .. pn),			index = 2, color = _SL.CommonColors.White},
+					Rolls = {text = radarvalues'Rolls', number = SCREENMAN('RollsTextP' .. pn),			index = 3, color = _SL.CommonColors.White},
+				}
 
-					judgments:xy(pn == 1 and 190 or -200, -275)
-					radarvalues:xy(pn == 1 and -300 or 195, -125)
+				judgments:xy(pn == 1 and 190 or -200, -275)
+				radarvalues:xy(pn == 1 and -300 or 195, -125)
 
-					for i, actor in pairs(actors) do
-						actor.text:y(77 * actor.index):shadowlength(0):horizalign'right'
-						actor.text:diffuse(_SL.HexToRGB(actor.color))
-						actor.number:diffuse(_SL.HexToRGB(actor.color))
-					end
-
-					local w5count = tonumber(actors.W5.number:GetText(), 10)
-					if w5count > 0 then actors.W5.text:settext'pad' end
-
-					if not Decents() then actors.W4.number:settext('    ') end
-					if not WayOffs() then actors.W5.number:settext('    ') end
+				for i, actor in pairs(actors) do
+					actor.text:y(77 * actor.index):shadowlength(0):horizalign'right'
+					actor.text:diffuse(_SL.HexToRGB(actor.color))
+					actor.number:diffuse(_SL.HexToRGB(actor.color))
 				end
+
+				local w5count = tonumber(actors.W5.number:GetText(), 10)
+				if w5count > 0 then actors.W5.text:settext'pad' end
+
+				if not Decents() then actors.W4.number:settext('    ') end
+				if not WayOffs() then actors.W5.number:settext('    ') end
+
+				local detailcache = {}
+				-- lifebar / scatterplot / spellcard logic
+				local stats = STATSMAN:GetCurStageStats()
+				local song = stats:GetPossibleSongs()[1]
+				local songlen = song:StepsLengthSeconds()
+				local pss = stats:GetPlayerStageStats(pn - 1)
+				local details = pss:GetDetailedStageStats()
+
+				local pane = SCREENMAN'Underlay'('GradePaneP' .. pn)
+				local lifebar = pane'LifeBar'
+				local scatterplot = pane'ScatterPlot'
+
+				local panesize = {width = 305, height = 86, padding = 2}
+				local halfheight = (panesize.height + panesize.padding) / 2
+				local datasize = #details
+
+				lifebar:SetDrawMode'linestrip':SetNumVertices(datasize + 2)
+				scatterplot:SetDrawMode'quads':SetNumVertices(datasize * 4)
+				local widestoffset = 0
 				do
-					if GAMESTATE:IsCourseMode() then return end
-					-- lifebar / scatterplot / spellcard logic
-					local stats = STATSMAN:GetCurStageStats()
-					local song = stats:GetPossibleSongs()[1]
-					local songlen = song:StepsLengthSeconds()
-					local pss = stats:GetPlayerStageStats(pn - 1)
-					local details = pss:GetDetailedStageStats()
+					-- add a point at song start to draw the lifebar
+					local when = 0
+					local life = pss:GetLifeRecordLerpAt(when)
+					local x = when / songlen * panesize.width
+					lifebar:SetVertexPosition(0, x, panesize.height - (life * panesize.height), 0)
+							:SetVertexColor(0, 1, 1, 1, 0.75)
+							:SetLineWidth(2) -- sorry intel users
+				end
+				for i, data in ipairs(details) do
+					-- main lifebar portion
+					detailcache[i] = {}
+					local when = data.time
+					local life = pss:GetLifeRecordLerpAt(when)
+					local x = when / songlen * panesize.width
+					lifebar:SetVertexPosition(i, x, panesize.height - (life * panesize.height), 0)
+							:SetVertexColor(i, 1, 1, 1, 0.75)
+							:SetLineWidth(2) -- sorry intel users
 
-					local pane = SCREENMAN'Underlay'('GradePaneP' .. pn)
-					local lifebar = pane'LifeBar'
-					local scatterplot = pane'ScatterPlot'
-
-					local panesize = {width = 305, height = 86, padding = 2}
-					local halfheight = (panesize.height + panesize.padding) / 2
-					local datasize = #details
-
-					lifebar:SetDrawMode'linestrip':SetNumVertices(datasize + 2)
-					scatterplot:SetDrawMode'quads':SetNumVertices(datasize * 4)
-					local widestoffset = 0
-					do
-						-- add a point at song start to draw the lifebar
-						local when = 0
-						local life = pss:GetLifeRecordLerpAt(when)
-						local x = when / songlen * panesize.width
-						lifebar:SetVertexPosition(0, x, panesize.height - (life * panesize.height), 0)
-								:SetVertexColor(0, 1, 1, 1, 0.75)
-								:SetLineWidth(2) -- sorry intel users
-					end
-					for i, data in ipairs(details) do
-						-- main lifebar portion
-						local when = data.time
-						local life = pss:GetLifeRecordLerpAt(when)
-						local x = when / songlen * panesize.width
-						lifebar:SetVertexPosition(i, x, panesize.height - (life * panesize.height), 0)
-								:SetVertexColor(i, 1, 1, 1, 0.75)
-								:SetLineWidth(2) -- sorry intel users
-
-						local index = (i - 1) * 4
-						local vert1, vert2, vert3, vert4 = index, index + 1, index + 2, index + 3
-						if data.tns then
-							local tns = data.tns
-							if tns ~= 'TNS_HitMine' and tns ~= 'TNS_Miss' and tns ~= 'TNS_AvoidMine' then
-								local offset = (-data.offset / (details.widestoffset + 0.01)) * panesize.height / 2
-								local color = _SL.CommonColors[string.sub(tns, 5)]
-								scatterplot:SetVertexPosition(vert1, x - 0.75, offset - 0.75, 0)
-											:SetVertexPosition(vert2, x - 0.75, offset + 0.75, 0)
-											:SetVertexPosition(vert3, x + 0.75, offset + 0.75, 0)
-											:SetVertexPosition(vert4, x + 0.75, offset - 0.75, 0)
-											:SetVertexColor(vert1, _SL.HexToRGB(color))
-											:SetVertexColor(vert2, _SL.HexToRGB(color))
-											:SetVertexColor(vert3, _SL.HexToRGB(color))
-											:SetVertexColor(vert4, _SL.HexToRGB(color))
-							elseif tns == 'TNS_Miss' then
-								local color = _SL.CommonColors.W6
-								scatterplot:SetVertexPosition(vert1, x - 0.5, -halfheight, 0)
-											:SetVertexPosition(vert2, x - 0.5, halfheight, 0)
-											:SetVertexPosition(vert3, x + 0.5, halfheight, 0)
-											:SetVertexPosition(vert4, x + 0.5, -halfheight, 0)
-											:SetVertexColor(vert1, _SL.HexToRGB(color .. '80'))
-											:SetVertexColor(vert2, _SL.HexToRGB(color .. '80'))
-											:SetVertexColor(vert3, _SL.HexToRGB(color .. '80'))
-											:SetVertexColor(vert4, _SL.HexToRGB(color .. '80'))
-							elseif tns == 'TNS_HitMine' then
-								scatterplot:SetVertexPosition(vert1, x - 0.5, -halfheight, 0)
-											:SetVertexPosition(vert2, x - 0.5, halfheight, 0)
-											:SetVertexPosition(vert3, x + 0.5, halfheight, 0)
-											:SetVertexPosition(vert4, x + 0.5, -halfheight, 0)
-											:SetVertexColor(vert1, _SL.HexToRGB'#88888880')
-											:SetVertexColor(vert2, _SL.HexToRGB'#88888880')
-											:SetVertexColor(vert3, _SL.HexToRGB'#88888880')
-											:SetVertexColor(vert4, _SL.HexToRGB'#88888880')
-							end
-						else
-							scatterplot:SetVertexPosition(vert1, x, 0, 0)
-										:SetVertexPosition(vert2, x, 0, 0)
-										:SetVertexPosition(vert3, x, 0, 0)
-										:SetVertexPosition(vert4, x, 0, 0)
-										:SetVertexColor(vert1, 1, 1, 1, 0)
-										:SetVertexColor(vert2, 1, 1, 1, 0)
-										:SetVertexColor(vert3, 1, 1, 1, 0)
-										:SetVertexColor(vert4, 1, 1, 1, 0)
+					local index = (i - 1) * 4
+					local vert1, vert2, vert3, vert4 = index, index + 1, index + 2, index + 3
+					if data.tns then
+						local tns = data.tns
+						detailcache[i][1] = columncolors[data.notes[1].column]
+						if tns ~= 'TNS_HitMine' and tns ~= 'TNS_Miss' and tns ~= 'TNS_AvoidMine' then
+							local offset = (-data.offset / (details.widestoffset + 0.01)) * panesize.height / 2
+							local color = _SL.CommonColors[string.sub(tns, 5)]
+							detailcache[i][0] = color
+							scatterplot:SetVertexPosition(vert1, x - 0.75, offset - 0.75, 0)
+										:SetVertexPosition(vert2, x - 0.75, offset + 0.75, 0)
+										:SetVertexPosition(vert3, x + 0.75, offset + 0.75, 0)
+										:SetVertexPosition(vert4, x + 0.75, offset - 0.75, 0)
+										:SetVertexColor(vert1, _SL.HexToRGB(color))
+										:SetVertexColor(vert2, _SL.HexToRGB(color))
+										:SetVertexColor(vert3, _SL.HexToRGB(color))
+										:SetVertexColor(vert4, _SL.HexToRGB(color))
+						elseif tns == 'TNS_Miss' then
+							local color = _SL.CommonColors.W6 .. '80'
+							detailcache[i][0] = color
+							detailcache[i][1] = detailcache[i][1] .. '80'
+							scatterplot:SetVertexPosition(vert1, x - 0.5, -halfheight, 0)
+										:SetVertexPosition(vert2, x - 0.5, halfheight, 0)
+										:SetVertexPosition(vert3, x + 0.5, halfheight, 0)
+										:SetVertexPosition(vert4, x + 0.5, -halfheight, 0)
+										:SetVertexColor(vert1, _SL.HexToRGB(color))
+										:SetVertexColor(vert2, _SL.HexToRGB(color))
+										:SetVertexColor(vert3, _SL.HexToRGB(color))
+										:SetVertexColor(vert4, _SL.HexToRGB(color))
+						elseif tns == 'TNS_HitMine' then
+							detailcache[i][0] = '#88888880'
+							detailcache[i][1] = detailcache[i][1] .. '80'
+							scatterplot:SetVertexPosition(vert1, x - 0.5, -halfheight, 0)
+										:SetVertexPosition(vert2, x - 0.5, halfheight, 0)
+										:SetVertexPosition(vert3, x + 0.5, halfheight, 0)
+										:SetVertexPosition(vert4, x + 0.5, -halfheight, 0)
+										:SetVertexColor(vert1, _SL.HexToRGB'#88888880')
+										:SetVertexColor(vert2, _SL.HexToRGB'#88888880')
+										:SetVertexColor(vert3, _SL.HexToRGB'#88888880')
+										:SetVertexColor(vert4, _SL.HexToRGB'#88888880')
 						end
-					end
-					do
-						-- add a point at song end to draw the lifebar
-						local when = songlen
-						local life = pss:GetLifeRecordLerpAt(when)
-						local x = when / songlen * panesize.width
-						lifebar:SetVertexPosition(datasize + 1, x, panesize.height - (life * panesize.height), 0)
-								:SetVertexColor(datasize + 1, 1, 1, 1, 0.75)
-								:SetLineWidth(2) -- sorry intel users
-					end
-
-					local spellcardregion = pane'SpellCards'
-					local spellcards = song:GetSpellCards()
-					spellcardregion:SetDrawMode'quads':SetNumVertices(#spellcards * 8)
-					for i, card in ipairs(spellcards) do
-						-- print(i, card.Name, #spellcards)
-						local index = (i - 1) * 4
-						local vert1, vert2, vert3, vert4 = index, index + 1, index + 2, index + 3
-						local left = song:GetElapsedTimeFromBeat(card.StartBeat) / songlen * panesize.width
-						local right = song:GetElapsedTimeFromBeat(card.EndBeat) / songlen * panesize.width
-						local color = card.Color
-						spellcardregion:SetVertexPosition(vert1, left, 0, 0)
-									:SetVertexPosition(vert2, left, panesize.height + panesize.padding, 0)
-									:SetVertexPosition(vert3, right, panesize.height + panesize.padding, 0)
-									:SetVertexPosition(vert4, right, 0, 0)
-									:SetVertexColor(vert1, color[1], color[2], color[3], color[4])
-									:SetVertexColor(vert2, color[1], color[2], color[3], color[4])
-									:SetVertexColor(vert3, color[1], color[2], color[3], color[4])
-									:SetVertexColor(vert4, color[1], color[2], color[3], color[4])
+					else
+						detailcache[i][0] = '#00000000'
+						detailcache[i][1] = '#00000000'
+						scatterplot:SetVertexPosition(vert1, x, 0, 0)
+									:SetVertexPosition(vert2, x, 0, 0)
+									:SetVertexPosition(vert3, x, 0, 0)
+									:SetVertexPosition(vert4, x, 0, 0)
+									:SetVertexColor(vert1, 1, 1, 1, 0)
+									:SetVertexColor(vert2, 1, 1, 1, 0)
+									:SetVertexColor(vert3, 1, 1, 1, 0)
+									:SetVertexColor(vert4, 1, 1, 1, 0)
 					end
 				end
-				-- local pos
-				-- self:addcommand()
+				do
+					-- add a point at song end to draw the lifebar
+					local when = songlen
+					local life = pss:GetLifeRecordLerpAt(when)
+					local x = when / songlen * panesize.width
+					lifebar:SetVertexPosition(datasize + 1, x, panesize.height - (life * panesize.height), 0)
+							:SetVertexColor(datasize + 1, 1, 1, 1, 0.75)
+							:SetLineWidth(2) -- sorry intel users
+				end
+
+				local spellcardregion = pane'SpellCards'
+				local spellcards = song:GetSpellCards()
+				spellcardregion:SetDrawMode'quads':SetNumVertices(#spellcards * 8)
+				for i, card in ipairs(spellcards) do
+					-- print(i, card.Name, #spellcards)
+					local index = (i - 1) * 4
+					local vert1, vert2, vert3, vert4 = index, index + 1, index + 2, index + 3
+					local left = song:GetElapsedTimeFromBeat(card.StartBeat) / songlen * panesize.width
+					local right = song:GetElapsedTimeFromBeat(card.EndBeat) / songlen * panesize.width
+					local color = card.Color
+					spellcardregion:SetVertexPosition(vert1, left, 0, 0)
+								:SetVertexPosition(vert2, left, panesize.height + panesize.padding, 0)
+								:SetVertexPosition(vert3, right, panesize.height + panesize.padding, 0)
+								:SetVertexPosition(vert4, right, 0, 0)
+								:SetVertexColor(vert1, color[1], color[2], color[3], color[4])
+								:SetVertexColor(vert2, color[1], color[2], color[3], color[4])
+								:SetVertexColor(vert3, color[1], color[2], color[3], color[4])
+								:SetVertexColor(vert4, color[1], color[2], color[3], color[4])
+				end
+
+				local vindex = 0
+				local hindex = 0
+
+				local function updatecolor(index)
+					index = _SL.modulo(index, 2) -- lua 5.0 my bloafed
+					for i, data in ipairs(details) do
+						local vertindex = (i - 1) * 4
+						local vert1, vert2, vert3, vert4 = vertindex, vertindex + 1, vertindex + 2, vertindex + 3
+						local color = detailcache[i][index]
+						scatterplot:SetVertexColor(vert1, _SL.HexToRGB(color))
+									:SetVertexColor(vert2, _SL.HexToRGB(color))
+									:SetVertexColor(vert3, _SL.HexToRGB(color))
+									:SetVertexColor(vert4, _SL.HexToRGB(color))
+					end
+				end
+
+				local function updatecard(index)
+				
+				end
+
+				local function incv() vindex = vindex + 1 updatecolor(vindex) end
+				local function decv() vindex = vindex - 1 updatecolor(vindex) end
+				local function inch() hindex = hindex + 1 updatecard(hindex) end
+				local function dech() hindex = hindex - 1 updatecard(hindex) end
+
+				self:addcommand('StepP' .. pn .. 'MenuUpPressMessage', incv):addcommand('StepP' .. pn .. 'UpPressMessage', incv)
+				self:addcommand('StepP' .. pn .. 'MenuDownPressMessage', decv):addcommand('StepP' .. pn .. 'DownPressMessage', decv)
+				self:addcommand('StepP' .. pn .. 'MenuRightPressMessage', inch):addcommand('StepP' .. pn .. 'RightPressMessage', inch)
+				self:addcommand('StepP' .. pn .. 'MenuLeftPressMessage', dech):addcommand('StepP' .. pn .. 'LeftPressMessage', dech)
 			end
 		end
 	end"
@@ -192,13 +242,13 @@
 
 		<Layer Type="Polygon" Name="SpellCards" OnCommand="y,175;ztestmode,writeonfail" />
 		<!-- transparent quads to dim colours so scatterplot and lifebars are easily visible with any colour -->
-		<Layer Type="Quad" OnCommand="diffuse,#101519A0;zoomto,305,44;y,175;fadetop,1;ztestmode,writeonfail" />
-		<Layer Type="Quad" OnCommand="diffuse,#101519A0;zoomto,305,44;y,175 + 44;fadebottom,1;ztestmode,writeonfail" />
-		<Layer Type="Quad" OnCommand="diffuse,#101519D8;zoomto,305,88;y,175;ztestmode,writeonfail" />
+		<Layer Type="Quad" OnCommand="diffuse,#101519C0;zoomto,305,44;y,175;fadetop,1;ztestmode,writeonfail" />
+		<Layer Type="Quad" OnCommand="diffuse,#101519C0;zoomto,305,44;y,175 + 44;fadebottom,1;ztestmode,writeonfail" />
+		<Layer Type="Quad" OnCommand="diffuse,#101519D0;zoomto,305,88;y,175;ztestmode,writeonfail" />
 		<!-- center to represent a 0 offset to more easily distinguish if notes are late or early-->
 		<Layer Type="Quad" OnCommand="diffuse,#565E6380;zoomto,305,1;y,175 + 43.5;ztestmode,writeonfail" />
+		<Layer Type="Polygon" Name="ScatterPlot" OnCommand="y,175 + 44;ztestmode,writeonfail;" />
 		<Layer Type="Polygon" Name="LifeBar" OnCommand="y,175 + 1;ztestmode,writeonfail;" />
-		<Layer Type="Polygon" Name="ScatterPlot" OnCommand="y,175 + 44 + 1;ztestmode,writeonfail;" />
 	</children></Layer>
 	<Layer Type="ActorFrame"
 		Condition="GAMESTATE:IsPlayerEnabled(PLAYER_2) and not _SL.IsCouples(1)"
@@ -224,18 +274,23 @@
 
 		<Layer Type="Polygon" Name="SpellCards" OnCommand="y,175;ztestmode,writeonfail" />
 		<!-- transparent quads to dim colours so scatterplot and lifebars are easily visible with any colour -->
-		<Layer Type="Quad" OnCommand="diffuse,#101519A0;zoomto,305,44;y,175;fadetop,1;ztestmode,writeonfail" />
-		<Layer Type="Quad" OnCommand="diffuse,#101519A0;zoomto,305,44;y,175 + 44;fadebottom,1;ztestmode,writeonfail" />
-		<Layer Type="Quad" OnCommand="diffuse,#101519D8;zoomto,305,88;y,175;ztestmode,writeonfail" />
+		<Layer Type="Quad" OnCommand="diffuse,#101519C0;zoomto,305,44;y,175;fadetop,1;ztestmode,writeonfail" />
+		<Layer Type="Quad" OnCommand="diffuse,#101519C0;zoomto,305,44;y,175 + 44;fadebottom,1;ztestmode,writeonfail" />
+		<Layer Type="Quad" OnCommand="diffuse,#101519D0;zoomto,305,88;y,175;ztestmode,writeonfail" />
 		<!-- center to represent a 0 offset to more easily distinguish if notes are late or early-->
 		<Layer Type="Quad" OnCommand="diffuse,#565E6380;zoomto,305,1;y,175 + 43.5;ztestmode,writeonfail" />
+		<Layer Type="Polygon" Name="ScatterPlot" OnCommand="y,175 + 44;ztestmode,writeonfail;" />
 		<Layer Type="Polygon" Name="LifeBar" OnCommand="y,175 + 1;ztestmode,writeonfail;" />
-		<Layer Type="Polygon" Name="ScatterPlot" OnCommand="y,175 + 44 + 1;ztestmode,writeonfail;" />
 	</children></Layer>
 	<Layer
 		File="@'../ScreenSelectMusic underlay/Banner'..Color()..'.png'"
-		InitCommand="x,SCREEN_CENTER_X;y,SCREEN_TOP+115;ZoomToWidth,278;ZoomToHeight,109"
+		InitCommand="x,SCREEN_CENTER_X;y,SCREEN_TOP+101;ZoomToWidth,278;ZoomToHeight,109"
 		OnCommand="ztest,1;diffusealpha,0;linear,0.6;diffusealpha,1"
 		Name="Banner"
 	/>
+	<!--
+		Add bitmaptext
+		U/D or MU/MD to switch between scatterplot colors
+		L/R or ML/MR to switch between panes
+	-->
 </children></Layer>

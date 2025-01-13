@@ -24,6 +24,7 @@
 			'33FF66',
 		}]]
 		local columncolors = {
+			[-1] = '#FFFFFF',
 			[0] = '#ED1C24',
 			'#00AEEF',
 			'#39B54A',
@@ -106,7 +107,8 @@
 					local vert1, vert2, vert3, vert4 = index, index + 1, index + 2, index + 3
 					if data.tns then
 						local tns = data.tns
-						detailcache[i][1] = columncolors[data.notes[1].column]
+						local column = data.notes[1].column or -1
+						detailcache[i][1] = columncolors[column]
 						if tns ~= 'TNS_HitMine' and tns ~= 'TNS_Miss' and tns ~= 'TNS_AvoidMine' then
 							local offset = (-data.offset / (details.widestoffset + 0.01)) * panesize.height / 2
 							local color = _SL.CommonColors[string.sub(tns, 5)]

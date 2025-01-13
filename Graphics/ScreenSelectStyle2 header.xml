@@ -4,6 +4,6 @@
 		Type="BitmapText"
 		Text="SELECT STYLE"
 		File="_wendy white"
-		InitCommand="diffuse,#FFFFFF;zoom,.4;shadowlength,0;horizalign,left;x,15;y,16"
+		InitCommand="diffuse,#FFFFFF;zoom,.3;shadowlength,0;horizalign,left;x,9;y,14"
 	/>
 </children> </ActorFrame>

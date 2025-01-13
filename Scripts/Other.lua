@@ -146,9 +146,9 @@ end
 
 function StyleIcon()
 	if not game then game = 'dance' end
-	s = "icon " .. game .. " " .. CurStyleName()
-	path = THEME:GetPath( EC_GRAPHICS, "MenuElements" , s)
-	i = SCREENMAN:GetTopScreen():GetChild('StyleIcon')
+	local s = "icon " .. game .. " " .. CurStyleName()
+	local path = THEME:GetPath( EC_GRAPHICS, "MenuElements" , s)
+	local i = SCREENMAN:GetTopScreen():GetChild('StyleIcon')
 	i:Load(path)
 end
 	
@@ -249,7 +249,7 @@ function ModeMenuAvailable()
 	--Trace( "here1" )
 	if GAMESTATE:GetSortOrder() == SORT_MODE_MENU then return false end
 	--Trace( "here2" )
-	return true
+	return false
 end
 
 function GetEditStepsText()

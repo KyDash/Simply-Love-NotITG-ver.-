@@ -14,10 +14,6 @@
 
 
 	</children></Layer>
-	<Layer 
-		Type="Quad"
-		OnCommand="diffuse,#1E282F;stretchto,SCREEN_CENTER_X-139,41,SCREEN_CENTER_X+139,61;diffusealpha,0.85"
-	/>
 
 	<Layer 
 		Condition="SongOptionsLabel() ~= ''"
@@ -26,8 +22,13 @@
 	/>	
 	<Layer Type="ActorFrame"
 		Condition="not (GAMESTATE:GetCurrentSong() == SONGMAN:FindSong('In The Groove/Training1/'))"
-		OnCommand="x,SCREEN_CENTER_X;y,SCREEN_TOP+68"
+		OnCommand="x,SCREEN_CENTER_X;y,SCREEN_TOP+52"
 		> <children>
+
+		<Layer 
+			Type="Quad"
+			OnCommand="diffuse,#1E282F;zoomto,278,20;diffusealpha,0.85;y,-16"
+		/>
 
 		<Layer
 			Type="BitmapText"

@@ -1,4 +1,2 @@
 UKSRT weights
-redo screeneval to display scatterplot on lifebar, probably steal bx's
-mines of scatterplot should be a line
-make scatterplot be less chunky
+remove forced bothatonce on quickplay

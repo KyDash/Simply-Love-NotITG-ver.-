@@ -13,6 +13,7 @@
 		ApplyHideBG()
 		SaveToProfile()
 		if GAMESTATE:IsCourseMode() then return end
+		-- a little messy in terms of organization, sorry! - Ky
 
 		-- originally i wanted to make the column colors for the scatterplot be the ones being used in schall we step
 		-- turns out that those colours on small dots don't have enough contrast to easily make out from eachother
@@ -33,6 +34,7 @@
 
 		for pn = 1, 2 do
 			if GAMESTATE:IsPlayerEnabled(pn - 1) then
+				-- main pane --
 				-- judgment info logic
 				local gradeframe = SCREENMAN('GradeFrameP' .. pn)
 				local judgments = gradeframe'Judgments'
@@ -65,6 +67,10 @@
 				if not Decents() then actors.W4.number:settext('    ') end
 				if not WayOffs() then actors.W5.number:settext('    ') end
 
+				-- additional pane stuff
+				local pane = SCREENMAN'Underlay'('GradePaneP' .. pn)
+				-- bottom of pane --
+
 				local detailcache = {}
 				-- lifebar / scatterplot / spellcard logic
 				local stats = STATSMAN:GetCurStageStats()
@@ -72,8 +78,14 @@
 				local songlen = song:StepsLengthSeconds()
 				local pss = stats:GetPlayerStageStats(pn - 1)
 				local details = pss:GetDetailedStageStats()
+				local widestoffset = 0
+				local columncounts = {
+					[0] = {TNS_W1 = 0, TNS_W2 = 0, TNS_W3 = 0, TNS_W4 = 0, TNS_W5 = 0, TNS_Miss = 0, TNS_HitMine = 0, TNS_AvoidMine = 0, Hold = {HNS_OK = 0, HNS_NG = 0}, Roll = {HNS_OK = 0, HNS_NG = 0}},
+					{TNS_W1 = 0, TNS_W2 = 0, TNS_W3 = 0, TNS_W4 = 0, TNS_W5 = 0, TNS_Miss = 0, TNS_HitMine = 0, TNS_AvoidMine = 0, Hold = {HNS_OK = 0, HNS_NG = 0}, Roll = {HNS_OK = 0, HNS_NG = 0}},
+					{TNS_W1 = 0, TNS_W2 = 0, TNS_W3 = 0, TNS_W4 = 0, TNS_W5 = 0, TNS_Miss = 0, TNS_HitMine = 0, TNS_AvoidMine = 0, Hold = {HNS_OK = 0, HNS_NG = 0}, Roll = {HNS_OK = 0, HNS_NG = 0}},
+					{TNS_W1 = 0, TNS_W2 = 0, TNS_W3 = 0, TNS_W4 = 0, TNS_W5 = 0, TNS_Miss = 0, TNS_HitMine = 0, TNS_AvoidMine = 0, Hold = {HNS_OK = 0, HNS_NG = 0}, Roll = {HNS_OK = 0, HNS_NG = 0}},
+				}
 
-				local pane = SCREENMAN'Underlay'('GradePaneP' .. pn)
 				local lifebar = pane'LifeBar'
 				local scatterplot = pane'ScatterPlot'
 
@@ -83,7 +95,6 @@
 
 				lifebar:SetDrawMode'linestrip':SetNumVertices(datasize + 2)
 				scatterplot:SetDrawMode'quads':SetNumVertices(datasize * 4)
-				local widestoffset = 0
 				do
 					-- add a point at song start to draw the lifebar
 					local when = 0
@@ -93,6 +104,7 @@
 							:SetVertexColor(0, 1, 1, 1, 0.75)
 							:SetLineWidth(2) -- sorry intel users
 				end
+
 				for i, data in ipairs(details) do
 					-- main lifebar portion
 					detailcache[i] = {}
@@ -109,6 +121,11 @@
 						local tns = data.tns
 						local column = data.notes[1].column or -1
 						detailcache[i][1] = columncolors[column]
+						for i, note in ipairs(data.notes) do
+							if note.column then
+								columncounts[note.column][tns] = columncounts[note.column][tns] + 1
+							end
+						end
 						if tns ~= 'TNS_HitMine' and tns ~= 'TNS_Miss' and tns ~= 'TNS_AvoidMine' then
 							local offset = (-data.offset / (details.widestoffset + 0.01)) * panesize.height / 2
 							local color = _SL.CommonColors[string.sub(tns, 5)]
@@ -117,10 +134,6 @@
 										:SetVertexPosition(vert2, x - 0.75, offset + 0.75, 0)
 										:SetVertexPosition(vert3, x + 0.75, offset + 0.75, 0)
 										:SetVertexPosition(vert4, x + 0.75, offset - 0.75, 0)
-										:SetVertexColor(vert1, _SL.HexToRGB(color))
-										:SetVertexColor(vert2, _SL.HexToRGB(color))
-										:SetVertexColor(vert3, _SL.HexToRGB(color))
-										:SetVertexColor(vert4, _SL.HexToRGB(color))
 						elseif tns == 'TNS_Miss' then
 							local color = _SL.CommonColors.W6 .. '80'
 							detailcache[i][0] = color
@@ -129,10 +142,6 @@
 										:SetVertexPosition(vert2, x - 0.5, halfheight, 0)
 										:SetVertexPosition(vert3, x + 0.5, halfheight, 0)
 										:SetVertexPosition(vert4, x + 0.5, -halfheight, 0)
-										:SetVertexColor(vert1, _SL.HexToRGB(color))
-										:SetVertexColor(vert2, _SL.HexToRGB(color))
-										:SetVertexColor(vert3, _SL.HexToRGB(color))
-										:SetVertexColor(vert4, _SL.HexToRGB(color))
 						elseif tns == 'TNS_HitMine' then
 							detailcache[i][0] = '#88888880'
 							detailcache[i][1] = detailcache[i][1] .. '80'
@@ -140,10 +149,13 @@
 										:SetVertexPosition(vert2, x - 0.5, halfheight, 0)
 										:SetVertexPosition(vert3, x + 0.5, halfheight, 0)
 										:SetVertexPosition(vert4, x + 0.5, -halfheight, 0)
-										:SetVertexColor(vert1, _SL.HexToRGB'#88888880')
-										:SetVertexColor(vert2, _SL.HexToRGB'#88888880')
-										:SetVertexColor(vert3, _SL.HexToRGB'#88888880')
-										:SetVertexColor(vert4, _SL.HexToRGB'#88888880')
+						else
+							detailcache[i][0] = '#00000000'
+							detailcache[i][1] = '#00000000'
+							scatterplot:SetVertexPosition(vert1, x, 0, 0)
+										:SetVertexPosition(vert2, x, 0, 0)
+										:SetVertexPosition(vert3, x, 0, 0)
+										:SetVertexPosition(vert4, x, 0, 0)
 						end
 					else
 						detailcache[i][0] = '#00000000'
@@ -152,10 +164,6 @@
 									:SetVertexPosition(vert2, x, 0, 0)
 									:SetVertexPosition(vert3, x, 0, 0)
 									:SetVertexPosition(vert4, x, 0, 0)
-									:SetVertexColor(vert1, 1, 1, 1, 0)
-									:SetVertexColor(vert2, 1, 1, 1, 0)
-									:SetVertexColor(vert3, 1, 1, 1, 0)
-									:SetVertexColor(vert4, 1, 1, 1, 0)
 					end
 				end
 				do
@@ -168,11 +176,151 @@
 							:SetLineWidth(2) -- sorry intel users
 				end
 
+				local paneactors = {
+					[0] = {
+						gradeframe,
+						SCREENMAN('MarvelousNumberP' .. pn),
+						SCREENMAN('PerfectNumberP' .. pn),
+						SCREENMAN('GreatNumberP' .. pn),
+						SCREENMAN('GoodNumberP' .. pn),
+						SCREENMAN('BooNumberP' .. pn),
+						SCREENMAN('MissNumberP' .. pn),
+						SCREENMAN('HoldsTextP' .. pn),
+						SCREENMAN('MinesTextP' .. pn),
+						SCREENMAN('HandsTextP' .. pn),
+						SCREENMAN('RollsTextP' .. pn),
+						pane'PanePercentageBackground',
+						SCREENMAN('PercentP' .. pn),
+					},
+					{pane'PaneColumns'},
+				}
+
+				local spellcardcache = {}
+				-- will need to make a little more detailed full (hns, etc, etc), naive will be good for now
+				local dp = {
+					TNS_W1 = PREFSMAN:GetPreference'PercentScoreWeightMarvelous',
+					TNS_W2 = PREFSMAN:GetPreference'PercentScoreWeightPerfect',
+					TNS_W3 = PREFSMAN:GetPreference'PercentScoreWeightGreat',
+					TNS_W4 = PREFSMAN:GetPreference'PercentScoreWeightGood',
+					TNS_W5 = PREFSMAN:GetPreference'PercentScoreWeightBoo',
+					TNS_Miss = PREFSMAN:GetPreference'PercentScoreWeightMiss',
+					TNS_HitMine = PREFSMAN:GetPreference'PercentScoreWeightHitMine',
+					TNS_AvoidMine = 0,
+					HNS_OK = PREFSMAN:GetPreference'PercentScoreWeightOK',
+					HNS_NG = PREFSMAN:GetPreference'PercentScoreWeightNG',
+				}
+				-- get the amount of judgments for a spellcard range (inclusive)
+				local function getjudgmentsforspellcardrange(firstbeat, lastbeat)
+					if spellcardcache[firstbeat] then
+						if spellcardcache[firstbeat][lastbeat] then return spellcardcache[firstbeat][lastbeat] end
+						spellcardcache[firstbeat][lastbeat] = {TNS_W1 = 0, TNS_W2 = 0, TNS_W3 = 0, TNS_W4 = 0, TNS_W5 = 0, TNS_Miss = 0, TNS_HitMine = 0, TNS_AvoidMine = 0, Hold = {HNS_OK = 0, HNS_NG = 0}, Roll = {HNS_OK = 0, HNS_NG = 0}, maxdp = 0, obtaineddp = 0}
+						-- no notes in spellcard, so return
+						if not spellcardcache[firstbeat].index then return spellcardcache[firstbeat][lastbeat] end
+						local cache = spellcardcache[firstbeat][lastbeat]
+						for i = spellcardcache[firstbeat].index, #details do
+							local data = details[i]
+							if data.beat > lastbeat then return spellcardcache[firstbeat][lastbeat] end
+							if data.tns then
+								cache[data.tns] = cache[data.tns] + 1
+								if data.tns ~= 'TNS_HitMine' and data.tns ~= 'TNS_AvoidMine' then
+									cache.maxdp = cache.maxdp + dp.TNS_W1
+								end
+								cache.obtaineddp = cache.obtaineddp + dp[data.tns]
+							end
+							if data.hns then
+								for c, note in ipairs(data.notes) do
+									cache[note.type][data.hns] = cache[note.type][data.hns] + 1
+									cache.maxdp = cache.maxdp + dp.HNS_OK
+									cache.obtaineddp = cache.obtaineddp + dp[data.hns]
+								end
+							end
+						end
+						return spellcardcache[firstbeat][lastbeat]
+					end
+					spellcardcache[firstbeat] = {}
+					spellcardcache[firstbeat][lastbeat] = {TNS_W1 = 0, TNS_W2 = 0, TNS_W3 = 0, TNS_W4 = 0, TNS_W5 = 0, TNS_Miss = 0, TNS_HitMine = 0, TNS_AvoidMine = 0, Hold = {HNS_OK = 0, HNS_NG = 0}, Roll = {HNS_OK = 0, HNS_NG = 0}, maxdp = 0, obtaineddp = 0}
+					local cache = spellcardcache[firstbeat][lastbeat]
+					for i, data in ipairs(details) do
+						if data.beat > lastbeat then return spellcardcache[firstbeat][lastbeat] end
+						if data.beat >= firstbeat then
+							if not spellcardcache[firstbeat].index then spellcardcache[firstbeat].index = i end
+							if data.tns then
+								cache[data.tns] = cache[data.tns] + 1
+								if data.tns ~= 'TNS_HitMine' and data.tns ~= 'TNS_AvoidMine' then
+									cache.maxdp = cache.maxdp + dp.TNS_W1
+								end
+								cache.obtaineddp = cache.obtaineddp + dp[data.tns]
+							end
+							if data.hns then
+								for c, note in ipairs(data.notes) do
+									cache[note.type][data.hns] = cache[note.type][data.hns] + 1
+									cache.maxdp = cache.maxdp + dp.HNS_OK
+									cache.obtaineddp = cache.obtaineddp + dp[data.hns]
+								end
+							end
+						end
+					end
+					return spellcardcache[firstbeat][lastbeat]
+				end
+
+				local panefuncs = {
+					[-1] = function() end,
+					[0] = function() end,
+					function() end,
+				}
+
+
 				local spellcardregion = pane'SpellCards'
 				local spellcards = song:GetSpellCards()
 				spellcardregion:SetDrawMode'quads':SetNumVertices(#spellcards * 8)
 				for i, card in ipairs(spellcards) do
-					-- print(i, card.Name, #spellcards)
+					table.insert(paneactors, {pane'PaneSpellcard'})
+					local card = card -- scoping strikes again!
+					table.insert(panefuncs, function()
+						local judges = getjudgmentsforspellcardrange(card.StartBeat, card.EndBeat)
+						local spellcard = pane'PaneSpellcard'
+						spellcard'Title':settext(card.Name):diffuse(unpack(card.Color))
+						spellcard'DifficultyNumber':settext(card.Difficulty):diffuse(unpack(card.Color))
+						local percent = 0
+						if judges.maxdp > 0 then
+							percent = judges.obtaineddp / judges.maxdp * 100
+						end
+						spellcard'Percent':settext(string.format('%.2f', percent))
+						if percent >= 100 then
+							spellcard'Percent':diffuse(_SL.HexToRGB(_SL.CommonColors.W1))
+						else
+							spellcard'Percent':diffuse(_SL.HexToRGB(_SL.CommonColors.White))
+						end
+						for i, actor in pairs(spellcard'Numbers':GetChildren()) do
+							local count = tostring(judges[actor:GetName()])
+							local len = #count
+							if len < 5 then count = string.rep(' ', 4 - len) .. count end
+							actor:settext(count)
+							-- print(i, v)
+						end
+						do
+							local total = tostring(judges.Hold.HNS_OK + judges.Hold.HNS_NG)
+							local success = tostring(judges.Hold.HNS_OK)
+							if #total < 4 then total = string.rep(' ', 3 - #total) .. total end
+							if #success < 4 then success = string.rep(' ', 3 - #success) .. success end
+							spellcard'RadarNumbers''Holds':settext(success .. '/' .. total)
+						end
+						do
+							local total = tostring(judges.Roll.HNS_OK + judges.Roll.HNS_NG)
+							local success = tostring(judges.Roll.HNS_OK)
+							if #total < 4 then total = string.rep(' ', 3 - #total) .. total end
+							if #success < 4 then success = string.rep(' ', 3 - #success) .. success end
+							spellcard'RadarNumbers''Rolls':settext(success .. '/' .. total)
+						end
+
+						do
+							local total = tostring(judges.TNS_HitMine + judges.TNS_AvoidMine)
+							local success = tostring(judges.TNS_AvoidMine)
+							if #total < 4 then total = string.rep(' ', 3 - #total) .. total end
+							if #success < 4 then success = string.rep(' ', 3 - #success) .. success end
+							spellcard'RadarNumbers''Mines':settext(success .. '/' .. total)
+						end
+					end)
 					local index = (i - 1) * 4
 					local vert1, vert2, vert3, vert4 = index, index + 1, index + 2, index + 3
 					local left = song:GetElapsedTimeFromBeat(card.StartBeat) / songlen * panesize.width
@@ -188,10 +336,106 @@
 								:SetVertexColor(vert4, color[1], color[2], color[3], color[4])
 				end
 
+				-- column pane --
+				do
+					local columns = pane'PaneColumns'
+					-- columns:y(2)
+					columns'Labels':xy(70, 52)
+					columns'Percent':zoom(0.4):horizalign'right':shadowlength(0):xy(68, 15):settext(string.gsub(SCREENMAN('PercentP' .. pn)(1):GetText(), '%%', ''))
+					columns'Left''Note':rotationz(90)
+					columns'Up''Note':rotationz(180)
+					columns'Right''Note':rotationz(-90)
+					for i, v in ipairs(columns'Labels':GetChildren()) do
+						v:y(21 * (i - 1)):zoom(0.35):shadowlength(0):horizalign'right'
+					end
+					for ci, column in ipairs{columns'Left', columns'Down', columns'Up', columns'Right'} do
+						column:xy(ci * 55 + 46, 56.5)
+						for i, actor in ipairs(column:GetChildren()) do
+							actor:y(21 * (i - 2)):zoom(0.3):shadowlength(0)
+							if actor.settext then
+								local count = tostring(columncounts[ci - 1][actor:GetName()])
+								local len = #count
+								if len < 5 then count = string.rep(' ', 4 - len) .. count end
+								actor:settext(count)
+							end
+						end
+						if not Decents() then column'TNS_W4':settext('    ') end
+						if not WayOffs() then column'TNS_W5':settext('    ') end
+						column'Note':zoom(0.5):y(-30)
+					end
+				end
+
+				-- spellcard pane --
+				do
+					local card = pane'PaneSpellcard'
+					card'Title':shadowlength(0):horizalign'left':zoom(0.55):xy(80, 7):maxwidth(395)
+					card'Percent':zoom(0.4):horizalign'right':shadowlength(0):xy(68, 15)
+					card'Difficulty':zoom(0.35):horizalign'right':shadowlength(0):xy(70, 31)
+					card'DifficultyNumber':zoom(0.3):horizalign'left':shadowlength(0):xy(79, 35.5)
+					card'Labels':xy(70, 52)
+					for i, actor in ipairs(card'Labels':GetChildren()) do
+						actor:y(21 * (i - 1)):zoom(0.35):shadowlength(0):horizalign'right'
+						local name = actor:GetName()
+						actor:diffuse(_SL.HexToRGB(_SL.CommonColors[name]))
+					end
+
+					card'Numbers':xy(101, 56.5)
+					for i, actor in ipairs(card'Numbers':GetChildren()) do
+						local name = actor:GetName()
+						actor:diffuse(_SL.HexToRGB(_SL.CommonColors[name]))
+						actor:y(21 * (i - 1)):zoom(0.3):shadowlength(0)
+						actor:settext('    ')
+					end
+
+					card'RadarLabels':xy(210, 52)
+					for i, actor in ipairs(card'RadarLabels':GetChildren()) do
+						actor:y(21 * (i - 1)):zoom(0.35):shadowlength(0):horizalign'right'
+						local name = actor:GetName()
+						-- actor:diffuse(_SL.HexToRGB(_SL.CommonColors[name]))
+					end
+					card'RadarNumbers':xy(256, 56.5)
+					for i, actor in ipairs(card'RadarNumbers':GetChildren()) do
+						local name = actor:GetName()
+						-- actor:diffuse(_SL.HexToRGB(_SL.CommonColors[name]))
+						actor:y(21 * (i - 1)):zoom(0.3):shadowlength(0)
+						actor:settext('   /   ')
+					end
+				end
+
+				-- pane switching logic
+
 				local vindex = 0
 				local hindex = 0
 
-				local function updatecolor(index)
+				local colorfuncs = {
+					[-1] = function()
+						local columns = pane'PaneColumns'
+						columns'Left':diffuse(_SL.HexToRGB(columncolors[-1]))
+						columns'Down':diffuse(_SL.HexToRGB(columncolors[-1]))
+						columns'Up':diffuse(_SL.HexToRGB(columncolors[-1]))
+						columns'Right':diffuse(_SL.HexToRGB(columncolors[-1]))
+					end,
+					[0] = function()
+						local columns = pane'PaneColumns'
+						for ci, column in ipairs{columns'Labels', columns'Left', columns'Down', columns'Up', columns'Right'} do
+							for i, actor in ipairs(column:GetChildren()) do
+								local name = actor:GetName()
+								if _SL.CommonColors[name] then
+									actor:diffuse(_SL.HexToRGB(_SL.CommonColors[name]))
+								end
+							end
+						end
+					end,
+					function()
+						local columns = pane'PaneColumns'
+						columns'Left':diffuse(_SL.HexToRGB(columncolors[0]))
+						columns'Down':diffuse(_SL.HexToRGB(columncolors[1]))
+						columns'Up':diffuse(_SL.HexToRGB(columncolors[2]))
+						columns'Right':diffuse(_SL.HexToRGB(columncolors[3]))
+					end,
+				}
+
+				local function updatescatterplot(index)
 					index = _SL.modulo(index, 2) -- lua 5.0 my bloafed
 					for i, data in ipairs(details) do
 						local vertindex = (i - 1) * 4
@@ -202,16 +446,31 @@
 									:SetVertexColor(vert3, _SL.HexToRGB(color))
 									:SetVertexColor(vert4, _SL.HexToRGB(color))
 					end
+					if not colorfuncs[index] then colorfuncs[-1]() return end
+					colorfuncs[index]()
 				end
 
-				local function updatecard(index)
-				
+				local panecount = #paneactors + 1
+				local function updatepane(index, direction)
+					index = _SL.modulo(index, panecount)
+					local previousindex = _SL.modulo(index - direction, panecount)
+					for i, v in ipairs(paneactors[previousindex]) do
+						v:hidden(1)
+					end
+					for i, v in ipairs(paneactors[index]) do
+						v:hidden(0)
+					end
+					if not panefuncs[index] then panefuncs[-1]() return end
+					panefuncs[index]()
 				end
 
-				local function incv() vindex = vindex + 1 updatecolor(vindex) end
-				local function decv() vindex = vindex - 1 updatecolor(vindex) end
-				local function inch() hindex = hindex + 1 updatecard(hindex) end
-				local function dech() hindex = hindex - 1 updatecard(hindex) end
+				local function incv() vindex = vindex + 1 updatescatterplot(vindex) end
+				local function decv() vindex = vindex - 1 updatescatterplot(vindex) end
+				local function inch() hindex = hindex + 1 updatepane(hindex, 1) end
+				local function dech() hindex = hindex - 1 updatepane(hindex, -1) end
+
+				updatescatterplot(0)
+				updatepane(0, 1)
 
 				self:addcommand('StepP' .. pn .. 'MenuUpPressMessage', incv):addcommand('StepP' .. pn .. 'UpPressMessage', incv)
 				self:addcommand('StepP' .. pn .. 'MenuDownPressMessage', decv):addcommand('StepP' .. pn .. 'DownPressMessage', decv)
@@ -234,13 +493,97 @@
 		end"
 	><children>
 		<!-- main portion, main stats, w = 305, h = 175-->
-		<Layer Type="Quad" OnCommand="diffuse,#1E282F;zoomto,305,175" />
+		<Layer Type="Quad" Name="PaneBackground" OnCommand="diffuse,#1E282F;zoomto,305,175" />
 		<!-- percentage, w = 165, h = 60-->
-		<Layer Type="Quad" OnCommand="diffuse,#101519;zoomto,165,60" />
-
+		<Layer Type="Quad" Name="PanePercentageBackground" OnCommand="diffuse,#101519;zoomto,165,60" />
 		<!-- bottom of pane, lifebar, w = 305, h = 88-->
 		<Layer Type="Quad" OnCommand="diffuse,#101519;zoomto,305,88;y,175" />
 		<Layer Type="Quad" OnCommand="zoomto,305,88;y,175;zwrite,1;blend,noeffect;" />
+		<Layer Type="ActorFrame" Name="PaneColumns" InitCommand="hidden,1"><children>
+			<Layer Type="BitmapText" Font="_wendy small" Name="Percent" Text="100.00" />
+			<Layer Type="ActorFrame" Name="Labels"><children>
+				<Layer Type="BitmapText" Font="_misoreg white" Name="TNS_W1" Text="FANTASTIC" />
+				<Layer Type="BitmapText" Font="_misoreg white" Name="TNS_W2" Text="EXCELLENT" />
+				<Layer Type="BitmapText" Font="_misoreg white" Name="TNS_W3" Text="GREAT" />
+				<Layer Type="BitmapText" Font="_misoreg white" Name="TNS_W4" Text="DECENT" />
+				<Layer Type="BitmapText" Font="_misoreg white" Name="TNS_W5" Text="WAY OFF" />
+				<Layer Type="BitmapText" Font="_misoreg white" Name="TNS_Miss" Text="MISS" />
+			</children></Layer>
+			<Layer Type="ActorFrame" Name="Left"><children>
+				<!-- i would like to pick the users noteskin but this will do for now -->
+				<Layer File="arrow.obj" Name="Note"/>
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W1" Text="----" />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W2" Text="----" />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W3" Text="----" />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W4" Text="----" />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W5" Text="----" />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_Miss" Text="----" />
+			</children></Layer>
+
+			<Layer Type="ActorFrame" Name="Down"><children>
+				<Layer File="arrow.obj" Name="Note"/>
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W1" Text="----" />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W2" Text="----" />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W3" Text="----" />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W4" Text="----" />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W5" Text="----" />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_Miss" Text="----" />
+			</children></Layer>
+
+			<Layer Type="ActorFrame" Name="Up"><children>
+				<Layer File="arrow.obj" Name="Note"/>
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W1" Text="----" />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W2" Text="----" />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W3" Text="----" />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W4" Text="----" />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W5" Text="----" />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_Miss" Text="----" />
+			</children></Layer>
+
+			<Layer Type="ActorFrame" Name="Right"><children>
+				<Layer File="arrow.obj" Name="Note"/>
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W1" Text="----" />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W2" Text="----" />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W3" Text="----" />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W4" Text="----" />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W5" Text="----" />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_Miss" Text="----" />
+			</children></Layer>
+		</children></Layer>
+
+		<Layer Type="ActorFrame" Name="PaneSpellcard" InitCommand="hidden,1"><children>
+			<Layer Type="BitmapText" Font="_misoreg white" Name="Title" Text="wenis" />
+			<Layer Type="BitmapText" Font="_wendy small" Name="Percent" Text="100.00" />
+			<Layer Type="BitmapText" Font="_misoreg white" Name="Difficulty" Text="Difficulty" />
+			<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="DifficultyNumber" Text="0" />
+			<Layer Type="ActorFrame" Name="Labels"><children>
+				<Layer Type="BitmapText" Font="_misoreg white" Name="TNS_W1" Text="FANTASTIC" />
+				<Layer Type="BitmapText" Font="_misoreg white" Name="TNS_W2" Text="EXCELLENT" />
+				<Layer Type="BitmapText" Font="_misoreg white" Name="TNS_W3" Text="GREAT" />
+				<Layer Type="BitmapText" Font="_misoreg white" Name="TNS_W4" Text="DECENT" />
+				<Layer Type="BitmapText" Font="_misoreg white" Name="TNS_W5" Text="WAY OFF" />
+				<Layer Type="BitmapText" Font="_misoreg white" Name="TNS_Miss" Text="MISS" />
+			</children></Layer>
+			<Layer Type="ActorFrame" Name="Numbers"><children>
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W1" Text="----" />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W2" Text="----" />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W3" Text="----" />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W4" Text="----" />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W5" Text="----" />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_Miss" Text="----" />
+			</children></Layer>
+
+			<Layer Type="ActorFrame" Name="RadarLabels"><children>
+				<Layer Type="BitmapText" Font="_misoreg white" Name="Holds" Text="Holds" />
+				<Layer Type="BitmapText" Font="_misoreg white" Name="Rolls" Text="Rolls" />
+				<Layer Type="BitmapText" Font="_misoreg white" Name="Mines" Text="Mines" />
+			</children></Layer>
+			<Layer Type="ActorFrame" Name="RadarNumbers"><children>
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="Holds" Text="---/---" />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="Rolls" Text="---/---" />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="Mines" Text="---/---" />
+			</children></Layer>
+		</children></Layer>
 
 		<Layer Type="Polygon" Name="SpellCards" OnCommand="y,175;ztestmode,writeonfail" />
 		<!-- transparent quads to dim colours so scatterplot and lifebars are easily visible with any colour -->
@@ -265,14 +608,100 @@
 		end"
 	><children>
 		<!-- main portion, main stats, w = 305, h = 175-->
-		<Layer Type="Quad" OnCommand="diffuse,#1E282F;zoomto,305,175" />
+		<Layer Type="Quad" Name="PaneBackground" OnCommand="diffuse,#1E282F;zoomto,305,175" />
 		<!-- percentage, w = 165, h = 60-->
-		<Layer Type="Quad" OnCommand="diffuse,#101519;zoomto,165,60;x,140" />
+		<Layer Type="Quad" Name="PanePercentageBackground" OnCommand="diffuse,#101519;zoomto,165,60;x,140" />
 
 		<!-- bottom of pane, lifebar, w = 305, h = 88-->
 		<Layer Type="Quad" OnCommand="diffuse,#101519;zoomto,305,88;y,175" />
 		<!-- figure out how to make this only render on p2 and not on p1 ever-->
 		<Layer Type="Quad" OnCommand="zoomto,305,88;y,175;zwrite,1;blend,noeffect;" />
+
+		<Layer Type="ActorFrame" Name="PaneColumns" InitCommand="hidden,1"><children>
+			<Layer Type="BitmapText" Font="_wendy small" Name="Percent" Text="100.00" />
+			<Layer Type="ActorFrame" Name="Labels"><children>
+				<Layer Type="BitmapText" Font="_misoreg white" Name="TNS_W1" Text="FANTASTIC" />
+				<Layer Type="BitmapText" Font="_misoreg white" Name="TNS_W2" Text="EXCELLENT" />
+				<Layer Type="BitmapText" Font="_misoreg white" Name="TNS_W3" Text="GREAT" />
+				<Layer Type="BitmapText" Font="_misoreg white" Name="TNS_W4" Text="DECENT" />
+				<Layer Type="BitmapText" Font="_misoreg white" Name="TNS_W5" Text="WAY OFF" />
+				<Layer Type="BitmapText" Font="_misoreg white" Name="TNS_Miss" Text="MISS" />
+			</children></Layer>
+			<Layer Type="ActorFrame" Name="Left"><children>
+				<!-- i would like to pick the users noteskin but this will do for now -->
+				<Layer File="arrow.obj" Name="Note"/>
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W1" Text="    " />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W2" Text="    " />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W3" Text="    " />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W4" Text="    " />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W5" Text="    " />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_Miss" Text="    " />
+			</children></Layer>
+
+			<Layer Type="ActorFrame" Name="Down"><children>
+				<Layer File="arrow.obj" Name="Note"/>
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W1" Text="    " />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W2" Text="    " />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W3" Text="    " />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W4" Text="    " />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W5" Text="    " />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_Miss" Text="    " />
+			</children></Layer>
+
+			<Layer Type="ActorFrame" Name="Up"><children>
+				<Layer File="arrow.obj" Name="Note"/>
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W1" Text="    " />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W2" Text="    " />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W3" Text="    " />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W4" Text="    " />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W5" Text="    " />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_Miss" Text="    " />
+			</children></Layer>
+
+			<Layer Type="ActorFrame" Name="Right"><children>
+				<Layer File="arrow.obj" Name="Note"/>
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W1" Text="    " />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W2" Text="    " />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W3" Text="    " />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W4" Text="    " />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W5" Text="    " />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_Miss" Text="    " />
+			</children></Layer>
+		</children></Layer>
+
+		<Layer Type="ActorFrame" Name="PaneSpellcard" InitCommand="hidden,1"><children>
+			<Layer Type="BitmapText" Font="_misoreg white" Name="Title" Text="everybody do the wenis the wenis is a dance everybody is a genius who knows it in advance" />
+			<Layer Type="BitmapText" Font="_wendy small" Name="Percent" Text="100.00" />
+			<Layer Type="BitmapText" Font="_misoreg white" Name="Difficulty" Text="Difficulty" />
+			<Layer Type="BitmapText" Font="_wendy small" Name="DifficultyNumber" Text="0" />
+			<Layer Type="ActorFrame" Name="Labels"><children>
+				<Layer Type="BitmapText" Font="_misoreg white" Name="TNS_W1" Text="FANTASTIC" />
+				<Layer Type="BitmapText" Font="_misoreg white" Name="TNS_W2" Text="EXCELLENT" />
+				<Layer Type="BitmapText" Font="_misoreg white" Name="TNS_W3" Text="GREAT" />
+				<Layer Type="BitmapText" Font="_misoreg white" Name="TNS_W4" Text="DECENT" />
+				<Layer Type="BitmapText" Font="_misoreg white" Name="TNS_W5" Text="WAY OFF" />
+				<Layer Type="BitmapText" Font="_misoreg white" Name="TNS_Miss" Text="MISS" />
+			</children></Layer>
+			<Layer Type="ActorFrame" Name="Numbers"><children>
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W1" Text="----" />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W2" Text="----" />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W3" Text="----" />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W4" Text="----" />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_W5" Text="----" />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="TNS_Miss" Text="----" />
+			</children></Layer>
+
+			<Layer Type="ActorFrame" Name="RadarLabels"><children>
+				<Layer Type="BitmapText" Font="_misoreg white" Name="Holds" Text="Holds" />
+				<Layer Type="BitmapText" Font="_misoreg white" Name="Rolls" Text="Rolls" />
+				<Layer Type="BitmapText" Font="_misoreg white" Name="Mines" Text="Mines" />
+			</children></Layer>
+			<Layer Type="ActorFrame" Name="RadarNumbers"><children>
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="Holds" Text="---/---" />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="Rolls" Text="---/---" />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="Mines" Text="---/---" />
+			</children></Layer>
+		</children></Layer>
 
 		<Layer Type="Polygon" Name="SpellCards" OnCommand="y,175;ztestmode,writeonfail" />
 		<!-- transparent quads to dim colours so scatterplot and lifebars are easily visible with any colour -->

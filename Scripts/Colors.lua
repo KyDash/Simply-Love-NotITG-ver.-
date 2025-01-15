@@ -56,6 +56,14 @@ _SL.CommonColors = {
 	W5 = 	"#C9855E",	-- Dark Salmon
 	W6 = 	"#FF3030",	-- Red
 }
+-- aliases
+_SL.CommonColors.TNS_W1 = _SL.CommonColors.W1
+_SL.CommonColors.TNS_W2 = _SL.CommonColors.W2
+_SL.CommonColors.TNS_W3 = _SL.CommonColors.W3
+_SL.CommonColors.TNS_W4 = _SL.CommonColors.W4
+_SL.CommonColors.TNS_W5 = _SL.CommonColors.W5
+_SL.CommonColors.TNS_W6 = _SL.CommonColors.W6
+_SL.CommonColors.TNS_Miss = _SL.CommonColors.W6
 
 -- colours that the theme will use, either for text on dark backgrounds or background featuring dark text
 -- see https://github.com/Simply-Love/Simply-Love-SM5/commit/d7192907c9dd96498738a12dbd6abd8d43bf6af5

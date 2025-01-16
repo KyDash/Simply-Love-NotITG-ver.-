@@ -867,7 +867,18 @@ function CapturePane()
 	end end
 end
 
-function CaptureJudgment() for pn = 1, 2 do if Player(pn) then for i,v in ipairs(judgmentList) do local j = Screen():GetChild(v .. 'P' .. pn) if j then _G[v][pn] = j:GetText() end end end end end
+function CaptureJudgment()
+	for pn = 1, 2 do
+		if Player(pn) then
+			for i,v in ipairs(judgmentList) do
+				local j = Screen():GetChild(v .. 'P' .. pn)
+				if j then
+					_G[v][pn] = j:GetText()
+				end
+			end
+		end
+	end
+end
 
 function CaptureMeter()
 	for pn = 1, 2 do if Player(pn) then

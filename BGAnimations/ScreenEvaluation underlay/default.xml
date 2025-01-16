@@ -279,8 +279,17 @@
 					table.insert(panefuncs, function()
 						local judges = getjudgmentsforspellcardrange(card.StartBeat, card.EndBeat)
 						local spellcard = pane'PaneSpellcard'
-						spellcard'Title':settext(card.Name):diffuse(unpack(card.Color))
-						spellcard'DifficultyNumber':settext(card.Difficulty):diffuse(unpack(card.Color))
+						local r, g, b, a = unpack(card.Color)
+						spellcard'Title':settext(card.Name):diffuse(r, g, b, a)
+						spellcard'DifficultyNumber':settext(card.Difficulty):diffuse(r, g, b, a)
+						-- from https://alienryderflex.com/hsp.html
+						local hspluminance = math.sqrt((r * r * 0.299) + (g * g * 0.587) + (b * b * 0.114))
+						-- threshold of 0.35 seems to be fine
+						local inverse = 1 - hspluminance
+						inverse = inverse * inverse
+						spellcard'TitleBorder':diffuse(inverse, inverse, inverse, 1)
+						spellcard'DifficultyNumberBorder':diffuse(inverse, inverse, inverse, 1)
+						
 						for i, actor in ipairs(spellcard'TitleBorder':GetChildren()) do
 							-- diffuse the opposite of the color
 							-- local r, g, b, a = 1 - card.Color[1], 1 - card.Color[2], 1 - card.Color[3], card.Color[4] * 0.5
@@ -377,10 +386,10 @@
 				-- spellcard pane --
 				do
 					local card = pane'PaneSpellcard'
-					card'Title':shadowlength(0):horizalign'left':zoom(0.55):xy(80, 7):maxwidth(395)
-					card'TitleBorder':zoom(0.55):xy(80, 7):diffuse(0, 0, 0, 1)
+					card'Title':shadowlength(0):horizalign'left':zoom(0.55):xy(80, 1):maxwidth(395):vertalign'top'
+					card'TitleBorder':zoom(0.55):xy(80, 1):diffuse(0, 0, 0, 1)
 					for i, actor in ipairs(card'TitleBorder':GetChildren()) do
-						actor:shadowlength(0):horizalign'left':maxwidth(395)
+						actor:shadowlength(0):horizalign'left':maxwidth(395):vertalign'top'
 					end
 					card'Percent':zoom(0.4):horizalign'right':shadowlength(0):xy(68, 15)
 					card'Difficulty':zoom(0.35):horizalign'right':shadowlength(0):xy(70, 31)
@@ -516,6 +525,15 @@
 		<!-- bottom of pane, lifebar, w = 305, h = 88-->
 		<Layer Type="Quad" OnCommand="diffuse,#101519;zoomto,305,88;y,175" />
 		<Layer Type="Quad" OnCommand="zoomto,305,88;y,175;zwrite,1;blend,noeffect;" />
+		<Layer Type="Polygon" Name="SpellCards" OnCommand="y,175;ztestmode,writeonfail" />
+		<!-- transparent quads to dim colours so scatterplot and lifebars are easily visible with any colour -->
+		<Layer Type="Quad" OnCommand="diffuse,#101519C0;zoomto,305,44;y,175;fadetop,1;ztestmode,writeonfail" />
+		<Layer Type="Quad" OnCommand="diffuse,#101519C0;zoomto,305,44;y,175 + 44;fadebottom,1;ztestmode,writeonfail" />
+		<Layer Type="Quad" OnCommand="diffuse,#101519D0;zoomto,305,88;y,175;ztestmode,writeonfail" />
+		<!-- center to represent a 0 offset to more easily distinguish if notes are late or early-->
+		<Layer Type="Quad" OnCommand="diffuse,#565E6380;zoomto,305,1;y,175 + 43.5;ztestmode,writeonfail" />
+		<Layer Type="Polygon" Name="ScatterPlot" OnCommand="y,175 + 44;ztestmode,writeonfail;" />
+		<Layer Type="Polygon" Name="LifeBar" OnCommand="y,175 + 1;ztestmode,writeonfail;" />
 		<Layer Type="ActorFrame" Name="PaneColumns" InitCommand="hidden,1"><children>
 			<Layer Type="Quad" Name="PercentageBackground" OnCommand="diffuse,#101519;zoomto,74,27;xy,37,13.5" />
 			<Layer Type="BitmapText" Font="_wendy small" Name="Percent" Text="100.00" />
@@ -571,22 +589,8 @@
 
 		<Layer Type="ActorFrame" Name="PaneSpellcard" InitCommand="hidden,1"><children>
 			<Layer Type="Quad" Name="PercentageBackground" OnCommand="diffuse,#101519;zoomto,74,27;xy,37,13.5" />
-			<Layer Type="ActorFrame" Name="TitleBorder"><children>
-				<Layer Type="BitmapText" Font="_misoreg white" Text="wenis" OnCommand="xy, -2, -2" />
-				<Layer Type="BitmapText" Font="_misoreg white" Text="wenis" OnCommand="xy, 2, -2" />
-				<Layer Type="BitmapText" Font="_misoreg white" Text="wenis" OnCommand="xy, 2, 2" />
-				<Layer Type="BitmapText" Font="_misoreg white" Text="wenis" OnCommand="xy, -2, 2" />
-			</children></Layer>
-			<Layer Type="BitmapText" Font="_misoreg white" Name="Title" Text="wenis" />
 			<Layer Type="BitmapText" Font="_wendy small" Name="Percent" Text="100.00" />
 			<Layer Type="BitmapText" Font="_misoreg white" Name="Difficulty" Text="Difficulty" />
-			<Layer Type="ActorFrame" Name="DifficultyNumberBorder"><children>
-				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Text="0" OnCommand="xy, -4, -4" />
-				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Text="0" OnCommand="xy, 4, -4" />
-				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Text="0" OnCommand="xy, 4, 4" />
-				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Text="0" OnCommand="xy, -4, 4" />
-			</children></Layer>
-			<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="DifficultyNumber" Text="0" />
 			<Layer Type="ActorFrame" Name="Labels"><children>
 				<Layer Type="BitmapText" Font="_misoreg white" Name="TNS_W1" Text="FANTASTIC" />
 				<Layer Type="BitmapText" Font="_misoreg white" Name="TNS_W2" Text="EXCELLENT" />
@@ -614,17 +618,22 @@
 				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="Rolls" Text="---/---" />
 				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="Mines" Text="---/---" />
 			</children></Layer>
-		</children></Layer>
 
-		<Layer Type="Polygon" Name="SpellCards" OnCommand="y,175;ztestmode,writeonfail" />
-		<!-- transparent quads to dim colours so scatterplot and lifebars are easily visible with any colour -->
-		<Layer Type="Quad" OnCommand="diffuse,#101519C0;zoomto,305,44;y,175;fadetop,1;ztestmode,writeonfail" />
-		<Layer Type="Quad" OnCommand="diffuse,#101519C0;zoomto,305,44;y,175 + 44;fadebottom,1;ztestmode,writeonfail" />
-		<Layer Type="Quad" OnCommand="diffuse,#101519D0;zoomto,305,88;y,175;ztestmode,writeonfail" />
-		<!-- center to represent a 0 offset to more easily distinguish if notes are late or early-->
-		<Layer Type="Quad" OnCommand="diffuse,#565E6380;zoomto,305,1;y,175 + 43.5;ztestmode,writeonfail" />
-		<Layer Type="Polygon" Name="ScatterPlot" OnCommand="y,175 + 44;ztestmode,writeonfail;" />
-		<Layer Type="Polygon" Name="LifeBar" OnCommand="y,175 + 1;ztestmode,writeonfail;" />
+			<Layer Type="ActorFrame" Name="TitleBorder"><children>
+				<Layer Type="BitmapText" Font="_misoreg white" Text="wenis" OnCommand="xy, -0.5, -0.5" />
+				<Layer Type="BitmapText" Font="_misoreg white" Text="wenis" OnCommand="xy, 0.5, -0.5" />
+				<Layer Type="BitmapText" Font="_misoreg white" Text="wenis" OnCommand="xy, 0.5, 0.5" />
+				<Layer Type="BitmapText" Font="_misoreg white" Text="wenis" OnCommand="xy, -0.5, 0.5" />
+			</children></Layer>
+			<Layer Type="BitmapText" Font="_misoreg white" Name="Title" Text="wenis" />
+			<Layer Type="ActorFrame" Name="DifficultyNumberBorder"><children>
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Text="0" OnCommand="xy, -1, -1" />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Text="0" OnCommand="xy, 1, -1" />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Text="0" OnCommand="xy, 1, 1" />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Text="0" OnCommand="xy, -1, 1" />
+			</children></Layer>
+			<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="DifficultyNumber" Text="0" />
+		</children></Layer>
 	</children></Layer>
 	<Layer Type="ActorFrame"
 		Condition="GAMESTATE:IsPlayerEnabled(PLAYER_2) and not _SL.IsCouples(1)"
@@ -647,6 +656,15 @@
 		<Layer Type="Quad" OnCommand="diffuse,#101519;zoomto,305,88;y,175" />
 		<!-- figure out how to make this only render on p2 and not on p1 ever-->
 		<Layer Type="Quad" OnCommand="zoomto,305,88;y,175;zwrite,1;blend,noeffect;" />
+		<Layer Type="Polygon" Name="SpellCards" OnCommand="y,175;ztestmode,writeonfail" />
+		<!-- transparent quads to dim colours so scatterplot and lifebars are easily visible with any colour -->
+		<Layer Type="Quad" OnCommand="diffuse,#101519C0;zoomto,305,44;y,175;fadetop,1;ztestmode,writeonfail" />
+		<Layer Type="Quad" OnCommand="diffuse,#101519C0;zoomto,305,44;y,175 + 44;fadebottom,1;ztestmode,writeonfail" />
+		<Layer Type="Quad" OnCommand="diffuse,#101519D0;zoomto,305,88;y,175;ztestmode,writeonfail" />
+		<!-- center to represent a 0 offset to more easily distinguish if notes are late or early-->
+		<Layer Type="Quad" OnCommand="diffuse,#565E6380;zoomto,305,1;y,175 + 43.5;ztestmode,writeonfail" />
+		<Layer Type="Polygon" Name="ScatterPlot" OnCommand="y,175 + 44;ztestmode,writeonfail;" />
+		<Layer Type="Polygon" Name="LifeBar" OnCommand="y,175 + 1;ztestmode,writeonfail;" />
 
 		<Layer Type="ActorFrame" Name="PaneColumns" InitCommand="hidden,1"><children>
 			<Layer Type="Quad" Name="PercentageBackground" OnCommand="diffuse,#101519;zoomto,74,27;xy,37,13.5" />
@@ -703,22 +721,8 @@
 
 		<Layer Type="ActorFrame" Name="PaneSpellcard" InitCommand="hidden,1"><children>
 			<Layer Type="Quad" Name="PercentageBackground" OnCommand="diffuse,#101519;zoomto,74,27;xy,37,13.5" />
-			<Layer Type="ActorFrame" Name="TitleBorder"><children>
-				<Layer Type="BitmapText" Font="_misoreg white" Text="everybody do the wenis the wenis is a dance everybody is a genius who knows it in advance" OnCommand="xy, -2, -2" />
-				<Layer Type="BitmapText" Font="_misoreg white" Text="everybody do the wenis the wenis is a dance everybody is a genius who knows it in advance" OnCommand="xy, 2, -2" />
-				<Layer Type="BitmapText" Font="_misoreg white" Text="everybody do the wenis the wenis is a dance everybody is a genius who knows it in advance" OnCommand="xy, 2, 2" />
-				<Layer Type="BitmapText" Font="_misoreg white" Text="everybody do the wenis the wenis is a dance everybody is a genius who knows it in advance" OnCommand="xy, -2, 2" />
-			</children></Layer>
-			<Layer Type="BitmapText" Font="_misoreg white" Name="Title" Text="everybody do the wenis the wenis is a dance everybody is a genius who knows it in advance" />
 			<Layer Type="BitmapText" Font="_wendy small" Name="Percent" Text="100.00" />
 			<Layer Type="BitmapText" Font="_misoreg white" Name="Difficulty" Text="Difficulty" />
-			<Layer Type="ActorFrame" Name="DifficultyNumberBorder"><children>
-				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Text="0" OnCommand="xy, -4, -4" />
-				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Text="0" OnCommand="xy, 4, -4" />
-				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Text="0" OnCommand="xy, 4, 4" />
-				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Text="0" OnCommand="xy, -4, 4" />
-			</children></Layer>
-			<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="DifficultyNumber" Text="0" />
 			<Layer Type="ActorFrame" Name="Labels"><children>
 				<Layer Type="BitmapText" Font="_misoreg white" Name="TNS_W1" Text="FANTASTIC" />
 				<Layer Type="BitmapText" Font="_misoreg white" Name="TNS_W2" Text="EXCELLENT" />
@@ -746,17 +750,22 @@
 				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="Rolls" Text="---/---" />
 				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="Mines" Text="---/---" />
 			</children></Layer>
-		</children></Layer>
 
-		<Layer Type="Polygon" Name="SpellCards" OnCommand="y,175;ztestmode,writeonfail" />
-		<!-- transparent quads to dim colours so scatterplot and lifebars are easily visible with any colour -->
-		<Layer Type="Quad" OnCommand="diffuse,#101519C0;zoomto,305,44;y,175;fadetop,1;ztestmode,writeonfail" />
-		<Layer Type="Quad" OnCommand="diffuse,#101519C0;zoomto,305,44;y,175 + 44;fadebottom,1;ztestmode,writeonfail" />
-		<Layer Type="Quad" OnCommand="diffuse,#101519D0;zoomto,305,88;y,175;ztestmode,writeonfail" />
-		<!-- center to represent a 0 offset to more easily distinguish if notes are late or early-->
-		<Layer Type="Quad" OnCommand="diffuse,#565E6380;zoomto,305,1;y,175 + 43.5;ztestmode,writeonfail" />
-		<Layer Type="Polygon" Name="ScatterPlot" OnCommand="y,175 + 44;ztestmode,writeonfail;" />
-		<Layer Type="Polygon" Name="LifeBar" OnCommand="y,175 + 1;ztestmode,writeonfail;" />
+			<Layer Type="ActorFrame" Name="TitleBorder"><children>
+				<Layer Type="BitmapText" Font="_misoreg white" Text="everybody do the wenis the wenis is a dance everybody is a genius who knows it in advance" OnCommand="xy, -0.5, -0.5" />
+				<Layer Type="BitmapText" Font="_misoreg white" Text="everybody do the wenis the wenis is a dance everybody is a genius who knows it in advance" OnCommand="xy, 0.5, -0.5" />
+				<Layer Type="BitmapText" Font="_misoreg white" Text="everybody do the wenis the wenis is a dance everybody is a genius who knows it in advance" OnCommand="xy, 0.5, 0.5" />
+				<Layer Type="BitmapText" Font="_misoreg white" Text="everybody do the wenis the wenis is a dance everybody is a genius who knows it in advance" OnCommand="xy, -0.5, 0.5" />
+			</children></Layer>
+			<Layer Type="BitmapText" Font="_misoreg white" Name="Title" Text="everybody do the wenis the wenis is a dance everybody is a genius who knows it in advance" />
+			<Layer Type="ActorFrame" Name="DifficultyNumberBorder"><children>
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Text="0" OnCommand="xy, -1, -1" />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Text="0" OnCommand="xy, 1, -1" />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Text="0" OnCommand="xy, 1, 1" />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Text="0" OnCommand="xy, -1, 1" />
+			</children></Layer>
+			<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="DifficultyNumber" Text="0" />
+		</children></Layer>
 	</children></Layer>
 	<Layer
 		File="@'../ScreenSelectMusic underlay/Banner'..Color()..'.png'"

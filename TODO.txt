@@ -1,2 +1,3 @@
 UKSRT weights
 remove forced bothatonce on quickplay
+add - to evaluation font number

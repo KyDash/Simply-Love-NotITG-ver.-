@@ -64,8 +64,8 @@
 				local w5count = tonumber(actors.W5.number:GetText(), 10)
 				if w5count > 0 then actors.W5.text:settext'pad' end
 
-				if not Decents() then actors.W4.number:settext('    ') end
-				if not WayOffs() then actors.W5.number:settext('    ') end
+				-- if not Decents() then actors.W4.number:settext('    ') end
+				-- if not WayOffs() then actors.W5.number:settext('    ') end
 
 				-- additional pane stuff
 				local pane = SCREENMAN'Underlay'('GradePaneP' .. pn)
@@ -281,6 +281,15 @@
 						local spellcard = pane'PaneSpellcard'
 						spellcard'Title':settext(card.Name):diffuse(unpack(card.Color))
 						spellcard'DifficultyNumber':settext(card.Difficulty):diffuse(unpack(card.Color))
+						for i, actor in ipairs(spellcard'TitleBorder':GetChildren()) do
+							-- diffuse the opposite of the color
+							-- local r, g, b, a = 1 - card.Color[1], 1 - card.Color[2], 1 - card.Color[3], card.Color[4] * 0.5
+							actor:settext(card.Name)--:diffuse(r, g, b, a)
+						end
+						for i, actor in ipairs(spellcard'DifficultyNumberBorder':GetChildren()) do
+							-- local r, g, b, a = 1 - card.Color[1], 1 - card.Color[2], 1 - card.Color[3], card.Color[4] * 0.5
+							actor:settext(card.Difficulty)--:diffuse(r, g, b, a)
+						end
 						local percent = 0
 						if judges.maxdp > 0 then
 							percent = judges.obtaineddp / judges.maxdp * 100
@@ -359,8 +368,8 @@
 								actor:settext(count)
 							end
 						end
-						if not Decents() then column'TNS_W4':settext('    ') end
-						if not WayOffs() then column'TNS_W5':settext('    ') end
+						-- if not Decents() then column'TNS_W4':settext('    ') end
+						-- if not WayOffs() then column'TNS_W5':settext('    ') end
 						column'Note':zoom(0.5):y(-30)
 					end
 				end
@@ -369,9 +378,17 @@
 				do
 					local card = pane'PaneSpellcard'
 					card'Title':shadowlength(0):horizalign'left':zoom(0.55):xy(80, 7):maxwidth(395)
+					card'TitleBorder':zoom(0.55):xy(80, 7):diffuse(0, 0, 0, 1)
+					for i, actor in ipairs(card'TitleBorder':GetChildren()) do
+						actor:shadowlength(0):horizalign'left':maxwidth(395)
+					end
 					card'Percent':zoom(0.4):horizalign'right':shadowlength(0):xy(68, 15)
 					card'Difficulty':zoom(0.35):horizalign'right':shadowlength(0):xy(70, 31)
 					card'DifficultyNumber':zoom(0.3):horizalign'left':shadowlength(0):xy(79, 35.5)
+					card'DifficultyNumberBorder':zoom(0.3):xy(79, 35.5):diffuse(0, 0, 0, 1)
+					for i, actor in ipairs(card'DifficultyNumberBorder':GetChildren()) do
+						actor:shadowlength(0):horizalign'left'
+					end
 					card'Labels':xy(70, 52)
 					for i, actor in ipairs(card'Labels':GetChildren()) do
 						actor:y(21 * (i - 1)):zoom(0.35):shadowlength(0):horizalign'right'
@@ -500,6 +517,7 @@
 		<Layer Type="Quad" OnCommand="diffuse,#101519;zoomto,305,88;y,175" />
 		<Layer Type="Quad" OnCommand="zoomto,305,88;y,175;zwrite,1;blend,noeffect;" />
 		<Layer Type="ActorFrame" Name="PaneColumns" InitCommand="hidden,1"><children>
+			<Layer Type="Quad" Name="PercentageBackground" OnCommand="diffuse,#101519;zoomto,74,27;xy,37,13.5" />
 			<Layer Type="BitmapText" Font="_wendy small" Name="Percent" Text="100.00" />
 			<Layer Type="ActorFrame" Name="Labels"><children>
 				<Layer Type="BitmapText" Font="_misoreg white" Name="TNS_W1" Text="FANTASTIC" />
@@ -552,9 +570,22 @@
 		</children></Layer>
 
 		<Layer Type="ActorFrame" Name="PaneSpellcard" InitCommand="hidden,1"><children>
+			<Layer Type="Quad" Name="PercentageBackground" OnCommand="diffuse,#101519;zoomto,74,27;xy,37,13.5" />
+			<Layer Type="ActorFrame" Name="TitleBorder"><children>
+				<Layer Type="BitmapText" Font="_misoreg white" Text="wenis" OnCommand="xy, -2, -2" />
+				<Layer Type="BitmapText" Font="_misoreg white" Text="wenis" OnCommand="xy, 2, -2" />
+				<Layer Type="BitmapText" Font="_misoreg white" Text="wenis" OnCommand="xy, 2, 2" />
+				<Layer Type="BitmapText" Font="_misoreg white" Text="wenis" OnCommand="xy, -2, 2" />
+			</children></Layer>
 			<Layer Type="BitmapText" Font="_misoreg white" Name="Title" Text="wenis" />
 			<Layer Type="BitmapText" Font="_wendy small" Name="Percent" Text="100.00" />
 			<Layer Type="BitmapText" Font="_misoreg white" Name="Difficulty" Text="Difficulty" />
+			<Layer Type="ActorFrame" Name="DifficultyNumberBorder"><children>
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Text="0" OnCommand="xy, -4, -4" />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Text="0" OnCommand="xy, 4, -4" />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Text="0" OnCommand="xy, 4, 4" />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Text="0" OnCommand="xy, -4, 4" />
+			</children></Layer>
 			<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="DifficultyNumber" Text="0" />
 			<Layer Type="ActorFrame" Name="Labels"><children>
 				<Layer Type="BitmapText" Font="_misoreg white" Name="TNS_W1" Text="FANTASTIC" />
@@ -618,6 +649,7 @@
 		<Layer Type="Quad" OnCommand="zoomto,305,88;y,175;zwrite,1;blend,noeffect;" />
 
 		<Layer Type="ActorFrame" Name="PaneColumns" InitCommand="hidden,1"><children>
+			<Layer Type="Quad" Name="PercentageBackground" OnCommand="diffuse,#101519;zoomto,74,27;xy,37,13.5" />
 			<Layer Type="BitmapText" Font="_wendy small" Name="Percent" Text="100.00" />
 			<Layer Type="ActorFrame" Name="Labels"><children>
 				<Layer Type="BitmapText" Font="_misoreg white" Name="TNS_W1" Text="FANTASTIC" />
@@ -670,10 +702,23 @@
 		</children></Layer>
 
 		<Layer Type="ActorFrame" Name="PaneSpellcard" InitCommand="hidden,1"><children>
+			<Layer Type="Quad" Name="PercentageBackground" OnCommand="diffuse,#101519;zoomto,74,27;xy,37,13.5" />
+			<Layer Type="ActorFrame" Name="TitleBorder"><children>
+				<Layer Type="BitmapText" Font="_misoreg white" Text="everybody do the wenis the wenis is a dance everybody is a genius who knows it in advance" OnCommand="xy, -2, -2" />
+				<Layer Type="BitmapText" Font="_misoreg white" Text="everybody do the wenis the wenis is a dance everybody is a genius who knows it in advance" OnCommand="xy, 2, -2" />
+				<Layer Type="BitmapText" Font="_misoreg white" Text="everybody do the wenis the wenis is a dance everybody is a genius who knows it in advance" OnCommand="xy, 2, 2" />
+				<Layer Type="BitmapText" Font="_misoreg white" Text="everybody do the wenis the wenis is a dance everybody is a genius who knows it in advance" OnCommand="xy, -2, 2" />
+			</children></Layer>
 			<Layer Type="BitmapText" Font="_misoreg white" Name="Title" Text="everybody do the wenis the wenis is a dance everybody is a genius who knows it in advance" />
 			<Layer Type="BitmapText" Font="_wendy small" Name="Percent" Text="100.00" />
 			<Layer Type="BitmapText" Font="_misoreg white" Name="Difficulty" Text="Difficulty" />
-			<Layer Type="BitmapText" Font="_wendy small" Name="DifficultyNumber" Text="0" />
+			<Layer Type="ActorFrame" Name="DifficultyNumberBorder"><children>
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Text="0" OnCommand="xy, -4, -4" />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Text="0" OnCommand="xy, 4, -4" />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Text="0" OnCommand="xy, 4, 4" />
+				<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Text="0" OnCommand="xy, -4, 4" />
+			</children></Layer>
+			<Layer Type="BitmapText" Font="_ScreenEvaluation numbers" Name="DifficultyNumber" Text="0" />
 			<Layer Type="ActorFrame" Name="Labels"><children>
 				<Layer Type="BitmapText" Font="_misoreg white" Name="TNS_W1" Text="FANTASTIC" />
 				<Layer Type="BitmapText" Font="_misoreg white" Name="TNS_W2" Text="EXCELLENT" />
@@ -724,4 +769,6 @@
 		U/D or MU/MD to switch between scatterplot colors
 		L/R or ML/MR to switch between panes
 	-->
+	<!--<Layer Type="BitmapText" Text="L / R to cycle through panes" />-->
+	<!--<Layer Type="BitmapText" Text="U / D to cycle between judgment and column scatterplot" />-->
 </children></Layer>

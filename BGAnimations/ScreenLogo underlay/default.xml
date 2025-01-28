@@ -1,1 +1,1 @@
-<ActorFrame Command="%function() love = 0 end" />
+<ActorFrame InitCommand="%function(self) _SL.love = 0 end" />

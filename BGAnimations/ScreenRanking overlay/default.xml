@@ -1,6 +1,6 @@
 <!-- why does it take 1 second for the titles to start existing. -->
 <Layer Type="ActorFrame"
-	OnCommand="queuecommand,Set"
+	InitCommand="queuecommand,Set"
 	SetCommand="%function(self)
 		local list = SCREENMAN'ListScoreRowItems':GetChildren()
         if #list == 0 then self:sleep(0.1):queuecommand'Set' return end

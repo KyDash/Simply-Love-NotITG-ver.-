@@ -1,8 +1,18 @@
 -- table for things the theme will use in multiple places, this file *needs* to be executed first
-_SL = {
-    Crazy = 1,
-    modulo = function(a, b) return a - math.floor(a / b) * b end
-}
+-- will possibly split this up in chunks later but, for the time being i'll be putting any variables created in one xml but shared with many here.
+-- this will ensure that reloading the theme will avoid errors where a screen expects a value created by a previous screen, which a reload will put in an odd order, and thus the value not existing
+_SL = {}
+-- the logo state, this switches between `ScreenLogo underlay` and `ScreenLove underlay`
+_SL.love = 0
+
+-- state of the background colour, when set to 1, background hearts will be in general brighter
+-- specifically set to 1 for `ScreenLogo` and `ScreenEndingGood` (which can be accessed when the worst grade of a set is an `S+`)
+_SL.Crazy = 0
+
+-- floored division modulo implementation
+-- lua 5.0's `math.mod` (and notitg's backport of the % operator) use truncated division, which often yields to unintended results when operating on a negative dividend
+-- lua 5.1 and beyond use floored division instead, which makes negative dividends consistent with positive ones
+_SL.modulo = function(a, b) return a - math.floor(a / b) * b end
 
 local istournament = true
 if istournament then

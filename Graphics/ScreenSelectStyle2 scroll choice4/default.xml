@@ -19,14 +19,14 @@
 			/>
 			<Layer
 				File="../4panels"
-				EnabledCommand="%function(self) self:diffuse(ColorRGB(2, true)) end"
+				EnabledCommand="%function(self) self:diffuse(_SL.ColorRGB(2, true)) end"
 				DisabledCommand="diffuse,.24,.31,.35,1"
 				OnCommand="%FadeIn"
 				OffCommand="%OutCommand"
 			/>
 			<Layer
 				File="../5panels"
-				EnabledCommand="%function(self) self:diffuse(ColorRGB(2, true)) self:cropbottom(.64) end"
+				EnabledCommand="%function(self) self:diffuse(_SL.ColorRGB(2, true)) self:cropbottom(.64) end"
 				DisabledCommand="diffuse,.24,.31,.35,1;cropbottom,.64"
 				OnCommand="%FadeIn"
 				OffCommand="%OutCommand"
@@ -62,7 +62,7 @@
 			/>
 			<Layer
 				File="../5panels"
-				EnabledCommand="%function(self) self:diffuse(ColorRGB(2, true)) self:cropright(.33) end"
+				EnabledCommand="%function(self) self:diffuse(_SL.ColorRGB(2, true)) self:cropright(.33) end"
 				DisabledCommand="diffuse,.24,.31,.35,1;cropright,.33"
 				OnCommand="%FadeIn"
 				OffCommand="%OutCommand"
@@ -89,7 +89,7 @@
 			/>
 			<Layer
 				File="../5panels"
-				EnabledCommand="%function(self) self:diffuse(ColorRGB(2, true)) self:cropleft(.33) end"
+				EnabledCommand="%function(self) self:diffuse(_SL.ColorRGB(2, true)) self:cropleft(.33) end"
 				DisabledCommand="diffuse,.24,.31,.35,1;cropleft,.33"
 				OnCommand="%FadeIn"
 				OffCommand="%OutCommand"

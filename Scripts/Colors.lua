@@ -141,7 +141,7 @@ function _SL.TextOnColor(n, decorative)
 	return _SL.HexToRGB(_SL.Colors.White)
 end
 
-function BubbleColorText( pn, decorative )
+function _SL.BubbleColorText( pn, decorative )
 	if not decorative then return _SL.HexToRGB(_SL.Colors.Black) end
 	if GAMESTATE:IsPlayerEnabled( pn ) then
 		local steps = GAMESTATE:GetCurrentSteps( pn )

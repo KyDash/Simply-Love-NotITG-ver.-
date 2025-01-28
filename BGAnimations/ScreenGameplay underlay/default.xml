@@ -183,11 +183,11 @@
 			StreamPath="meter stream" 
 			Command="%function(self) 
 				local color = _SL.Color()
-					if color == 8 then self:diffuse(ColorRGB(0)) 
-				elseif color == 9 then self:diffuse(ColorRGB(-1)) 
-				elseif color == 10 then self:diffuse(ColorRGB(3)) 
-				elseif color == 11 then self:diffuse(ColorRGB(2)) 
-				else self:diffuse(ColorRGB(1)) 
+					if color == 8 then self:diffuse(_SL.ColorRGB(0)) 
+				elseif color == 9 then self:diffuse(_SL.ColorRGB(-1)) 
+				elseif color == 10 then self:diffuse(_SL.ColorRGB(3)) 
+				elseif color == 11 then self:diffuse(_SL.ColorRGB(2)) 
+				else self:diffuse(_SL.ColorRGB(1)) 
 				end
 			end" 
 		>
@@ -218,7 +218,7 @@
 			<Layer
 				Type="Quad"
 				InitCommand="%function(self) self:zoomto(30, 30) self:queuecommand('Set') end"
-				SetCommand="%function(self) self:diffuse(DifficultyColorRGB(GAMESTATE:GetCurrentSteps(PLAYER_1):GetDifficulty())) end"
+				SetCommand="%function(self) self:diffuse(_SL.DifficultyColorRGB(GAMESTATE:GetCurrentSteps(PLAYER_1):GetDifficulty())) end"
 			/>
 			<Layer
 				Class="DifficultyMeter"
@@ -234,7 +234,7 @@
 			<Layer
 				Type="Quad"
 				InitCommand="%function(self) self:zoomto(30, 30) self:queuecommand('Set') end"
-				SetCommand="%function(self) self:diffuse(DifficultyColorRGB(GAMESTATE:GetCurrentSteps(PLAYER_2):GetDifficulty())) end"
+				SetCommand="%function(self) self:diffuse(_SL.DifficultyColorRGB(GAMESTATE:GetCurrentSteps(PLAYER_2):GetDifficulty())) end"
 			/>
 			<Layer
 				Class="DifficultyMeter"

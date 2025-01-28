@@ -93,7 +93,7 @@
 				local halfheight = (panesize.height + panesize.padding) / 2
 				local datasize = #details
 
-				lifebar:SetDrawMode'linestrip':SetNumVertices(datasize + 2)
+				lifebar:SetDrawMode'linestrip':SetNumVertices(datasize + 2):SetLineWidth(2)
 				scatterplot:SetDrawMode'quads':SetNumVertices(datasize * 4)
 				do
 					-- add a point at song start to draw the lifebar
@@ -102,7 +102,6 @@
 					local x = when / songlen * panesize.width
 					lifebar:SetVertexPosition(0, x, panesize.height - (life * panesize.height), 0)
 							:SetVertexColor(0, 1, 1, 1, 0.75)
-							:SetLineWidth(2) -- sorry intel users
 				end
 
 				for i, data in ipairs(details) do
@@ -113,7 +112,6 @@
 					local x = when / songlen * panesize.width
 					lifebar:SetVertexPosition(i, x, panesize.height - (life * panesize.height), 0)
 							:SetVertexColor(i, 1, 1, 1, 0.75)
-							:SetLineWidth(2) -- sorry intel users
 
 					local index = (i - 1) * 4
 					local vert1, vert2, vert3, vert4 = index, index + 1, index + 2, index + 3
@@ -173,7 +171,6 @@
 					local x = when / songlen * panesize.width
 					lifebar:SetVertexPosition(datasize + 1, x, panesize.height - (life * panesize.height), 0)
 							:SetVertexColor(datasize + 1, 1, 1, 1, 0.75)
-							:SetLineWidth(2) -- sorry intel users
 				end
 
 				local paneactors = {
@@ -508,7 +505,6 @@
 ><children>
 	<Layer Type="ActorFrame"
 		Condition="GAMESTATE:IsPlayerEnabled(PLAYER_1) and not _SL.IsCouples(0)"
-		Command="x,DoublesOffset()"
 		Name="GradePaneP1"
 		OnCommand="%function(self)
 			local width = 305
@@ -637,7 +633,6 @@
 	</children></Layer>
 	<Layer Type="ActorFrame"
 		Condition="GAMESTATE:IsPlayerEnabled(PLAYER_2) and not _SL.IsCouples(1)"
-		Command="x,DoublesOffset()"
 		Name="GradePaneP2"
 		OnCommand="%function(self)
 			local width = 305

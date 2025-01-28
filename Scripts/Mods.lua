@@ -73,7 +73,7 @@
 -- Redefine these in Theme.lua if other values are desired.
 
 -- Used with GoTo option for PlayerOptions and with Summary screen. These can return either functions or strings.
-	screenList = { Gameplay = 'ScreenStage' , SelectMusic = 'ScreenSelectMusic' , PlayerOptions = 'ScreenPlayerOptions' , TitleMenu = ScreenTitleBranch  , NameEntry = 'ScreenNameEntryTraditional' , Evaluation = SelectEvaluationScreen , Summary = 'Summary' , Ending = SelectEndingScreen }
+	local screenList = { Gameplay = 'ScreenStage' , SelectMusic = 'ScreenSelectMusic' , PlayerOptions = 'ScreenPlayerOptions' , TitleMenu = ScreenTitleBranch  , NameEntry = 'ScreenNameEntryTraditional' , Evaluation = SelectEvaluationScreen , Summary = 'Summary' , Ending = SelectEndingScreen }
 	function ScreenList(str) if type(screenList[str]) == 'function' then return screenList[str]() else return screenList[str] end end
 
 -- Judgment tween commands.
@@ -161,18 +161,18 @@ else]]
 	function HoldTween(self) self:diffuse(1,1,1,1) self:zoom(.5); self:sleep(.5) self:zoom(0) end
 
 -- Used with Judgment Graphs.
-	judgeGraphWidth = 44
-	judgeGraphHeight = 20
+	local judgeGraphWidth = 44
+	local judgeGraphHeight = 20
 
 -- Used with Synthetic Difficulty List
-	maxRows = 5
-	blankMeter = '?'
-	maxFeet = 20
-	minFeet = 0
-	feetBaseZoom = 0.275
+	local maxRows = 5
+	local blankMeter = '?'
+	maxFeet = 20 -- used in ScreenSelectMusic overlay/DifficultyList.xml
+	local minFeet = 0
+	feetBaseZoom = 0.275 -- -- used in ScreenSelectMusic overlay/DifficultyList.xml
 
 -- Judgment Font List
-	judgmentFontList = { 'Default' , 'Tactics', 'Chromatic', 'Deco', 'GrooveNights', 'ITG2' }
+	local judgmentFontList = { 'Default' , 'Tactics', 'Chromatic', 'Deco', 'GrooveNights', 'ITG2' }
 	if FUCK_EXE then -- Auto load on NotITG
 		local list = { 'Default' }
 		
@@ -188,7 +188,7 @@ else]]
 		judgmentFontList = list
 	end
 
-	holdJudgmentFontList = { 'Default' , 'GrooveNights', 'ITG2'}
+	local holdJudgmentFontList = { 'Default' , 'GrooveNights', 'ITG2'}
 	if FUCK_EXE then
 		local list = { 'Default' }
 		
@@ -205,20 +205,20 @@ else]]
 	end
 
 -- Used with ThemeFiles function
-	themeDir = '_ThemeFiles'
+	local themeDir = '_ThemeFiles'
 
 -- Used with LifeBar option 
 	lifeBarSizeAdd = { Width = 0, Height = 4, OffsetX = 0, OffsetY = -2 } -- Allows size adjustments for cases like Meatboy's progress bar.
 
 -- Used with CompareScore and Measure display
-	DPLimit = 9 -- Max of DP the compare score feature will display before switching to percent.
-	function CompareTextColor(n) if n < 0 then return 1,.3,1,1 end return 0.3,1,0.3,1 end
-	function ModTextFormat(self,n) end -- This is added on top of the base positioning etc.
+	local DPLimit = 9 -- Max of DP the compare score feature will display before switching to percent.
+	local function CompareTextColor(n) if n < 0 then return 1,.3,1,1 end return 0.3,1,0.3,1 end
+	local function ModTextFormat(self,n) end -- This is added on top of the base positioning etc.
 
 -- Used with Speed Mods, to determine selected mod and as limits for slider speed mods.
-	speedMax = 2000
-	speedSpread = 5
-	speedMin = 5
+	local speedMax = 2000
+	local speedSpread = 5
+	local speedMin = 5
 
 -- These will be the option rows available on the [nth] option screen. The 'NextScreen' row will be automatically added as long as there is more than 1 option screen.
 
@@ -231,7 +231,7 @@ else]]
 		playerOptions[2] = { 'Accel','Scroll','Effect','Appearance','Handicap','InsertTaps','InsertOther','Hide','Ghost','Compare','Measure','LifeBar' }
 	end
 	playerOptions.Edit = { 'SpeedType','SpeedNumber','Mini','Perspective','NoteSkin','Turn' }
-	ShowAllInRow = false
+	ShowAllInRow = true
 
 -----------------------
 -- Utility Functions
@@ -738,15 +738,14 @@ function JudgeGraph(self)
 	self:stretchto(judgeFrame-1,0,judgeFrame,-t)
 end
 
-function JudgmentColor( n , alpha )
-	if alpha then a = alpha else a = 1 end
-	if n == 1 then return 0,.86,1,a end
-	if n == 2 then return 1,.60,0,a end
-	if n == 3 then return .04,1,0,a end
-	if n == 4 then return .62,0,.97,a end
-	if n == 5 then return 1,.42,0,a end
-	if n == 6 then return 1,0,0,a end
-	return 1,1,1,1
+function JudgmentColor( n )
+	if n == 1 then return _SL.HexToRGB(_SL.Colors.TNS_W1) end
+	if n == 2 then return _SL.HexToRGB(_SL.Colors.TNS_W1) end
+	if n == 3 then return _SL.HexToRGB(_SL.Colors.TNS_W3) end
+	if n == 4 then return _SL.HexToRGB(_SL.Colors.TNS_W4) end
+	if n == 5 then return _SL.HexToRGB(_SL.Colors.TNS_W5) end
+	if n == 6 then return _SL.HexToRGB(_SL.Colors.TNS_W6) end
+	return _SL.HexToRGB(_SL.Colors.White)
 end
 
 function ResetScores() AllScores = {} end
@@ -1672,7 +1671,7 @@ function DifficultyListRow(self,row,name,pn)
 		self:diffuse(0.1, 0.1, 0.1, 1)
 		return
 	else
-		self:diffuse(_SL._SL.DifficultyColorRGB( row - 1 ))
+		self:diffuse(_SL.DifficultyColorRGB( row - 1 ))
 	end
 	
 	if Player(1) and listPointer[1] then

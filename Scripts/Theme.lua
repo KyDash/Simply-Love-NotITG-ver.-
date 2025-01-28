@@ -10,8 +10,6 @@ rateModsFree = { "1.0x", "1.1x", "1.2x", "1.3x", "1.4x", "1.5x", "1.6x", "1.7x",
 
 function CompareTextFormat(self,n) self:zoom(.3) end -- This is added on top of the base positioning etc.
 
-ShowAllInRow = true
-
 function NonCombos()
 	local t = OptionRowBase('NonCombos')
 	t.OneChoiceForAllPlayers = true

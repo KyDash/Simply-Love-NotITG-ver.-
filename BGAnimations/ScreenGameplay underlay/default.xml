@@ -168,7 +168,7 @@
 			self:stopeffect()
 			self:SetUpdateFunction(GameplayUpdate)
 			if FUCK_EXE then
-				stitch('lua.death').Start()
+				-- stitch('lua.death').Start()
 			end
 		end" 
 	/>

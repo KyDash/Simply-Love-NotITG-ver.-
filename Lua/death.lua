@@ -55,7 +55,7 @@ end
 
 function death.Start()
     players = GAMESTATE:GetNumPlayersEnabled()
-    if types[current].Prepare then
+    if types[current] and types[current].Prepare then
         types[current].Prepare(types[current].Frame)
     end
 end

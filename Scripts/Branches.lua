@@ -10,10 +10,11 @@ function GetArcadeStartScreen()
 	return "ScreenLove"
 end
 
-function ScreenTitleBranch()
-	if GAMESTATE:GetCoinMode() == COIN_MODE_HOME then return "ScreenTitleMenu" end
-	return "ScreenTitleJoin"
-end
+-- defined in fallback
+-- function ScreenTitleBranch()
+-- 	if GAMESTATE:GetCoinMode() == COIN_MODE_HOME then return "ScreenTitleMenu" end
+-- 	return "ScreenTitleJoin"
+-- end
 
 function EvaluationNextScreen()
 
@@ -49,11 +50,11 @@ function GetGameplayNextScreen()
 end
 
 function SelectEvaluationScreen()
-	Mode = PlayModeName()
-	screen = "ScreenEvaluationStage"
+	local Mode = PlayModeName()
+	local screen = "ScreenEvaluationStage"
 	if( Mode == "Nonstop" ) then screen = "ScreenEvaluationNonstop" end
 	if( Mode == "Oni" ) then screen = "ScreenEvaluationOni" end
-	return screen .. Color()
+	return screen .. _SL.Color()
 end
 
 function SelectEndingScreen()

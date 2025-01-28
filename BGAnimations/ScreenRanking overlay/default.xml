@@ -542,10 +542,10 @@
             {'HellKiteChaos','3.59%','Clear'},
         }
         local cleartocolormap = {
-            Clear = _SL.CommonColors.White,
-            FC = _SL.CommonColors.W3,
-            FEC = _SL.CommonColors.W2,
-            Quad = _SL.CommonColors.W1,
+            Clear = _SL.Colors.White,
+            FC = _SL.Colors.W3,
+            FEC = _SL.Colors.W2,
+            Quad = _SL.Colors.W1,
             Quint = '#B462B2',
         }
 		for afi, af in ipairs(SCREENMAN'ListScoreRowItems':GetChildren()) do
@@ -563,7 +563,7 @@
                         table.remove(names, idx)
                     else
                         namecache[i] = {'Sorry, no more [7] Disco Pop', ':<'}
-                        color = _SL.CommonColors.White
+                        color = _SL.Colors.White
                         scores:rainbow():effectoffset((i / 7) + (afi / 6))
                     end
                     scores:hidden(0)

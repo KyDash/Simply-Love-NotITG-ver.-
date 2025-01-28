@@ -58,7 +58,7 @@ _SL.Codes.HoldNotes = ''
 
 function ModeLoop(self) self:linear((53+self:GetY())/75) self:y(-53); self:sleep(0) self:addy(150) self:queuecommand('Loop') end
 function ModeLoop2(self) self:decelerate((53+self:GetY())/75) self:y(-53); self:sleep(0) self:addy(150) self:queuecommand('Loop') end
-function ModeColor(self) local a = self:getaux(); a = math.mod(a+6,12) self:aux(a) if self:GetZ() == 0 then self:diffuse(ColorRGB(a, true)) end end
+function ModeColor(self) local a = self:getaux(); a = math.mod(a+6,12) self:aux(a) if self:GetZ() == 0 then self:diffuse(_SL.ColorRGB(a, true)) end end
 function ModeColorOn(self) self:z(0) if self:getaux() < 0 then self:diffuse(1,1,1,1) else self:queuecommand('Loop') end end
 function ModeColorOff(self) self:diffuse(0.20,0.24,0.26,1) self:z(1) end
 

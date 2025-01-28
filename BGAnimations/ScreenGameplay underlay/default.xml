@@ -182,10 +182,11 @@
 			StreamWidth="300" 
 			StreamPath="meter stream" 
 			Command="%function(self) 
-					if Color() == 8 then self:diffuse(ColorRGB(0)) 
-				elseif Color() == 9 then self:diffuse(ColorRGB(-1)) 
-				elseif Color() == 10 then self:diffuse(ColorRGB(3)) 
-				elseif Color() == 11 then self:diffuse(ColorRGB(2)) 
+				local color = _SL.Color()
+					if color == 8 then self:diffuse(ColorRGB(0)) 
+				elseif color == 9 then self:diffuse(ColorRGB(-1)) 
+				elseif color == 10 then self:diffuse(ColorRGB(3)) 
+				elseif color == 11 then self:diffuse(ColorRGB(2)) 
 				else self:diffuse(ColorRGB(1)) 
 				end
 			end" 

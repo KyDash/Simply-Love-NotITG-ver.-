@@ -73,7 +73,7 @@
 -- Redefine these in Theme.lua if other values are desired.
 
 -- Used with GoTo option for PlayerOptions and with Summary screen. These can return either functions or strings.
-	screenList = { TitleMenu = 'TitleMenu' , SelectMusic = 'SelectMusic' , PlayerOptions = 'PlayerOptions' , Stage = 'Stage' , Gameplay = 'Gameplay' , Evaluation = 'Evaluation' , NameEntry = 'NameEntry' , Summary = 'Summary' , Ending = 'TitleMenu' }
+	screenList = { Gameplay = 'ScreenStage' , SelectMusic = 'ScreenSelectMusic' , PlayerOptions = 'ScreenPlayerOptions' , TitleMenu = ScreenTitleBranch  , NameEntry = 'ScreenNameEntryTraditional' , Evaluation = SelectEvaluationScreen , Summary = 'Summary' , Ending = SelectEndingScreen }
 	function ScreenList(str) if type(screenList[str]) == 'function' then return screenList[str]() else return screenList[str] end end
 
 -- Judgment tween commands.
@@ -1672,7 +1672,7 @@ function DifficultyListRow(self,row,name,pn)
 		self:diffuse(0.1, 0.1, 0.1, 1)
 		return
 	else
-		self:diffuse(DifficultyColorRGB( row - 1 ))
+		self:diffuse(_SL._SL.DifficultyColorRGB( row - 1 ))
 	end
 	
 	if Player(1) and listPointer[1] then
@@ -1710,7 +1710,7 @@ function DifficultyListRow(self,row,name,pn)
 			local metermods = selection:GetMeterMods()
 			local difficulty = selection:GetDifficulty()
 			local description = selection:GetDescription()
-			local color = {DifficultyColorRGB( difficulty )}
+			local color = {_SL.DifficultyColorRGB( difficulty )}
 			self:diffuse(unpack(color))
 			if name == 'difficulty' then
 				if row - 1  < 5 then
@@ -1746,7 +1746,7 @@ function DifficultyListRow(self,row,name,pn)
 				end
 			end
 		else
-			local color = {DifficultyColorRGB( row - 1 )}
+			local color = {_SL.DifficultyColorRGB( row - 1 )}
 			self:diffuse(unpack(color))
 			if name == 'difficulty' then
 				if row - 1 < 5 then
@@ -1789,7 +1789,7 @@ function DifficultyListRow(self,row,name,pn)
 			local metermods = selection:GetMeterMods()
 			local difficulty = selection:GetDifficulty()
 			local description = selection:GetDescription()
-			local color = {DifficultyColorRGB( difficulty )}
+			local color = {_SL.DifficultyColorRGB( difficulty )}
 			self:diffuse(unpack(color))
 
 			if name == 'difficulty' then

@@ -57,9 +57,9 @@
 			SetCommand="%function(self)
 				local trail = GAMESTATE:GetCurrentTrail(PLAYER_1)
 				if trail then
-					self:diffuse(DifficultyColorRGB(trail:GetDifficulty()))
+					self:diffuse(_SL.DifficultyColorRGB(trail:GetDifficulty()))
 				else
-					self:diffuse(DifficultyColorRGB(GAMESTATE:GetCurrentSteps(PLAYER_1):GetDifficulty()))
+					self:diffuse(_SL.DifficultyColorRGB(GAMESTATE:GetCurrentSteps(PLAYER_1):GetDifficulty()))
 				end
 			end"
 		/>
@@ -101,9 +101,9 @@
 			SetCommand="%function(self)
 				local trail = GAMESTATE:GetCurrentTrail(PLAYER_2)
 				if trail then
-					self:diffuse(DifficultyColorRGB(trail:GetDifficulty()))
+					self:diffuse(_SL.DifficultyColorRGB(trail:GetDifficulty()))
 				else
-					self:diffuse(DifficultyColorRGB(GAMESTATE:GetCurrentSteps(PLAYER_2):GetDifficulty()))
+					self:diffuse(_SL.DifficultyColorRGB(GAMESTATE:GetCurrentSteps(PLAYER_2):GetDifficulty()))
 				end
 			end"
 		/>

@@ -40,16 +40,16 @@
 				local judgments = gradeframe'Judgments'
 				local radarvalues = gradeframe'Radar'
 				local actors = {
-					W1 =	{text = judgments'W1',		number = SCREENMAN('MarvelousNumberP' .. pn),	index = 0, color = _SL.CommonColors.W1},
-					W2 =	{text = judgments'W2',		number = SCREENMAN('PerfectNumberP' .. pn),		index = 1, color = _SL.CommonColors.W2},
-					W3 =	{text = judgments'W3',		number = SCREENMAN('GreatNumberP' .. pn),		index = 2, color = _SL.CommonColors.W3},
-					W4 =	{text = judgments'W4',		number = SCREENMAN('GoodNumberP' .. pn),		index = 3, color = _SL.CommonColors.W4},
-					W5 =	{text = judgments'W5',		number = SCREENMAN('BooNumberP' .. pn),			index = 4, color = _SL.CommonColors.W5},
-					W6 =	{text = judgments'W6',		number = SCREENMAN('MissNumberP' .. pn),		index = 5, color = _SL.CommonColors.W6},
-					Holds = {text = radarvalues'Holds', number = SCREENMAN('HoldsTextP' .. pn),			index = 0, color = _SL.CommonColors.White},
-					Mines = {text = radarvalues'Mines', number = SCREENMAN('MinesTextP' .. pn),			index = 1, color = _SL.CommonColors.White},
-					Hands = {text = radarvalues'Hands', number = SCREENMAN('HandsTextP' .. pn),			index = 2, color = _SL.CommonColors.White},
-					Rolls = {text = radarvalues'Rolls', number = SCREENMAN('RollsTextP' .. pn),			index = 3, color = _SL.CommonColors.White},
+					W1 =	{text = judgments'W1',		number = SCREENMAN('MarvelousNumberP' .. pn),	index = 0, color = _SL.Colors.W1},
+					W2 =	{text = judgments'W2',		number = SCREENMAN('PerfectNumberP' .. pn),		index = 1, color = _SL.Colors.W2},
+					W3 =	{text = judgments'W3',		number = SCREENMAN('GreatNumberP' .. pn),		index = 2, color = _SL.Colors.W3},
+					W4 =	{text = judgments'W4',		number = SCREENMAN('GoodNumberP' .. pn),		index = 3, color = _SL.Colors.W4},
+					W5 =	{text = judgments'W5',		number = SCREENMAN('BooNumberP' .. pn),			index = 4, color = _SL.Colors.W5},
+					W6 =	{text = judgments'W6',		number = SCREENMAN('MissNumberP' .. pn),		index = 5, color = _SL.Colors.W6},
+					Holds = {text = radarvalues'Holds', number = SCREENMAN('HoldsTextP' .. pn),			index = 0, color = _SL.Colors.White},
+					Mines = {text = radarvalues'Mines', number = SCREENMAN('MinesTextP' .. pn),			index = 1, color = _SL.Colors.White},
+					Hands = {text = radarvalues'Hands', number = SCREENMAN('HandsTextP' .. pn),			index = 2, color = _SL.Colors.White},
+					Rolls = {text = radarvalues'Rolls', number = SCREENMAN('RollsTextP' .. pn),			index = 3, color = _SL.Colors.White},
 				}
 
 				judgments:xy(pn == 1 and 190 or -200, -275)
@@ -126,14 +126,14 @@
 						end
 						if tns ~= 'TNS_HitMine' and tns ~= 'TNS_Miss' and tns ~= 'TNS_AvoidMine' then
 							local offset = (-data.offset / (details.widestoffset + 0.01)) * panesize.height / 2
-							local color = _SL.CommonColors[string.sub(tns, 5)]
+							local color = _SL.Colors[string.sub(tns, 5)]
 							detailcache[i][0] = color
 							scatterplot:SetVertexPosition(vert1, x - 0.75, offset - 0.75, 0)
 										:SetVertexPosition(vert2, x - 0.75, offset + 0.75, 0)
 										:SetVertexPosition(vert3, x + 0.75, offset + 0.75, 0)
 										:SetVertexPosition(vert4, x + 0.75, offset - 0.75, 0)
 						elseif tns == 'TNS_Miss' then
-							local color = _SL.CommonColors.W6 .. '80'
+							local color = _SL.Colors.W6 .. '80'
 							detailcache[i][0] = color
 							detailcache[i][1] = detailcache[i][1] .. '80'
 							scatterplot:SetVertexPosition(vert1, x - 0.5, -halfheight, 0)
@@ -302,9 +302,9 @@
 						end
 						spellcard'Percent':settext(string.format('%.2f', percent))
 						if percent >= 100 then
-							spellcard'Percent':diffuse(_SL.HexToRGB(_SL.CommonColors.W1))
+							spellcard'Percent':diffuse(_SL.HexToRGB(_SL.Colors.W1))
 						else
-							spellcard'Percent':diffuse(_SL.HexToRGB(_SL.CommonColors.White))
+							spellcard'Percent':diffuse(_SL.HexToRGB(_SL.Colors.White))
 						end
 						for i, actor in pairs(spellcard'Numbers':GetChildren()) do
 							local count = tostring(judges[actor:GetName()])
@@ -399,13 +399,13 @@
 					for i, actor in ipairs(card'Labels':GetChildren()) do
 						actor:y(21 * (i - 1)):zoom(0.35):shadowlength(0):horizalign'right'
 						local name = actor:GetName()
-						actor:diffuse(_SL.HexToRGB(_SL.CommonColors[name]))
+						actor:diffuse(_SL.HexToRGB(_SL.Colors[name]))
 					end
 
 					card'Numbers':xy(101, 56.5)
 					for i, actor in ipairs(card'Numbers':GetChildren()) do
 						local name = actor:GetName()
-						actor:diffuse(_SL.HexToRGB(_SL.CommonColors[name]))
+						actor:diffuse(_SL.HexToRGB(_SL.Colors[name]))
 						actor:y(21 * (i - 1)):zoom(0.3):shadowlength(0)
 						actor:settext('    ')
 					end
@@ -414,12 +414,12 @@
 					for i, actor in ipairs(card'RadarLabels':GetChildren()) do
 						actor:y(21 * (i - 1)):zoom(0.35):shadowlength(0):horizalign'right'
 						local name = actor:GetName()
-						-- actor:diffuse(_SL.HexToRGB(_SL.CommonColors[name]))
+						-- actor:diffuse(_SL.HexToRGB(_SL.Colors[name]))
 					end
 					card'RadarNumbers':xy(256, 56.5)
 					for i, actor in ipairs(card'RadarNumbers':GetChildren()) do
 						local name = actor:GetName()
-						-- actor:diffuse(_SL.HexToRGB(_SL.CommonColors[name]))
+						-- actor:diffuse(_SL.HexToRGB(_SL.Colors[name]))
 						actor:y(21 * (i - 1)):zoom(0.3):shadowlength(0)
 						actor:settext('   /   ')
 					end
@@ -443,8 +443,8 @@
 						for ci, column in ipairs{columns'Labels', columns'Left', columns'Down', columns'Up', columns'Right'} do
 							for i, actor in ipairs(column:GetChildren()) do
 								local name = actor:GetName()
-								if _SL.CommonColors[name] then
-									actor:diffuse(_SL.HexToRGB(_SL.CommonColors[name]))
+								if _SL.Colors[name] then
+									actor:diffuse(_SL.HexToRGB(_SL.Colors[name]))
 								end
 							end
 						end
@@ -763,7 +763,7 @@
 		</children></Layer>
 	</children></Layer>
 	<Layer
-		File="@'../ScreenSelectMusic underlay/Banner'..Color()..'.png'"
+		File="@'../ScreenSelectMusic underlay/Banner'.._SL.Color()..'.png'"
 		InitCommand="x,SCREEN_CENTER_X;y,SCREEN_TOP+101;ZoomToWidth,278;ZoomToHeight,109"
 		OnCommand="ztest,1;diffusealpha,0;linear,0.6;diffusealpha,1"
 		Name="Banner"

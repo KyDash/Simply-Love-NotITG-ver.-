@@ -8,7 +8,7 @@
 		<Layer
 			File="stepbubble.png"
 			InitCommand="x,52;y,-19;playcommand,Set"
-			SetCommand="%function(self) self:diffuse(BubbleColorRGB(PLAYER_1)) end" 
+			SetCommand="%function(self) self:diffuse(_SL.BubbleColorRGB(PLAYER_1)) end" 
 			CurrentSongChangedMessageCommand="playcommand,Set" 
 			CurrentStepsP1ChangedMessageCommand="playcommand,Set" 
 		/>
@@ -23,7 +23,7 @@
 		   Font="_misobold small"
 			Text="???" 
 			OnCommand="y,-29;x,5;zoom,0.5;shadowlength,0;horizalign,left;maxwidth,250" 
-			SetCommand="%function(self) self:settext(GetStepsDescriptionText(PLAYER_1)) self:diffuse(BubbleColorText(PLAYER_1)) end" 
+			SetCommand="%function(self) self:settext(GetStepsDescriptionText(PLAYER_1)) self:diffuse(_SL.BubbleColorText(PLAYER_1)) end" 
 			CurrentSongChangedMessageCommand="playcommand,Set" 
 			CurrentStepsP1ChangedMessageCommand="playcommand,Set" 
 		/>
@@ -38,7 +38,7 @@
 		<Layer
 			File="stepbubble.png"
 			InitCommand="x,-47;y,32;rotationz,180;playcommand,Set"
-			SetCommand="%function(self) self:diffuse(BubbleColorRGB(PLAYER_2)) end" 
+			SetCommand="%function(self) self:diffuse(_SL.BubbleColorRGB(PLAYER_2)) end" 
 			CurrentSongChangedMessageCommand="playcommand,Set" 
 			CurrentStepsP2ChangedMessageCommand="playcommand,Set" 
 		/>
@@ -53,7 +53,7 @@
 			Font="_misobold small"
 			Text="???" 
 			OnCommand="y,29;x,-95;zoom,0.5;shadowlength,0;horizalign,left;maxwidth,250;" 
-			SetCommand="%function(self) self:settext(GetStepsDescriptionText(PLAYER_2)) self:diffuse(BubbleColorText(PLAYER_2)) end" 
+			SetCommand="%function(self) self:settext(GetStepsDescriptionText(PLAYER_2)) self:diffuse(_SL.BubbleColorText(PLAYER_2)) end" 
 			CurrentSongChangedMessageCommand="playcommand,Set" 
 			CurrentStepsP2ChangedMessageCommand="playcommand,Set" 
 		/>
@@ -75,14 +75,14 @@
 	><children>
 		<Layer
 			File="@Path('Graphics','longverbubble.png')"
-			OnCommand="%function(self) self:diffuse(ColorRGB(-1)) end" 
+			OnCommand="%function(self) self:diffuse(_SL.ColorRGB(-1)) end" 
 		/>
 		<Layer
 			Type="BitmapText"
 			Text="INSUFFICIENT TIME"
 			File="_misobold small"
 			InitCommand="zoom,.5;shadowlength,0;addx,2;addy,-2"
-			OnCommand="%function(self) self:diffuse(TextOnColor(-1)) end"
+			OnCommand="%function(self) self:diffuse(_SL.TextOnColor(-1)) end"
 			OffCommand="linear,0.2;diffusealpha,0"
 		/>
 	</children></Layer>

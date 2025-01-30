@@ -1,6 +1,6 @@
 <ActorFrame> <children>
 
-	<Layer Type="Quad" Command="diffuse,#1E282F66;stretchto,10,438,630,388"
+	<Layer Type="Quad" Command="diffuse,_SL.HexToRGB(_SL.Colors.UIMain .. '66');stretchto,10,438,630,388"
 		OffCommand="decelerate,0.75;addx,-1000"
 	/>
 	<Layer File="keymapstuff.png" Command="x,SCREEN_CENTER_X;y,SCREEN_CENTER_Y+25"

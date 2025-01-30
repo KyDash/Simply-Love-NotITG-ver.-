@@ -18,7 +18,7 @@
 	<Layer 
 		Condition="SongOptionsLabel() ~= ''"
 		Type="Quad"
-		OnCommand="diffuse,#1E282F;stretchto,SCREEN_CENTER_X-139,153,SCREEN_CENTER_X+139,170;diffusealpha,0.85"
+		OnCommand="diffuse,_SL.HexToRGB(_SL.Colors.UIMain);stretchto,SCREEN_CENTER_X-139,153,SCREEN_CENTER_X+139,170;diffusealpha,0.85"
 	/>	
 	<Layer Type="ActorFrame"
 		Condition="not (GAMESTATE:GetCurrentSong() == SONGMAN:FindSong('In The Groove/Training1/'))"
@@ -27,7 +27,7 @@
 
 		<Layer 
 			Type="Quad"
-			OnCommand="diffuse,#1E282F;zoomto,278,20;diffusealpha,0.85;y,-16"
+			OnCommand="diffuse,_SL.HexToRGB(_SL.Colors.UIMain);zoomto,278,20;diffusealpha,0.85;y,-16"
 		/>
 
 		<Layer

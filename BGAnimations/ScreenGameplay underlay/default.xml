@@ -1,5 +1,5 @@
 <ActorFrame> <children>
-	<Layer Type="Quad" Command="diffuse,#00000080;stretchto,SCREEN_LEFT,SCREEN_TOP,SCREEN_RIGHT,80"/>
+	<Layer Type="Quad" Command="diffuse,_SL.HexToRGB(_SL.Colors.Outline);stretchto,SCREEN_LEFT,SCREEN_TOP,SCREEN_RIGHT,80"/>
 
 	<ActorFrame 
 		Condition="GAMESTATE:GetPlayMode()==PLAY_MODE_REGULAR and GAMESTATE:GetEasiestStepsDifficulty()==DIFFICULTY_BEGINNER and PREFSMAN:GetPreference('MercifulBeginner')"

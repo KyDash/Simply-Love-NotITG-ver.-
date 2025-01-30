@@ -19,15 +19,43 @@ end
 -- common colours that do not change depending on initial color selection
 -- names may overlap when colours are close together
 _SL.Colors = {
-	Edit = 	"#B4B7BA",	-- Silver
-	White = "#FFFFFF",	-- White
-	Black = "#000000",	-- Black
-	W1 = 	"#21CCE8",	-- Dark Turquoise
-	W2 = 	"#E29C18",	-- Golden Rod
-	W3 = 	"#66C955",	-- Light Green
-	W4 = 	"#A272D5",	-- Medium Purple
-	W5 = 	"#C9855E",	-- Dark Salmon
-	W6 = 	"#FF3030",	-- Red
+	White		=	"#FFFFFF",
+	Black		=	"#000000",
+	Red			=	"#ED1C24",
+	Blue		=	"#00AEEF",
+	Green		=	"#39B54A",
+	Yellow		=	"#FFF200",
+	Orange		=	"#F7941D",
+	Purple		=	"#92278F",
+	Outline		=	"#00000080",
+	Invisible	=	"#FFFFFF00",
+	Stealth		=	"#00000000",
+
+	-- Android Design Stencil Colors
+	-- https://m3.material.io/styles/color/system/overview
+	HoloBlue		=	"#33B5E5",
+	HoloDarkBlue	=	"#0099CC",
+	HoloPurple		=	"#AA66CC",
+	HoloDarkPurple	=	"#9933CC",
+	HoloGreen		=	"#99CC00",
+	HoloDarkGreen	=	"#669900",
+	HoloOrange		=	"#FFBB33",
+	HoloDarkOrange	=	"#FF8800",
+	HoloRed			=	"#FF4444",
+	HoloDarkRed		=	"#CC0000",
+
+	-- consistent colours used within the theme
+	UIMain	=	"#1E282F",	-- Main color of quads used around the theme
+	-- UISection	=	"#293338", --
+	UIDark	=	"#101519",	-- Darker, secondary color of quads used around the theme
+	UIPlot	=	"#565E6380",	-- An even darker color, used for the scatterplot
+	Edit	= 	"#B4B7BA",	-- Silver
+	W1		= 	"#21CCE8",	-- Dark Turquoise
+	W2		= 	"#E29C18",	-- Golden Rod
+	W3		= 	"#66C955",	-- Light Green
+	W4		= 	"#A272D5",	-- Medium Purple
+	W5		= 	"#C9855E",	-- Dark Salmon
+	W6		= 	"#FF3030",	-- Red
 }
 -- aliases
 _SL.Colors.TNS_W1 = _SL.Colors.W1

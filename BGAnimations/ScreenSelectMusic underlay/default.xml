@@ -6,10 +6,10 @@
 		OffCommand=""
 	/>
 	<Layer Type="Quad"
-			OnCommand="diffuse,#1E282F;stretchto,SCREEN_CENTER_X-(SCREEN_WIDTH*160/640+150),172,SCREEN_CENTER_X-(SCREEN_WIDTH*160/640-156),220"
+			OnCommand="diffuse,_SL.HexToRGB(_SL.Colors.UIMain);stretchto,SCREEN_CENTER_X-(SCREEN_WIDTH*160/640+150),172,SCREEN_CENTER_X-(SCREEN_WIDTH*160/640-156),220"
 	/>	
 	<Layer Type="Quad"
-			OnCommand="diffuse,#1E282F;stretchto,SCREEN_CENTER_X-(SCREEN_WIDTH*160/640+150),245,SCREEN_CENTER_X-(SCREEN_WIDTH*160/640-156),363"
+			OnCommand="diffuse,_SL.HexToRGB(_SL.Colors.UIMain);stretchto,SCREEN_CENTER_X-(SCREEN_WIDTH*160/640+150),245,SCREEN_CENTER_X-(SCREEN_WIDTH*160/640-156),363"
 	/>	
 	
 	<Layer 

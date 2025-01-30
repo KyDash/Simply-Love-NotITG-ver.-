@@ -13,6 +13,9 @@
 		ApplyHideBG()
 		SaveToProfile()
 		if GAMESTATE:IsCourseMode() then return end
+
+		local Colors = _SL.Colors
+		local RGB = _SL.HexToRGB
 		-- a little messy in terms of organization, sorry! - Ky
 
 		-- originally i wanted to make the column colors for the scatterplot be the ones being used in schall we step
@@ -25,11 +28,11 @@
 			'33FF66',
 		}]]
 		local columncolors = {
-			[-1] = '#FFFFFF',
-			[0] = '#ED1C24',
-			'#00AEEF',
-			'#39B54A',
-			'#FFF200',
+			[-1] = Colors.White, -- when sent from SendJudgment, no column info is provided
+			[0] = Colors.Red,
+			Colors.Blue,
+			Colors.Green,
+			Colors.Yellow,
 		}
 
 		for pn = 1, 2 do
@@ -40,16 +43,16 @@
 				local judgments = gradeframe'Judgments'
 				local radarvalues = gradeframe'Radar'
 				local actors = {
-					W1 =	{text = judgments'W1',		number = SCREENMAN('MarvelousNumberP' .. pn),	index = 0, color = _SL.Colors.W1},
-					W2 =	{text = judgments'W2',		number = SCREENMAN('PerfectNumberP' .. pn),		index = 1, color = _SL.Colors.W2},
-					W3 =	{text = judgments'W3',		number = SCREENMAN('GreatNumberP' .. pn),		index = 2, color = _SL.Colors.W3},
-					W4 =	{text = judgments'W4',		number = SCREENMAN('GoodNumberP' .. pn),		index = 3, color = _SL.Colors.W4},
-					W5 =	{text = judgments'W5',		number = SCREENMAN('BooNumberP' .. pn),			index = 4, color = _SL.Colors.W5},
-					W6 =	{text = judgments'W6',		number = SCREENMAN('MissNumberP' .. pn),		index = 5, color = _SL.Colors.W6},
-					Holds = {text = radarvalues'Holds', number = SCREENMAN('HoldsTextP' .. pn),			index = 0, color = _SL.Colors.White},
-					Mines = {text = radarvalues'Mines', number = SCREENMAN('MinesTextP' .. pn),			index = 1, color = _SL.Colors.White},
-					Hands = {text = radarvalues'Hands', number = SCREENMAN('HandsTextP' .. pn),			index = 2, color = _SL.Colors.White},
-					Rolls = {text = radarvalues'Rolls', number = SCREENMAN('RollsTextP' .. pn),			index = 3, color = _SL.Colors.White},
+					W1 =	{text = judgments'W1',		number = SCREENMAN('MarvelousNumberP' .. pn),	index = 0, color = Colors.W1},
+					W2 =	{text = judgments'W2',		number = SCREENMAN('PerfectNumberP' .. pn),		index = 1, color = Colors.W2},
+					W3 =	{text = judgments'W3',		number = SCREENMAN('GreatNumberP' .. pn),		index = 2, color = Colors.W3},
+					W4 =	{text = judgments'W4',		number = SCREENMAN('GoodNumberP' .. pn),		index = 3, color = Colors.W4},
+					W5 =	{text = judgments'W5',		number = SCREENMAN('BooNumberP' .. pn),			index = 4, color = Colors.W5},
+					W6 =	{text = judgments'W6',		number = SCREENMAN('MissNumberP' .. pn),		index = 5, color = Colors.W6},
+					Holds = {text = radarvalues'Holds', number = SCREENMAN('HoldsTextP' .. pn),			index = 0, color = Colors.White},
+					Mines = {text = radarvalues'Mines', number = SCREENMAN('MinesTextP' .. pn),			index = 1, color = Colors.White},
+					Hands = {text = radarvalues'Hands', number = SCREENMAN('HandsTextP' .. pn),			index = 2, color = Colors.White},
+					Rolls = {text = radarvalues'Rolls', number = SCREENMAN('RollsTextP' .. pn),			index = 3, color = Colors.White},
 				}
 
 				judgments:xy(pn == 1 and 190 or -200, -275)
@@ -57,8 +60,8 @@
 
 				for i, actor in pairs(actors) do
 					actor.text:y(77 * actor.index):shadowlength(0):horizalign'right'
-					actor.text:diffuse(_SL.HexToRGB(actor.color))
-					actor.number:diffuse(_SL.HexToRGB(actor.color))
+					actor.text:diffuse(RGB(actor.color))
+					actor.number:diffuse(RGB(actor.color))
 				end
 
 				local w5count = tonumber(actors.W5.number:GetText(), 10)
@@ -126,14 +129,14 @@
 						end
 						if tns ~= 'TNS_HitMine' and tns ~= 'TNS_Miss' and tns ~= 'TNS_AvoidMine' then
 							local offset = (-data.offset / (details.widestoffset + 0.01)) * panesize.height / 2
-							local color = _SL.Colors[string.sub(tns, 5)]
+							local color = Colors[string.sub(tns, 5)]
 							detailcache[i][0] = color
 							scatterplot:SetVertexPosition(vert1, x - 0.75, offset - 0.75, 0)
 										:SetVertexPosition(vert2, x - 0.75, offset + 0.75, 0)
 										:SetVertexPosition(vert3, x + 0.75, offset + 0.75, 0)
 										:SetVertexPosition(vert4, x + 0.75, offset - 0.75, 0)
 						elseif tns == 'TNS_Miss' then
-							local color = _SL.Colors.W6 .. '80'
+							local color = Colors.W6 .. '80'
 							detailcache[i][0] = color
 							detailcache[i][1] = detailcache[i][1] .. '80'
 							scatterplot:SetVertexPosition(vert1, x - 0.5, -halfheight, 0)
@@ -302,9 +305,9 @@
 						end
 						spellcard'Percent':settext(string.format('%.2f', percent))
 						if percent >= 100 then
-							spellcard'Percent':diffuse(_SL.HexToRGB(_SL.Colors.W1))
+							spellcard'Percent':diffuse(RGB(Colors.W1))
 						else
-							spellcard'Percent':diffuse(_SL.HexToRGB(_SL.Colors.White))
+							spellcard'Percent':diffuse(RGB(Colors.White))
 						end
 						for i, actor in pairs(spellcard'Numbers':GetChildren()) do
 							local count = tostring(judges[actor:GetName()])
@@ -384,14 +387,14 @@
 				do
 					local card = pane'PaneSpellcard'
 					card'Title':shadowlength(0):horizalign'left':zoom(0.55):xy(80, 1):maxwidth(395):vertalign'top'
-					card'TitleBorder':zoom(0.55):xy(80, 1):diffuse(0, 0, 0, 1)
+					card'TitleBorder':zoom(0.55):xy(80, 1)
 					for i, actor in ipairs(card'TitleBorder':GetChildren()) do
 						actor:shadowlength(0):horizalign'left':maxwidth(395):vertalign'top'
 					end
 					card'Percent':zoom(0.4):horizalign'right':shadowlength(0):xy(68, 15)
 					card'Difficulty':zoom(0.35):horizalign'right':shadowlength(0):xy(70, 31)
 					card'DifficultyNumber':zoom(0.3):horizalign'left':shadowlength(0):xy(79, 35.5)
-					card'DifficultyNumberBorder':zoom(0.3):xy(79, 35.5):diffuse(0, 0, 0, 1)
+					card'DifficultyNumberBorder':zoom(0.3):xy(79, 35.5)
 					for i, actor in ipairs(card'DifficultyNumberBorder':GetChildren()) do
 						actor:shadowlength(0):horizalign'left'
 					end
@@ -399,13 +402,13 @@
 					for i, actor in ipairs(card'Labels':GetChildren()) do
 						actor:y(21 * (i - 1)):zoom(0.35):shadowlength(0):horizalign'right'
 						local name = actor:GetName()
-						actor:diffuse(_SL.HexToRGB(_SL.Colors[name]))
+						actor:diffuse(RGB(Colors[name]))
 					end
 
 					card'Numbers':xy(101, 56.5)
 					for i, actor in ipairs(card'Numbers':GetChildren()) do
 						local name = actor:GetName()
-						actor:diffuse(_SL.HexToRGB(_SL.Colors[name]))
+						actor:diffuse(RGB(Colors[name]))
 						actor:y(21 * (i - 1)):zoom(0.3):shadowlength(0)
 						actor:settext('    ')
 					end
@@ -414,12 +417,12 @@
 					for i, actor in ipairs(card'RadarLabels':GetChildren()) do
 						actor:y(21 * (i - 1)):zoom(0.35):shadowlength(0):horizalign'right'
 						local name = actor:GetName()
-						-- actor:diffuse(_SL.HexToRGB(_SL.Colors[name]))
+						-- actor:diffuse(RGB(Colors[name]))
 					end
 					card'RadarNumbers':xy(256, 56.5)
 					for i, actor in ipairs(card'RadarNumbers':GetChildren()) do
 						local name = actor:GetName()
-						-- actor:diffuse(_SL.HexToRGB(_SL.Colors[name]))
+						-- actor:diffuse(RGB(Colors[name]))
 						actor:y(21 * (i - 1)):zoom(0.3):shadowlength(0)
 						actor:settext('   /   ')
 					end
@@ -433,28 +436,28 @@
 				local colorfuncs = {
 					[-1] = function()
 						local columns = pane'PaneColumns'
-						columns'Left':diffuse(_SL.HexToRGB(columncolors[-1]))
-						columns'Down':diffuse(_SL.HexToRGB(columncolors[-1]))
-						columns'Up':diffuse(_SL.HexToRGB(columncolors[-1]))
-						columns'Right':diffuse(_SL.HexToRGB(columncolors[-1]))
+						columns'Left':diffuse(RGB(columncolors[-1]))
+						columns'Down':diffuse(RGB(columncolors[-1]))
+						columns'Up':diffuse(RGB(columncolors[-1]))
+						columns'Right':diffuse(RGB(columncolors[-1]))
 					end,
 					[0] = function()
 						local columns = pane'PaneColumns'
 						for ci, column in ipairs{columns'Labels', columns'Left', columns'Down', columns'Up', columns'Right'} do
 							for i, actor in ipairs(column:GetChildren()) do
 								local name = actor:GetName()
-								if _SL.Colors[name] then
-									actor:diffuse(_SL.HexToRGB(_SL.Colors[name]))
+								if Colors[name] then
+									actor:diffuse(RGB(Colors[name]))
 								end
 							end
 						end
 					end,
 					function()
 						local columns = pane'PaneColumns'
-						columns'Left':diffuse(_SL.HexToRGB(columncolors[0]))
-						columns'Down':diffuse(_SL.HexToRGB(columncolors[1]))
-						columns'Up':diffuse(_SL.HexToRGB(columncolors[2]))
-						columns'Right':diffuse(_SL.HexToRGB(columncolors[3]))
+						columns'Left':diffuse(RGB(columncolors[0]))
+						columns'Down':diffuse(RGB(columncolors[1]))
+						columns'Up':diffuse(RGB(columncolors[2]))
+						columns'Right':diffuse(RGB(columncolors[3]))
 					end,
 				}
 
@@ -464,10 +467,10 @@
 						local vertindex = (i - 1) * 4
 						local vert1, vert2, vert3, vert4 = vertindex, vertindex + 1, vertindex + 2, vertindex + 3
 						local color = detailcache[i][index]
-						scatterplot:SetVertexColor(vert1, _SL.HexToRGB(color))
-									:SetVertexColor(vert2, _SL.HexToRGB(color))
-									:SetVertexColor(vert3, _SL.HexToRGB(color))
-									:SetVertexColor(vert4, _SL.HexToRGB(color))
+						scatterplot:SetVertexColor(vert1, RGB(color))
+									:SetVertexColor(vert2, RGB(color))
+									:SetVertexColor(vert3, RGB(color))
+									:SetVertexColor(vert4, RGB(color))
 					end
 					if not colorfuncs[index] then colorfuncs[-1]() return end
 					colorfuncs[index]()
@@ -515,23 +518,23 @@
 		end"
 	><children>
 		<!-- main portion, main stats, w = 305, h = 175-->
-		<Layer Type="Quad" Name="PaneBackground" OnCommand="diffuse,#1E282F;zoomto,305,175" />
+		<Layer Type="Quad" Name="PaneBackground" OnCommand="diffuse,_SL.HexToRGB(_SL.Colors.UIMain);zoomto,305,175" />
 		<!-- percentage, w = 165, h = 60-->
-		<Layer Type="Quad" Name="PanePercentageBackground" OnCommand="diffuse,#101519;zoomto,165,60" />
+		<Layer Type="Quad" Name="PanePercentageBackground" OnCommand="diffuse,_SL.HexToRGB(_SL.Colors.UIDark);zoomto,165,60" />
 		<!-- bottom of pane, lifebar, w = 305, h = 88-->
-		<Layer Type="Quad" OnCommand="diffuse,#101519;zoomto,305,88;y,175" />
+		<Layer Type="Quad" OnCommand="diffuse,_SL.HexToRGB(_SL.Colors.UIDark);zoomto,305,88;y,175" />
 		<Layer Type="Quad" OnCommand="zoomto,305,88;y,175;zwrite,1;blend,noeffect;" />
 		<Layer Type="Polygon" Name="SpellCards" OnCommand="y,175;ztestmode,writeonfail" />
 		<!-- transparent quads to dim colours so scatterplot and lifebars are easily visible with any colour -->
-		<Layer Type="Quad" OnCommand="diffuse,#101519C0;zoomto,305,44;y,175;fadetop,1;ztestmode,writeonfail" />
-		<Layer Type="Quad" OnCommand="diffuse,#101519C0;zoomto,305,44;y,175 + 44;fadebottom,1;ztestmode,writeonfail" />
-		<Layer Type="Quad" OnCommand="diffuse,#101519D0;zoomto,305,88;y,175;ztestmode,writeonfail" />
+		<Layer Type="Quad" OnCommand="diffuse,_SL.HexToRGB(_SL.Colors.UIDark .. 'C0');zoomto,305,44;y,175;fadetop,1;ztestmode,writeonfail" />
+		<Layer Type="Quad" OnCommand="diffuse,_SL.HexToRGB(_SL.Colors.UIDark .. 'C0');zoomto,305,44;y,175 + 44;fadebottom,1;ztestmode,writeonfail" />
+		<Layer Type="Quad" OnCommand="diffuse,_SL.HexToRGB(_SL.Colors.UIDark .. 'D0');zoomto,305,88;y,175;ztestmode,writeonfail" />
 		<!-- center to represent a 0 offset to more easily distinguish if notes are late or early-->
-		<Layer Type="Quad" OnCommand="diffuse,#565E6380;zoomto,305,1;y,175 + 43.5;ztestmode,writeonfail" />
+		<Layer Type="Quad" OnCommand="diffuse,_SL.HexToRGB(_SL.Colors.UIPlot);zoomto,305,1;y,175 + 43.5;ztestmode,writeonfail" />
 		<Layer Type="Polygon" Name="ScatterPlot" OnCommand="y,175 + 44;ztestmode,writeonfail;" />
 		<Layer Type="Polygon" Name="LifeBar" OnCommand="y,175 + 1;ztestmode,writeonfail;" />
 		<Layer Type="ActorFrame" Name="PaneColumns" InitCommand="hidden,1"><children>
-			<Layer Type="Quad" Name="PercentageBackground" OnCommand="diffuse,#101519;zoomto,74,27;xy,37,13.5" />
+			<Layer Type="Quad" Name="PercentageBackground" OnCommand="diffuse,_SL.HexToRGB(_SL.Colors.UIDark);zoomto,74,27;xy,37,13.5" />
 			<Layer Type="BitmapText" Font="_wendy small" Name="Percent" Text="100.00" />
 			<Layer Type="ActorFrame" Name="Labels"><children>
 				<Layer Type="BitmapText" Font="_misoreg white" Name="TNS_W1" Text="FANTASTIC" />
@@ -584,7 +587,7 @@
 		</children></Layer>
 
 		<Layer Type="ActorFrame" Name="PaneSpellcard" InitCommand="hidden,1"><children>
-			<Layer Type="Quad" Name="PercentageBackground" OnCommand="diffuse,#101519;zoomto,74,27;xy,37,13.5" />
+			<Layer Type="Quad" Name="PercentageBackground" OnCommand="diffuse,_SL.HexToRGB(_SL.Colors.UIDark);zoomto,74,27;xy,37,13.5" />
 			<Layer Type="BitmapText" Font="_wendy small" Name="Percent" Text="100.00" />
 			<Layer Type="BitmapText" Font="_misoreg white" Name="Difficulty" Text="Difficulty" />
 			<Layer Type="ActorFrame" Name="Labels"><children>
@@ -643,26 +646,26 @@
 		end"
 	><children>
 		<!-- main portion, main stats, w = 305, h = 175-->
-		<Layer Type="Quad" Name="PaneBackground" OnCommand="diffuse,#1E282F;zoomto,305,175" />
+		<Layer Type="Quad" Name="PaneBackground" OnCommand="diffuse,_SL.HexToRGB(_SL.Colors.UIMain);zoomto,305,175" />
 		<!-- percentage, w = 165, h = 60-->
-		<Layer Type="Quad" Name="PanePercentageBackground" OnCommand="diffuse,#101519;zoomto,165,60;x,140" />
+		<Layer Type="Quad" Name="PanePercentageBackground" OnCommand="diffuse,_SL.HexToRGB(_SL.Colors.UIDark);zoomto,165,60;x,140" />
 
 		<!-- bottom of pane, lifebar, w = 305, h = 88-->
-		<Layer Type="Quad" OnCommand="diffuse,#101519;zoomto,305,88;y,175" />
+		<Layer Type="Quad" OnCommand="diffuse,_SL.HexToRGB(_SL.Colors.UIDark);zoomto,305,88;y,175" />
 		<!-- figure out how to make this only render on p2 and not on p1 ever-->
 		<Layer Type="Quad" OnCommand="zoomto,305,88;y,175;zwrite,1;blend,noeffect;" />
 		<Layer Type="Polygon" Name="SpellCards" OnCommand="y,175;ztestmode,writeonfail" />
 		<!-- transparent quads to dim colours so scatterplot and lifebars are easily visible with any colour -->
-		<Layer Type="Quad" OnCommand="diffuse,#101519C0;zoomto,305,44;y,175;fadetop,1;ztestmode,writeonfail" />
-		<Layer Type="Quad" OnCommand="diffuse,#101519C0;zoomto,305,44;y,175 + 44;fadebottom,1;ztestmode,writeonfail" />
-		<Layer Type="Quad" OnCommand="diffuse,#101519D0;zoomto,305,88;y,175;ztestmode,writeonfail" />
+		<Layer Type="Quad" OnCommand="diffuse,_SL.HexToRGB(_SL.Colors.UIDark .. 'C0');zoomto,305,44;y,175;fadetop,1;ztestmode,writeonfail" />
+		<Layer Type="Quad" OnCommand="diffuse,_SL.HexToRGB(_SL.Colors.UIDark .. 'C0');zoomto,305,44;y,175 + 44;fadebottom,1;ztestmode,writeonfail" />
+		<Layer Type="Quad" OnCommand="diffuse,_SL.HexToRGB(_SL.Colors.UIDark .. 'D0');zoomto,305,88;y,175;ztestmode,writeonfail" />
 		<!-- center to represent a 0 offset to more easily distinguish if notes are late or early-->
-		<Layer Type="Quad" OnCommand="diffuse,#565E6380;zoomto,305,1;y,175 + 43.5;ztestmode,writeonfail" />
+		<Layer Type="Quad" OnCommand="diffuse,_SL.HexToRGB(_SL.Colors.UIPlot);zoomto,305,1;y,175 + 43.5;ztestmode,writeonfail" />
 		<Layer Type="Polygon" Name="ScatterPlot" OnCommand="y,175 + 44;ztestmode,writeonfail;" />
 		<Layer Type="Polygon" Name="LifeBar" OnCommand="y,175 + 1;ztestmode,writeonfail;" />
 
 		<Layer Type="ActorFrame" Name="PaneColumns" InitCommand="hidden,1"><children>
-			<Layer Type="Quad" Name="PercentageBackground" OnCommand="diffuse,#101519;zoomto,74,27;xy,37,13.5" />
+			<Layer Type="Quad" Name="PercentageBackground" OnCommand="diffuse,_SL.HexToRGB(_SL.Colors.UIDark);zoomto,74,27;xy,37,13.5" />
 			<Layer Type="BitmapText" Font="_wendy small" Name="Percent" Text="100.00" />
 			<Layer Type="ActorFrame" Name="Labels"><children>
 				<Layer Type="BitmapText" Font="_misoreg white" Name="TNS_W1" Text="FANTASTIC" />
@@ -715,7 +718,7 @@
 		</children></Layer>
 
 		<Layer Type="ActorFrame" Name="PaneSpellcard" InitCommand="hidden,1"><children>
-			<Layer Type="Quad" Name="PercentageBackground" OnCommand="diffuse,#101519;zoomto,74,27;xy,37,13.5" />
+			<Layer Type="Quad" Name="PercentageBackground" OnCommand="diffuse,_SL.HexToRGB(_SL.Colors.UIDark);zoomto,74,27;xy,37,13.5" />
 			<Layer Type="BitmapText" Font="_wendy small" Name="Percent" Text="100.00" />
 			<Layer Type="BitmapText" Font="_misoreg white" Name="Difficulty" Text="Difficulty" />
 			<Layer Type="ActorFrame" Name="Labels"><children>

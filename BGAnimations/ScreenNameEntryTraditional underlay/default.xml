@@ -10,13 +10,13 @@
 Condition="GAMESTATE:IsPlayerEnabled(PLAYER_1)"> 
 	<children>
 		<ActorFrame Command="queuecommand,Color" ColorCommand="%function() local s = SCREENMAN:GetTopScreen():GetChild('KeyboardP1') if s then s:GetChild('CursorP1'):diffuse(_SL.ColorRGB(1)) end end" />
-		<Layer Type="Quad" Command="diffuse,#1E282F00;stretchto,SCREEN_CENTER_X-310,180,SCREEN_CENTER_X-5,422;linear,.5;diffuse,#1E282F59"/>	
+		<Layer Type="Quad" Command="diffuse,_SL.HexToRGB(_SL.Colors.UIMain .. '00');stretchto,SCREEN_CENTER_X-310,180,SCREEN_CENTER_X-5,422;linear,.5;diffuse,_SL.HexToRGB(_SL.Colors.UIMain .. '59')"/>	
 	
-		<Layer Type="Quad" Command="diffuse,#00000000;stretchto,SCREEN_CENTER_X-310,117,SCREEN_CENTER_X-165,171;linear,.5;diffuse,#00000066"/>	
+		<Layer Type="Quad" Command="diffuse,_SL.HexToRGB(_SL.Colors.Stealth);stretchto,SCREEN_CENTER_X-310,117,SCREEN_CENTER_X-165,171;linear,.5;diffuse,#00000066"/>	
 		
-		<Layer Type="Quad" Command="diffuse,#00000000;stretchto,SCREEN_CENTER_X-310,236,SCREEN_CENTER_X-5,276;linear,.5;diffuse,#00000066"/>
+		<Layer Type="Quad" Command="diffuse,_SL.HexToRGB(_SL.Colors.Stealth);stretchto,SCREEN_CENTER_X-310,236,SCREEN_CENTER_X-5,276;linear,.5;diffuse,#00000066"/>
 
-		<Layer Type="Quad" Command="diffuse,#00000000;stretchto,SCREEN_CENTER_X-310,180,SCREEN_CENTER_X-5,236;linear,.5;diffuse,#00000099"/>		
+		<Layer Type="Quad" Command="diffuse,_SL.HexToRGB(_SL.Colors.Stealth);stretchto,SCREEN_CENTER_X-310,180,SCREEN_CENTER_X-5,236;linear,.5;diffuse,#00000099"/>		
 		
 		
 	</children></ActorFrame>
@@ -25,13 +25,13 @@ Condition="GAMESTATE:IsPlayerEnabled(PLAYER_1)">
 Condition="GAMESTATE:IsPlayerEnabled(PLAYER_2)"> 
 	<children>
 		<ActorFrame Command="queuecommand,Color" ColorCommand="%function() local s = SCREENMAN:GetTopScreen():GetChild('KeyboardP2') if s then s:GetChild('CursorP2'):diffuse(_SL.ColorRGB(-1)) end end" />
-		<Layer Type="Quad" Command="diffuse,#1E282F00;stretchto,SCREEN_CENTER_X+5,180,SCREEN_CENTER_X+310,422;diffuse,#1E282F59"/>	
+		<Layer Type="Quad" Command="diffuse,_SL.HexToRGB(_SL.Colors.UIMain .. '00');stretchto,SCREEN_CENTER_X+5,180,SCREEN_CENTER_X+310,422;diffuse,_SL.HexToRGB(_SL.Colors.UIMain .. '59')"/>	
 		
-		<Layer Type="Quad" Command="diffuse,#00000000;stretchto,SCREEN_CENTER_X+165,117,SCREEN_CENTER_X+310,171;diffuse,#00000066"/>	
+		<Layer Type="Quad" Command="diffuse,_SL.HexToRGB(_SL.Colors.Stealth);stretchto,SCREEN_CENTER_X+165,117,SCREEN_CENTER_X+310,171;diffuse,#00000066"/>	
 		
-		<Layer Type="Quad" Command="diffuse,#00000000;stretchto,SCREEN_CENTER_X+5,236,SCREEN_CENTER_X+310,276;diffuse,#00000066"/>	
+		<Layer Type="Quad" Command="diffuse,_SL.HexToRGB(_SL.Colors.Stealth);stretchto,SCREEN_CENTER_X+5,236,SCREEN_CENTER_X+310,276;diffuse,#00000066"/>	
 		
-		<Layer Type="Quad" Command="diffuse,#00000000;stretchto,SCREEN_CENTER_X+5,180,SCREEN_CENTER_X+310,236;diffuse,#00000099"/>	
+		<Layer Type="Quad" Command="diffuse,_SL.HexToRGB(_SL.Colors.Stealth);stretchto,SCREEN_CENTER_X+5,180,SCREEN_CENTER_X+310,236;diffuse,#00000099"/>	
 		
 
 	

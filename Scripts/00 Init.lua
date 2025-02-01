@@ -53,6 +53,7 @@ if istournament then
             :SetPreference('SmoothLines',                           true)
             :SetPreference('SoundDrivers',                          'WaveOut')
             :SetPreference('SoundResampleQuality',                  1)
+            :SetPreference('AutoMapOnJoyChange',                    false)
 
             -- notitg specific
             :SetPreference('AlwaysShowUnknownModsWarning',      0)

@@ -35,13 +35,17 @@
 			Colors.Yellow,
 		}
 
+		-- overall pane logic contained here
 		for pn = 1, 2 do
-			if GAMESTATE:IsPlayerEnabled(pn - 1) then
+			if GAMESTATE:IsPlayerEnabled(pn - 1) then -- only operate on player actors if they are joined, else they won't exist
+
 				-- main pane --
-				-- judgment info logic
+				-- judgment and radar display
+				-- fetch the actors set laid down by the game
 				local gradeframe = SCREENMAN('GradeFrameP' .. pn)
 				local judgments = gradeframe'Judgments'
 				local radarvalues = gradeframe'Radar'
+				-- store actors in a table, easier to run through and operate on in a loop
 				local actors = {
 					W1 =	{text = judgments'W1',		number = SCREENMAN('MarvelousNumberP' .. pn),	index = 0, color = Colors.W1},
 					W2 =	{text = judgments'W2',		number = SCREENMAN('PerfectNumberP' .. pn),		index = 1, color = Colors.W2},
@@ -55,33 +59,91 @@
 					Rolls = {text = radarvalues'Rolls', number = SCREENMAN('RollsTextP' .. pn),			index = 3, color = Colors.White},
 				}
 
+				-- judgment and radar values are slightly different for each player, the score displays on the opposite edge of the pane, so we need to shift the positions accordingly
 				judgments:xy(pn == 1 and 190 or -200, -275)
 				radarvalues:xy(pn == 1 and -300 or 195, -125)
 
 				for i, actor in pairs(actors) do
+					-- position text vertically in accordance to their row index relative to each column
+					-- in addition, remove any shadows from underneath and align to right
 					actor.text:y(77 * actor.index):shadowlength(0):horizalign'right'
+					-- diffuse to the commonly used colours representing the judgments
 					actor.text:diffuse(RGB(actor.color))
 					actor.number:diffuse(RGB(actor.color))
 				end
 
+				-- easter egg: replace the WAY OFF judgment text to pad if the judgment count is above 0
+				-- gotta keep the mod tournament customs around in someway ;>
 				local w5count = tonumber(actors.W5.number:GetText(), 10)
 				if w5count > 0 then actors.W5.text:settext'pad' end
 
-				-- if not Decents() then actors.W4.number:settext('    ') end
-				-- if not WayOffs() then actors.W5.number:settext('    ') end
-
-				-- additional pane stuff
+				-- additional panes, not created by default by the game, so we gotta do some additional things
 				local pane = SCREENMAN'Underlay'('GradePaneP' .. pn)
-				-- bottom of pane --
 
+				-- logic for those additional panes, this is where the ordering gets messy, mostly due to function scopes
+
+				-- table that will cache the color of spellcard points, as there are multiple color states for each point
 				local detailcache = {}
-				-- lifebar / scatterplot / spellcard logic
+
+				-- the StageStats object for the song(s) that was(were) just played 
 				local stats = STATSMAN:GetCurStageStats()
+
+				-- no course support yet, so we're only operating on the first (and only) song from within the song array
 				local song = stats:GetPossibleSongs()[1]
+
+				-- get the length of our steps to scale our polygons into the width of our pane
 				local songlen = song:StepsLengthSeconds()
+
+				-- the PlayerStageStats object, this holds the bulk of the information we want
 				local pss = stats:GetPlayerStageStats(pn - 1)
+
+				-- table of our overly detailed stats, I wanted something rather detail rich in information
+				--[[ the format of the table is as such:
+				{
+					float widestoffset -- the (absolute) deviation in milliseconds that a fully judged note was hit furthest from 0
+					float widestearlyoffset -- just like the above, but accounting for notes that were hit early and then recalculated
+					-- every single note hit within a song will have it's own table containing info about the notes in question
+					{
+						Song song -- the Song object of the judged note, this can be useful for courses, as the song won't always be the same and this can be used to distinguish which song a note belongs to
+						-- note: row, beat, and time are not the points in time of where a judgment occurs, but rather the position in the chart a note is in
+						int row -- the row of the judged note, there are 192 rows per measure, so 48 rows per beat
+						float beat -- the beat of the judged note
+						float time -- the time in secons of the judged note
+						float offset -- the timing deviation of the judged note in milliseconds, this will be null in the following cases:
+							-- the judgment is TNS_Miss
+							-- the judgment is a HoldNoteScore
+							-- the note type is a Mine
+						TapNoteScore earlytns -- the TapNoteScore value of a note that was hit early, and then recalculated
+						TapNoteScore tns -- the TapNoteScore value of a fully judged note
+						-- note: TapNoteScore can be the following values, these are passed to lua as strings:
+							-- TNS_W1			-- traditionally known as Fantastic or Marvelous
+							-- TNS_W2			-- traditionally known as Excellent or Perfect
+							-- TNS_W3			-- traditionally known as Great
+							-- TNS_W4			-- traditionally known as Decent or Good
+							-- TNS_W5			-- traditionally known as Way Off or Boo
+							-- TNS_Miss			-- these last three are pretty self explanatory
+							-- TNS_HitMine
+							-- TNS_AvoidMine
+						HoldNoteScore hns -- the HoldNoteScore of a judged note
+						-- note: HoldNoteScore can be the following values, these are passed to lua as strings:
+							-- HNS_OK	-- a hold or roll that was held to completion
+							-- HNS_NG	-- a hold or roll that was let go before it's full length
+						table notes { -- table of information of notes judged, this can have multiple notes as jumps and chords all have more than one note, but only have share single judgment under normal gameplay, note that this will be nil if the judgment has been sent in from Player.SendJudgment in a song
+							table[int] column {} -- will hold the column numbers of each note judged, columns are 0-indexed
+							table[NoteType] type {} -- the NoteType of notes judged in a row, the index positions of this is shared with column, meaning that the column information of column[1] corresponds to the note type of type[1]
+							note: NoteType can be the following values, these are passed to lua as strings:
+								Tap
+								Hold
+								Roll
+								Mine
+								Attack
+							int quant -- the quantization of a note, can be one of the following: 4, 8, 12, 16, 24, 32, 48, 64, 192
+						}
+					}
+				}
+				]]
 				local details = pss:GetDetailedStageStats()
-				local widestoffset = 0
+				-- base table for per-column judgment counts
 				local columncounts = {
 					[0] = {TNS_W1 = 0, TNS_W2 = 0, TNS_W3 = 0, TNS_W4 = 0, TNS_W5 = 0, TNS_Miss = 0, TNS_HitMine = 0, TNS_AvoidMine = 0, Hold = {HNS_OK = 0, HNS_NG = 0}, Roll = {HNS_OK = 0, HNS_NG = 0}},
 					{TNS_W1 = 0, TNS_W2 = 0, TNS_W3 = 0, TNS_W4 = 0, TNS_W5 = 0, TNS_Miss = 0, TNS_HitMine = 0, TNS_AvoidMine = 0, Hold = {HNS_OK = 0, HNS_NG = 0}, Roll = {HNS_OK = 0, HNS_NG = 0}},
@@ -89,283 +151,20 @@
 					{TNS_W1 = 0, TNS_W2 = 0, TNS_W3 = 0, TNS_W4 = 0, TNS_W5 = 0, TNS_Miss = 0, TNS_HitMine = 0, TNS_AvoidMine = 0, Hold = {HNS_OK = 0, HNS_NG = 0}, Roll = {HNS_OK = 0, HNS_NG = 0}},
 				}
 
-				local lifebar = pane'LifeBar'
-				local scatterplot = pane'ScatterPlot'
-
-				local panesize = {width = 305, height = 86, padding = 2}
-				local halfheight = (panesize.height + panesize.padding) / 2
-				local datasize = #details
-
-				lifebar:SetDrawMode'linestrip':SetNumVertices(datasize + 2):SetLineWidth(2)
-				scatterplot:SetDrawMode'quads':SetNumVertices(datasize * 4)
-				do
-					-- add a point at song start to draw the lifebar
-					local when = 0
-					local life = pss:GetLifeRecordLerpAt(when)
-					local x = when / songlen * panesize.width
-					lifebar:SetVertexPosition(0, x, panesize.height - (life * panesize.height), 0)
-							:SetVertexColor(0, 1, 1, 1, 0.75)
-				end
-
-				for i, data in ipairs(details) do
-					-- main lifebar portion
-					detailcache[i] = {}
-					local when = data.time
-					local life = pss:GetLifeRecordLerpAt(when)
-					local x = when / songlen * panesize.width
-					lifebar:SetVertexPosition(i, x, panesize.height - (life * panesize.height), 0)
-							:SetVertexColor(i, 1, 1, 1, 0.75)
-
-					local index = (i - 1) * 4
-					local vert1, vert2, vert3, vert4 = index, index + 1, index + 2, index + 3
-					if data.tns then
-						local tns = data.tns
-						local column = data.notes[1].column or -1
-						detailcache[i][1] = columncolors[column]
-						for i, note in ipairs(data.notes) do
-							if note.column then
-								columncounts[note.column][tns] = columncounts[note.column][tns] + 1
-							end
-						end
-						if tns ~= 'TNS_HitMine' and tns ~= 'TNS_Miss' and tns ~= 'TNS_AvoidMine' then
-							local offset = (-data.offset / (details.widestoffset + 0.01)) * panesize.height / 2
-							local color = Colors[string.sub(tns, 5)]
-							detailcache[i][0] = color
-							scatterplot:SetVertexPosition(vert1, x - 0.75, offset - 0.75, 0)
-										:SetVertexPosition(vert2, x - 0.75, offset + 0.75, 0)
-										:SetVertexPosition(vert3, x + 0.75, offset + 0.75, 0)
-										:SetVertexPosition(vert4, x + 0.75, offset - 0.75, 0)
-						elseif tns == 'TNS_Miss' then
-							local color = Colors.W6 .. '80'
-							detailcache[i][0] = color
-							detailcache[i][1] = detailcache[i][1] .. '80'
-							scatterplot:SetVertexPosition(vert1, x - 0.5, -halfheight, 0)
-										:SetVertexPosition(vert2, x - 0.5, halfheight, 0)
-										:SetVertexPosition(vert3, x + 0.5, halfheight, 0)
-										:SetVertexPosition(vert4, x + 0.5, -halfheight, 0)
-						elseif tns == 'TNS_HitMine' then
-							detailcache[i][0] = '#88888880'
-							detailcache[i][1] = detailcache[i][1] .. '80'
-							scatterplot:SetVertexPosition(vert1, x - 0.5, -halfheight, 0)
-										:SetVertexPosition(vert2, x - 0.5, halfheight, 0)
-										:SetVertexPosition(vert3, x + 0.5, halfheight, 0)
-										:SetVertexPosition(vert4, x + 0.5, -halfheight, 0)
-						else
-							detailcache[i][0] = '#00000000'
-							detailcache[i][1] = '#00000000'
-							scatterplot:SetVertexPosition(vert1, x, 0, 0)
-										:SetVertexPosition(vert2, x, 0, 0)
-										:SetVertexPosition(vert3, x, 0, 0)
-										:SetVertexPosition(vert4, x, 0, 0)
-						end
-					else
-						detailcache[i][0] = '#00000000'
-						detailcache[i][1] = '#00000000'
-						scatterplot:SetVertexPosition(vert1, x, 0, 0)
-									:SetVertexPosition(vert2, x, 0, 0)
-									:SetVertexPosition(vert3, x, 0, 0)
-									:SetVertexPosition(vert4, x, 0, 0)
-					end
-				end
-				do
-					-- add a point at song end to draw the lifebar
-					local when = songlen
-					local life = pss:GetLifeRecordLerpAt(when)
-					local x = when / songlen * panesize.width
-					lifebar:SetVertexPosition(datasize + 1, x, panesize.height - (life * panesize.height), 0)
-							:SetVertexColor(datasize + 1, 1, 1, 1, 0.75)
-				end
-
-				local paneactors = {
-					[0] = {
-						gradeframe,
-						SCREENMAN('MarvelousNumberP' .. pn),
-						SCREENMAN('PerfectNumberP' .. pn),
-						SCREENMAN('GreatNumberP' .. pn),
-						SCREENMAN('GoodNumberP' .. pn),
-						SCREENMAN('BooNumberP' .. pn),
-						SCREENMAN('MissNumberP' .. pn),
-						SCREENMAN('HoldsTextP' .. pn),
-						SCREENMAN('MinesTextP' .. pn),
-						SCREENMAN('HandsTextP' .. pn),
-						SCREENMAN('RollsTextP' .. pn),
-						pane'PanePercentageBackground',
-						SCREENMAN('PercentP' .. pn),
-					},
-					{pane'PaneColumns'},
-				}
-
-				local spellcardcache = {}
-				-- will need to make a little more detailed full (hns, etc, etc), naive will be good for now
-				local dp = {
-					TNS_W1 = PREFSMAN:GetPreference'PercentScoreWeightMarvelous',
-					TNS_W2 = PREFSMAN:GetPreference'PercentScoreWeightPerfect',
-					TNS_W3 = PREFSMAN:GetPreference'PercentScoreWeightGreat',
-					TNS_W4 = PREFSMAN:GetPreference'PercentScoreWeightGood',
-					TNS_W5 = PREFSMAN:GetPreference'PercentScoreWeightBoo',
-					TNS_Miss = PREFSMAN:GetPreference'PercentScoreWeightMiss',
-					TNS_HitMine = PREFSMAN:GetPreference'PercentScoreWeightHitMine',
-					TNS_AvoidMine = 0,
-					HNS_OK = PREFSMAN:GetPreference'PercentScoreWeightOK',
-					HNS_NG = PREFSMAN:GetPreference'PercentScoreWeightNG',
-				}
-				-- get the amount of judgments for a spellcard range (inclusive)
-				local function getjudgmentsforspellcardrange(firstbeat, lastbeat)
-					if spellcardcache[firstbeat] then
-						if spellcardcache[firstbeat][lastbeat] then return spellcardcache[firstbeat][lastbeat] end
-						spellcardcache[firstbeat][lastbeat] = {TNS_W1 = 0, TNS_W2 = 0, TNS_W3 = 0, TNS_W4 = 0, TNS_W5 = 0, TNS_Miss = 0, TNS_HitMine = 0, TNS_AvoidMine = 0, Hold = {HNS_OK = 0, HNS_NG = 0}, Roll = {HNS_OK = 0, HNS_NG = 0}, maxdp = 0, obtaineddp = 0}
-						-- no notes in spellcard, so return
-						if not spellcardcache[firstbeat].index then return spellcardcache[firstbeat][lastbeat] end
-						local cache = spellcardcache[firstbeat][lastbeat]
-						for i = spellcardcache[firstbeat].index, #details do
-							local data = details[i]
-							if data.beat > lastbeat then return spellcardcache[firstbeat][lastbeat] end
-							if data.tns then
-								cache[data.tns] = cache[data.tns] + 1
-								if data.tns ~= 'TNS_HitMine' and data.tns ~= 'TNS_AvoidMine' then
-									cache.maxdp = cache.maxdp + dp.TNS_W1
-								end
-								cache.obtaineddp = cache.obtaineddp + dp[data.tns]
-							end
-							if data.hns then
-								for c, note in ipairs(data.notes) do
-									cache[note.type][data.hns] = cache[note.type][data.hns] + 1
-									cache.maxdp = cache.maxdp + dp.HNS_OK
-									cache.obtaineddp = cache.obtaineddp + dp[data.hns]
-								end
-							end
-						end
-						return spellcardcache[firstbeat][lastbeat]
-					end
-					spellcardcache[firstbeat] = {}
-					spellcardcache[firstbeat][lastbeat] = {TNS_W1 = 0, TNS_W2 = 0, TNS_W3 = 0, TNS_W4 = 0, TNS_W5 = 0, TNS_Miss = 0, TNS_HitMine = 0, TNS_AvoidMine = 0, Hold = {HNS_OK = 0, HNS_NG = 0}, Roll = {HNS_OK = 0, HNS_NG = 0}, maxdp = 0, obtaineddp = 0}
-					local cache = spellcardcache[firstbeat][lastbeat]
-					for i, data in ipairs(details) do
-						if data.beat > lastbeat then return spellcardcache[firstbeat][lastbeat] end
-						if data.beat >= firstbeat then
-							if not spellcardcache[firstbeat].index then spellcardcache[firstbeat].index = i end
-							if data.tns then
-								cache[data.tns] = cache[data.tns] + 1
-								if data.tns ~= 'TNS_HitMine' and data.tns ~= 'TNS_AvoidMine' then
-									cache.maxdp = cache.maxdp + dp.TNS_W1
-								end
-								cache.obtaineddp = cache.obtaineddp + dp[data.tns]
-							end
-							if data.hns then
-								for c, note in ipairs(data.notes) do
-									cache[note.type][data.hns] = cache[note.type][data.hns] + 1
-									cache.maxdp = cache.maxdp + dp.HNS_OK
-									cache.obtaineddp = cache.obtaineddp + dp[data.hns]
-								end
-							end
-						end
-					end
-					return spellcardcache[firstbeat][lastbeat]
-				end
-
-				local panefuncs = {
-					[-1] = function() end,
-					[0] = function() end,
-					function() end,
-				}
-
-
-				local spellcardregion = pane'SpellCards'
-				local spellcards = song:GetSpellCards()
-				spellcardregion:SetDrawMode'quads':SetNumVertices(#spellcards * 8)
-				for i, card in ipairs(spellcards) do
-					table.insert(paneactors, {pane'PaneSpellcard'})
-					local card = card -- scoping strikes again!
-					table.insert(panefuncs, function()
-						local judges = getjudgmentsforspellcardrange(card.StartBeat, card.EndBeat)
-						local spellcard = pane'PaneSpellcard'
-						local r, g, b, a = unpack(card.Color)
-						spellcard'Title':settext(card.Name):diffuse(r, g, b, a)
-						spellcard'DifficultyNumber':settext(card.Difficulty):diffuse(r, g, b, a)
-						-- from https://alienryderflex.com/hsp.html
-						local hspluminance = math.sqrt((r * r * 0.299) + (g * g * 0.587) + (b * b * 0.114))
-						-- threshold of 0.35 seems to be fine
-						local inverse = 1 - hspluminance
-						inverse = inverse * inverse
-						spellcard'TitleBorder':diffuse(inverse, inverse, inverse, 1)
-						spellcard'DifficultyNumberBorder':diffuse(inverse, inverse, inverse, 1)
-						
-						for i, actor in ipairs(spellcard'TitleBorder':GetChildren()) do
-							-- diffuse the opposite of the color
-							-- local r, g, b, a = 1 - card.Color[1], 1 - card.Color[2], 1 - card.Color[3], card.Color[4] * 0.5
-							actor:settext(card.Name)--:diffuse(r, g, b, a)
-						end
-						for i, actor in ipairs(spellcard'DifficultyNumberBorder':GetChildren()) do
-							-- local r, g, b, a = 1 - card.Color[1], 1 - card.Color[2], 1 - card.Color[3], card.Color[4] * 0.5
-							actor:settext(card.Difficulty)--:diffuse(r, g, b, a)
-						end
-						local percent = 0
-						if judges.maxdp > 0 then
-							percent = judges.obtaineddp / judges.maxdp * 100
-						end
-						spellcard'Percent':settext(string.format('%.2f', percent))
-						if percent >= 100 then
-							spellcard'Percent':diffuse(RGB(Colors.W1))
-						else
-							spellcard'Percent':diffuse(RGB(Colors.White))
-						end
-						for i, actor in pairs(spellcard'Numbers':GetChildren()) do
-							local count = tostring(judges[actor:GetName()])
-							local len = #count
-							if len < 5 then count = string.rep(' ', 4 - len) .. count end
-							actor:settext(count)
-							-- print(i, v)
-						end
-						do
-							local total = tostring(judges.Hold.HNS_OK + judges.Hold.HNS_NG)
-							local success = tostring(judges.Hold.HNS_OK)
-							if #total < 4 then total = string.rep(' ', 3 - #total) .. total end
-							if #success < 4 then success = string.rep(' ', 3 - #success) .. success end
-							spellcard'RadarNumbers''Holds':settext(success .. '/' .. total)
-						end
-						do
-							local total = tostring(judges.Roll.HNS_OK + judges.Roll.HNS_NG)
-							local success = tostring(judges.Roll.HNS_OK)
-							if #total < 4 then total = string.rep(' ', 3 - #total) .. total end
-							if #success < 4 then success = string.rep(' ', 3 - #success) .. success end
-							spellcard'RadarNumbers''Rolls':settext(success .. '/' .. total)
-						end
-
-						do
-							local total = tostring(judges.TNS_HitMine + judges.TNS_AvoidMine)
-							local success = tostring(judges.TNS_AvoidMine)
-							if #total < 4 then total = string.rep(' ', 3 - #total) .. total end
-							if #success < 4 then success = string.rep(' ', 3 - #success) .. success end
-							spellcard'RadarNumbers''Mines':settext(success .. '/' .. total)
-						end
-					end)
-					local index = (i - 1) * 4
-					local vert1, vert2, vert3, vert4 = index, index + 1, index + 2, index + 3
-					local left = song:GetElapsedTimeFromBeat(card.StartBeat) / songlen * panesize.width
-					local right = song:GetElapsedTimeFromBeat(card.EndBeat) / songlen * panesize.width
-					local color = card.Color
-					spellcardregion:SetVertexPosition(vert1, left, 0, 0)
-								:SetVertexPosition(vert2, left, panesize.height + panesize.padding, 0)
-								:SetVertexPosition(vert3, right, panesize.height + panesize.padding, 0)
-								:SetVertexPosition(vert4, right, 0, 0)
-								:SetVertexColor(vert1, color[1], color[2], color[3], color[4])
-								:SetVertexColor(vert2, color[1], color[2], color[3], color[4])
-								:SetVertexColor(vert3, color[1], color[2], color[3], color[4])
-								:SetVertexColor(vert4, color[1], color[2], color[3], color[4])
-				end
-
-				-- column pane --
+				-- per-column pane --
 				do
 					local columns = pane'PaneColumns'
-					-- columns:y(2)
+					-- set position of actors
 					columns'Labels':xy(70, 52)
 					columns'Percent':zoom(0.4):horizalign'right':shadowlength(0):xy(68, 15):settext(string.gsub(SCREENMAN('PercentP' .. pn)(1):GetText(), '%%', ''))
+					-- rotate the arrow model to the direction represented by each column
 					columns'Left''Note':rotationz(90)
 					columns'Up''Note':rotationz(180)
 					columns'Right''Note':rotationz(-90)
 					for i, v in ipairs(columns'Labels':GetChildren()) do
 						v:y(21 * (i - 1)):zoom(0.35):shadowlength(0):horizalign'right'
 					end
+					-- set judgment counts for each column
 					for ci, column in ipairs{columns'Left', columns'Down', columns'Up', columns'Right'} do
 						column:xy(ci * 55 + 46, 56.5)
 						for i, actor in ipairs(column:GetChildren()) do
@@ -377,15 +176,15 @@
 								actor:settext(count)
 							end
 						end
-						-- if not Decents() then column'TNS_W4':settext('    ') end
-						-- if not WayOffs() then column'TNS_W5':settext('    ') end
 						column'Note':zoom(0.5):y(-30)
 					end
 				end
 
 				-- spellcard pane --
 				do
+					-- base spellcard setup, each spellcard pane shares this setup in common 
 					local card = pane'PaneSpellcard'
+					-- ensure title horizontally fits within our pane
 					card'Title':shadowlength(0):horizalign'left':zoom(0.55):xy(80, 1):maxwidth(395):vertalign'top'
 					card'TitleBorder':zoom(0.55):xy(80, 1)
 					for i, actor in ipairs(card'TitleBorder':GetChildren()) do
@@ -402,9 +201,11 @@
 					for i, actor in ipairs(card'Labels':GetChildren()) do
 						actor:y(21 * (i - 1)):zoom(0.35):shadowlength(0):horizalign'right'
 						local name = actor:GetName()
+						-- diffuse judgments to judgment colors
 						actor:diffuse(RGB(Colors[name]))
 					end
 
+					-- base number setup, diffuse to judgment colors, and set values to four spaces
 					card'Numbers':xy(101, 56.5)
 					for i, actor in ipairs(card'Numbers':GetChildren()) do
 						local name = actor:GetName()
@@ -428,12 +229,236 @@
 					end
 				end
 
-				-- pane switching logic
+				-- fetch the lifebar and scatterplot actors on out pane
+				local lifebar = pane'LifeBar'
+				local scatterplot = pane'ScatterPlot'
 
-				local vindex = 0
-				local hindex = 0
+				-- pane width and height
+				local panesize = {width = 305, height = 86, padding = 2}
+				local halfheight = (panesize.height + panesize.padding) / 2
 
+				-- length of our judgment detail table
+				local datasize = #details
+
+				-- set the lifebar to contain a point for every judgment, + 2 to plot the state at the beginning and end of a song
+				-- lifebar only needs to be a line, and not a filled shape, so use GL_LINE_STRIP as the drawing mode, and a width of 2 so the line isn't too thin and deal with ugly sub pixel display situations
+				lifebar:SetDrawMode'linestrip':SetNumVertices(datasize + 2):SetLineWidth(2)
+				-- our scatterplot is made out of multiple tiny quads, one per judgment, which need four points to be filled
+				scatterplot:SetDrawMode'quads':SetNumVertices(datasize * 4)
+
+				-- helper to plot lifebar, takes the time to calculate the y position of the point, and the x position of where our lifebar line goes
+				local plotlifebar
+				do
+					local idx = 0
+					plotlifebar = function(when, x)
+						local life = pss:GetLifeRecordLerpAt(when)
+						local y = panesize.height - (life * panesize.height)
+						lifebar:SetVertexPosition(idx, x, y, 0)
+								:SetVertexColor(idx, 1, 1, 1, 0.75)
+						idx = idx + 1
+					end
+				end
+
+				-- add a point at song start to draw the lifebar's initial value and fill out the line from the left edge of our graph
+				plotlifebar(0, 0)
+
+				for i, data in ipairs(details) do
+					-- create a table to store the multiple color states of this point
+					detailcache[i] = {}
+
+					-- time of judge to figure out where on the x axis we need to draw our lifebar and spellcard point
+					local when = data.time
+					-- scale time into a value from 0 to 1, multiplied by the width of our pane
+					local x = when / songlen * panesize.width
+					-- add a point to our lifebar
+					plotlifebar(when, x)
+
+					-- current quad index we're dealing with
+					local index = (i - 1) * 4
+					-- the individual vertexes of our quad
+					local vert1, vert2, vert3, vert4 = index, index + 1, index + 2, index + 3
+					-- check if our judgment is a TapNoteScore
+					if data.tns then
+						local tns = data.tns
+						-- only grab the first column for our colours, i'm still not sure how to handle jumps, to be honest
+						-- if we don't have a column, because or data is being passed from Player.SendJudgment, fall back to an invalid column
+						local column = data.notes[1].column or -1
+						-- store the column color into our cache
+						detailcache[i][1] = columncolors[column]
+						-- run through our column info, if any, increment the tns value for our per-column table
+						for i, note in ipairs(data.notes) do
+							if note.column then
+								columncounts[note.column][tns] = columncounts[note.column][tns] + 1
+							end
+						end
+						-- we want to draw one small quad for normal judgments, but in the event of missing a note or hitting a mine, we want to use a small strip that stretches the full height of our graph, so check for those cases here
+						if tns ~= 'TNS_HitMine' and tns ~= 'TNS_Miss' and tns ~= 'TNS_AvoidMine' then -- a normal timing window
+							-- get the offset of the judged note, scale it so only the note with our widest offset reaches top or bottom of the graph
+							local offset = (-data.offset / (details.widestoffset + 0.01)) * panesize.height / 2
+							-- cache the judgment color of our point
+							detailcache[i][0] = Colors[tns]
+							-- plot the position of our points, shift the vertexes a tiny bit so the center of each quad is where our judgment is
+							scatterplot:SetVertexPosition(vert1, x - 0.75, offset - 0.75, 0)
+										:SetVertexPosition(vert2, x - 0.75, offset + 0.75, 0)
+										:SetVertexPosition(vert3, x + 0.75, offset + 0.75, 0)
+										:SetVertexPosition(vert4, x + 0.75, offset - 0.75, 0)
+						elseif tns == 'TNS_Miss' then
+							-- make the colour of misses slightly transparent, so it doesn't mask out our surrounding judgments
+							detailcache[i][0] = Colors[tns] .. '80'
+							detailcache[i][1] = detailcache[i][1] .. '80'
+							-- we only need to care about the x position of misses, as they take up the full graph height
+							scatterplot:SetVertexPosition(vert1, x - 0.5, -halfheight, 0)
+										:SetVertexPosition(vert2, x - 0.5, halfheight, 0)
+										:SetVertexPosition(vert3, x + 0.5, halfheight, 0)
+										:SetVertexPosition(vert4, x + 0.5, -halfheight, 0)
+						elseif tns == 'TNS_HitMine' then
+							-- hit mines are a strip taking up the full graph height, but are grey in color
+							-- same as misses, they should also be slightly transparent
+							detailcache[i][0] = '#88888880'
+							detailcache[i][1] = detailcache[i][1] .. '80'
+							scatterplot:SetVertexPosition(vert1, x - 0.5, -halfheight, 0)
+										:SetVertexPosition(vert2, x - 0.5, halfheight, 0)
+										:SetVertexPosition(vert3, x + 0.5, halfheight, 0)
+										:SetVertexPosition(vert4, x + 0.5, -halfheight, 0)
+						else
+							-- other tns information that are not regular judgments or hit mines, in this case avoided mines
+							-- we do not care about these so set them to be invisible
+							detailcache[i][0] = Colors.Stealth
+							detailcache[i][1] = Colors.Stealth
+							scatterplot:SetVertexPosition(vert1, x, 0, 0)
+										:SetVertexPosition(vert2, x, 0, 0)
+										:SetVertexPosition(vert3, x, 0, 0)
+										:SetVertexPosition(vert4, x, 0, 0)
+						end
+					else
+						-- notes without any TapNoteScore data, in this case, holds, which we don't need to mark on our graph, the dip in life will be enough to indicate a dropped hold, so make these invisible as well
+						detailcache[i][0] = Colors.Stealth
+						detailcache[i][1] = Colors.Stealth
+						scatterplot:SetVertexPosition(vert1, x, 0, 0)
+									:SetVertexPosition(vert2, x, 0, 0)
+									:SetVertexPosition(vert3, x, 0, 0)
+									:SetVertexPosition(vert4, x, 0, 0)
+					end
+				end
+				-- add a point at song end to draw the lifebar
+				plotlifebar(songlen, panesize.width)
+
+				-- table of existing panes, and the actors being held inside, this is used to hide and unhide actors depending on which pane is being viewed
+				local paneactors = {
+					-- default judgment and radar count pane
+					[0] = {
+						gradeframe,
+						SCREENMAN('MarvelousNumberP' .. pn),
+						SCREENMAN('PerfectNumberP' .. pn),
+						SCREENMAN('GreatNumberP' .. pn),
+						SCREENMAN('GoodNumberP' .. pn),
+						SCREENMAN('BooNumberP' .. pn),
+						SCREENMAN('MissNumberP' .. pn),
+						SCREENMAN('HoldsTextP' .. pn),
+						SCREENMAN('MinesTextP' .. pn),
+						SCREENMAN('HandsTextP' .. pn),
+						SCREENMAN('RollsTextP' .. pn),
+						pane'PanePercentageBackground',
+						SCREENMAN('PercentP' .. pn),
+					},
+					-- per-column judgment count pane
+					{pane'PaneColumns'},
+
+					-- other panes will automatically add the actors that they use in this table dynamically
+				}
+
+				-- get the preferences of how many points are returned for judgments
+				local dp = {
+					TNS_W1 = PREFSMAN:GetPreference'PercentScoreWeightMarvelous',
+					TNS_W2 = PREFSMAN:GetPreference'PercentScoreWeightPerfect',
+					TNS_W3 = PREFSMAN:GetPreference'PercentScoreWeightGreat',
+					TNS_W4 = PREFSMAN:GetPreference'PercentScoreWeightGood',
+					TNS_W5 = PREFSMAN:GetPreference'PercentScoreWeightBoo',
+					TNS_Miss = PREFSMAN:GetPreference'PercentScoreWeightMiss',
+					TNS_HitMine = PREFSMAN:GetPreference'PercentScoreWeightHitMine',
+					TNS_AvoidMine = 0,
+					HNS_OK = PREFSMAN:GetPreference'PercentScoreWeightOK',
+					HNS_NG = PREFSMAN:GetPreference'PercentScoreWeightNG',
+				}
+
+				-- table to hold information about spellcards
+				local spellcardcache = {}
+
+				-- get the amount of judgments for a spellcard range (inclusive)
+				local function getjudgmentsforspellcardrange(firstbeat, lastbeat)
+					-- check if we have a cached begin point to seek for judgments
+					if spellcardcache[firstbeat] then
+						-- if we have a cached end point, (ie: multiple overlapping spellcards) return the cached values
+						if spellcardcache[firstbeat][lastbeat] then
+							return spellcardcache[firstbeat][lastbeat]
+						end
+						-- else create an entry to hold judgment counts
+						spellcardcache[firstbeat][lastbeat] = {
+							TNS_W1 = 0, TNS_W2 = 0, TNS_W3 = 0, TNS_W4 = 0, TNS_W5 = 0, TNS_Miss = 0,
+							TNS_HitMine = 0, TNS_AvoidMine = 0,
+							Hold = {HNS_OK = 0, HNS_NG = 0},
+							Roll = {HNS_OK = 0, HNS_NG = 0},
+							maxdp = 0, obtaineddp = 0,
+							-- store the first and last indexes, things that display judgments in an alternate fashion can use it
+							firstindex = spellcardcache[firstbeat].index,
+							lastindex = spellcardcache[firstbeat].index,
+						}
+						-- if there aren't any cached beginning indexes, this means the range specified has no notes, so return the base table above 
+						if not spellcardcache[firstbeat].index then return spellcardcache[firstbeat][lastbeat] end
+
+						-- otherwise, start going through our judgment data beginning at our cached index
+						local cache = spellcardcache[firstbeat][lastbeat]
+						for i = spellcardcache[firstbeat].index, #details do
+							local data = details[i]
+							if data.beat > lastbeat then
+								-- when we reach a point where the beat of the data we're operating on is bigger than our range, bail
+								-- our table will have all the updated judgment counts for this region
+								cache.lastindex = i - 1 -- set the last index to the previous index that was still within our range
+								return spellcardcache[firstbeat][lastbeat]
+							end
+							-- check if the judgment data has a tns field, and update the judgment held inside accordingly
+							if data.tns then
+								cache[data.tns] = cache[data.tns] + 1
+								if data.tns ~= 'TNS_HitMine' and data.tns ~= 'TNS_AvoidMine' then
+									cache.maxdp = cache.maxdp + dp.TNS_W1
+								end
+								cache.obtaineddp = cache.obtaineddp + dp[data.tns]
+							end
+							-- do the same if we have an hns field, though look through how many columns are within this row, as hns counts are per-column
+							if data.hns then
+								for c, note in ipairs(data.notes) do
+									cache[note.type][data.hns] = cache[note.type][data.hns] + 1
+									cache.maxdp = cache.maxdp + dp.HNS_OK
+									cache.obtaineddp = cache.obtaineddp + dp[data.hns]
+								end
+							end
+						end
+						-- we've hit the ending of the table that holds all judgment info, so set the final index to the table size, and return our info
+						cache.lastindex = #details
+						return spellcardcache[firstbeat][lastbeat]
+					end
+					-- we don't have any cached info on where to start seeking for our judgments, so create an empty key that will store judgments that start at the first beat specified
+					spellcardcache[firstbeat] = {}
+					-- start going through our judgment data to find a beginning point
+					for i, data in ipairs(details) do
+						-- if we've gotten through our judgment data and the first value we find is already beyond our range, bail
+						-- a lack of an index key will tell us there aren't any notes within our range
+						if data.beat > lastbeat then break end
+						if data.beat >= firstbeat then
+							-- when reaching a value within the beginning of our range, store it's index and break
+							-- we can call this function again to proceed to the second half and avoid duplicating the full lastbeat cache code
+							spellcardcache[firstbeat].index = i
+							break
+						end
+						-- if we've looped through all of our judgments, without breaking, don't set an index, again, this signifies that there are no notes in our range and to return an empty table
+					end
+					-- call this function again to set up the lastbeat portion of the cache
+					return getjudgmentsforspellcardrange(firstbeat, lastbeat)
+				end
+
+				-- color related functions do diffuse the judgment counts in the per-column pane a specific color, depending on the graph color state
 				local colorfuncs = {
+					-- an invalid state
 					[-1] = function()
 						local columns = pane'PaneColumns'
 						columns'Left':diffuse(RGB(columncolors[-1]))
@@ -441,6 +466,7 @@
 						columns'Up':diffuse(RGB(columncolors[-1]))
 						columns'Right':diffuse(RGB(columncolors[-1]))
 					end,
+					-- default color state, counts are coloured the usual judgment colors
 					[0] = function()
 						local columns = pane'PaneColumns'
 						for ci, column in ipairs{columns'Labels', columns'Left', columns'Down', columns'Up', columns'Right'} do
@@ -452,6 +478,7 @@
 							end
 						end
 					end,
+					-- per-column state, judgments are coloured in accorance to their column color
 					function()
 						local columns = pane'PaneColumns'
 						columns'Left':diffuse(RGB(columncolors[0]))
@@ -461,43 +488,183 @@
 					end,
 				}
 
-				local function updatescatterplot(index)
-					index = _SL.modulo(index, 2) -- lua 5.0 my bloafed
+				-- pane switching logic
+				local vindex = 0 -- increments / decrements whenever up or down is pressed, cycle through a color set for scatterplot
+				local hindex = 0 -- increments / decrements whenever left or right is pressed, cycles through panes
+				local fplotidx, lplotidx = 1, #details + 1 -- range of currently displayed information
+
+				-- fplotidx, lplotidx are updated from updatepanes to set the range of the first and last data indexes
+				-- points outside said range are dimmed to better highlight the portion of a spellcard shown on screen
+				-- function to update scatterplot color in according to the color state / index
+				local function updatescatterplot(coloridx)
+					coloridx = _SL.modulo(coloridx, 2) -- lua 5.0 my bloafed
+					-- run through all of the points in our scatterplor
 					for i, data in ipairs(details) do
 						local vertindex = (i - 1) * 4
 						local vert1, vert2, vert3, vert4 = vertindex, vertindex + 1, vertindex + 2, vertindex + 3
-						local color = detailcache[i][index]
-						scatterplot:SetVertexColor(vert1, RGB(color))
-									:SetVertexColor(vert2, RGB(color))
-									:SetVertexColor(vert3, RGB(color))
-									:SetVertexColor(vert4, RGB(color))
+						-- get the cached color for our current color state 
+						local r, g, b, a = RGB(detailcache[i][coloridx])
+						-- if outside a specific range, (shown via spellcards), dim the alpha of each point
+						if i < fplotidx or i > lplotidx then a = a * 0.2 end
+						scatterplot:SetVertexColor(vert1, r, g, b, a)
+									:SetVertexColor(vert2, r, g, b, a)
+									:SetVertexColor(vert3, r, g, b, a)
+									:SetVertexColor(vert4, r, g, b, a)
 					end
-					if not colorfuncs[index] then colorfuncs[-1]() return end
-					colorfuncs[index]()
+					-- update the color of other actors that can be changed depending on color state
+					if not colorfuncs[coloridx] then colorfuncs[-1]() return end
+					colorfuncs[coloridx]()
 				end
 
+				local identical = true -- for panes which show the same scatterplot information
+				local function defaultfunc()
+					-- we want to update scatterplot colors only when a previous pane was a spellcard pane, otherwise we're computing data that won't change between panes
+					if not identical then
+						fplotidx, lplotidx = 1, #details + 1
+						updatescatterplot(vindex)
+					end
+					identical = true
+				end
+
+				-- functions to run when switching to a specific pane
+				local panefuncs = {
+					[-1] = defaultfunc,	-- a pane that did not define a function, currently all panes define one, so this effectively means an invalid pane
+					[0] = defaultfunc,	-- the initial startup pane, contains judgment counts, percentages, and radar counts (holds, mines, etc)
+					defaultfunc,		-- pane for column specific judgment counts, this can be useful for diagnosing issues with a pad, or inspect your form
+
+					-- additional panes will add their functions when defined below
+				}
+
+				-- set up our spellcard positions, each region is represented by a quad in our polygon
+				local spellcardregion = pane'SpellCards'
+				local spellcards = song:GetSpellCards()
+				spellcardregion:SetDrawMode'quads':SetNumVertices(#spellcards * 4)
+				-- run through our list of spellcards
+				for i, card in ipairs(spellcards) do
+					-- insert an entry into our pane actor table, even if we're hiding and unhiding the same actor for spellcards it ensures the pane is hidden proper when going into one of the other panes 
+					table.insert(paneactors, {pane'PaneSpellcard'})
+					local card = card -- scoping strikes again!
+					-- insert an entry to our pane function table, this handles updating the spellcard names, difficulty, judgment counts
+					table.insert(panefuncs, function()
+						-- spellcards typically aren't unique, so ensure going back to one of the default panes updates the scatterplot fully
+						identical = false
+						-- fetch the judgments that are within the spellcard range
+						local judges = getjudgmentsforspellcardrange(card.StartBeat, card.EndBeat)
+						-- our spellcard pane
+						local spellcard = pane'PaneSpellcard'
+						-- unpack the current spellcard color into rgba values
+						local r, g, b, a = unpack(card.Color)
+						-- set the title and difficulty number to the spellcard color
+						spellcard'Title':settext(card.Name):diffuse(r, g, b, a)
+						spellcard'DifficultyNumber':settext(card.Difficulty):diffuse(r, g, b, a)
+						-- turn the color into a luminance value using the values found here: https://alienryderflex.com/hsp.html
+						-- flip the luminance value and apply it to a few outline actors around the title and difficulty
+						-- this ensures a white border around colors that are dark so text can remain readable against the pane background
+						local hspluminance = math.sqrt((r * r * 0.299) + (g * g * 0.587) + (b * b * 0.114))
+						-- threshold of 0.35 seems to be fine
+						local inverse = 1 - hspluminance
+						inverse = inverse * inverse
+						spellcard'TitleBorder':diffuse(inverse, inverse, inverse, 1)
+						spellcard'DifficultyNumberBorder':diffuse(inverse, inverse, inverse, 1)
+						
+						for i, actor in ipairs(spellcard'TitleBorder':GetChildren()) do
+							actor:settext(card.Name)
+						end
+						for i, actor in ipairs(spellcard'DifficultyNumberBorder':GetChildren()) do
+							actor:settext(card.Difficulty)
+						end
+						-- current spellcard percentage 
+						local percent = 0
+						-- ensure that there is a maximum point value to avoid dividing by zero
+						if judges.maxdp > 0 then
+							percent = judges.obtaineddp / judges.maxdp * 100
+						end
+						spellcard'Percent':settext(string.format('%.2f', percent))
+						-- color the percentage blue if a player quadded this specific spellcard
+						if percent >= 100 then
+							spellcard'Percent':diffuse(RGB(Colors.W1))
+						else
+							spellcard'Percent':diffuse(RGB(Colors.White))
+						end
+						-- pad the number count with spaces, the number font uses those as a more gray-ish zero to indicate no numbers
+						for i, actor in pairs(spellcard'Numbers':GetChildren()) do
+							local count = tostring(judges[actor:GetName()])
+							local len = #count
+							if len < 5 then count = string.rep(' ', 4 - len) .. count end
+							actor:settext(count)
+						end
+						do
+							local total = tostring(judges.Hold.HNS_OK + judges.Hold.HNS_NG)
+							local success = tostring(judges.Hold.HNS_OK)
+							if #total < 4 then total = string.rep(' ', 3 - #total) .. total end
+							if #success < 4 then success = string.rep(' ', 3 - #success) .. success end
+							spellcard'RadarNumbers''Holds':settext(success .. '/' .. total)
+						end
+						do
+							local total = tostring(judges.Roll.HNS_OK + judges.Roll.HNS_NG)
+							local success = tostring(judges.Roll.HNS_OK)
+							if #total < 4 then total = string.rep(' ', 3 - #total) .. total end
+							if #success < 4 then success = string.rep(' ', 3 - #success) .. success end
+							spellcard'RadarNumbers''Rolls':settext(success .. '/' .. total)
+						end
+						do
+							local total = tostring(judges.TNS_HitMine + judges.TNS_AvoidMine)
+							local success = tostring(judges.TNS_AvoidMine)
+							if #total < 4 then total = string.rep(' ', 3 - #total) .. total end
+							if #success < 4 then success = string.rep(' ', 3 - #success) .. success end
+							spellcard'RadarNumbers''Mines':settext(success .. '/' .. total)
+						end
+						-- set the index ranges to use to highlight which judgments are inside the current spellcard range
+						fplotidx = judges.firstindex or (#details + 1)
+						lplotidx = judges.lastindex or (#details + 1)
+						updatescatterplot(vindex)
+					end)
+					-- set the vertex points of each spellcard to where it begins and ends in relation to the pane width
+					local index = (i - 1) * 4
+					local vert1, vert2, vert3, vert4 = index, index + 1, index + 2, index + 3
+					local left = song:GetElapsedTimeFromBeat(card.StartBeat) / songlen * panesize.width
+					local right = song:GetElapsedTimeFromBeat(card.EndBeat) / songlen * panesize.width
+					local color = card.Color
+					spellcardregion:SetVertexPosition(vert1, left, 0, 0)
+								:SetVertexPosition(vert2, left, panesize.height + panesize.padding, 0)
+								:SetVertexPosition(vert3, right, panesize.height + panesize.padding, 0)
+								:SetVertexPosition(vert4, right, 0, 0)
+								:SetVertexColor(vert1, color[1], color[2], color[3], color[4])
+								:SetVertexColor(vert2, color[1], color[2], color[3], color[4])
+								:SetVertexColor(vert3, color[1], color[2], color[3], color[4])
+								:SetVertexColor(vert4, color[1], color[2], color[3], color[4])
+				end
+
+				-- get the total amount of panes players can cycle through, this dynamically changes between songs
+				-- judgment pane, per-column pane, spellcard panes (dynamic)
 				local panecount = #paneactors + 1
 				local function updatepane(index, direction)
 					index = _SL.modulo(index, panecount)
 					local previousindex = _SL.modulo(index - direction, panecount)
+					-- hide actors of the previous pane
 					for i, v in ipairs(paneactors[previousindex]) do
 						v:hidden(1)
 					end
+					-- unhide actors of the new pane to display
 					for i, v in ipairs(paneactors[index]) do
 						v:hidden(0)
 					end
+					-- run functions associated with the pane to update text and numbers when needed
 					if not panefuncs[index] then panefuncs[-1]() return end
 					panefuncs[index]()
 				end
 
+				-- increment and decrement functions
 				local function incv() vindex = vindex + 1 updatescatterplot(vindex) end
 				local function decv() vindex = vindex - 1 updatescatterplot(vindex) end
 				local function inch() hindex = hindex + 1 updatepane(hindex, 1) end
 				local function dech() hindex = hindex - 1 updatepane(hindex, -1) end
 
+				-- set up initial scatterplot and pane display
 				updatescatterplot(0)
 				updatepane(0, 1)
 
+				-- apply increment and decrement functions to directional inputes
 				self:addcommand('StepP' .. pn .. 'MenuUpPressMessage', incv):addcommand('StepP' .. pn .. 'UpPressMessage', incv)
 				self:addcommand('StepP' .. pn .. 'MenuDownPressMessage', decv):addcommand('StepP' .. pn .. 'DownPressMessage', decv)
 				self:addcommand('StepP' .. pn .. 'MenuRightPressMessage', inch):addcommand('StepP' .. pn .. 'RightPressMessage', inch)
@@ -521,7 +688,7 @@
 		<Layer Type="Quad" Name="PaneBackground" OnCommand="diffuse,_SL.HexToRGB(_SL.Colors.UIMain);zoomto,305,175" />
 		<!-- percentage, w = 165, h = 60-->
 		<Layer Type="Quad" Name="PanePercentageBackground" OnCommand="diffuse,_SL.HexToRGB(_SL.Colors.UIDark);zoomto,165,60" />
-		<!-- bottom of pane, lifebar, w = 305, h = 88-->
+		<!-- graph, lifebar, w = 305, h = 88-->
 		<Layer Type="Quad" OnCommand="diffuse,_SL.HexToRGB(_SL.Colors.UIDark);zoomto,305,88;y,175" />
 		<Layer Type="Quad" OnCommand="zoomto,305,88;y,175;zwrite,1;blend,noeffect;" />
 		<Layer Type="Polygon" Name="SpellCards" OnCommand="y,175;ztestmode,writeonfail" />
@@ -650,7 +817,7 @@
 		<!-- percentage, w = 165, h = 60-->
 		<Layer Type="Quad" Name="PanePercentageBackground" OnCommand="diffuse,_SL.HexToRGB(_SL.Colors.UIDark);zoomto,165,60;x,140" />
 
-		<!-- bottom of pane, lifebar, w = 305, h = 88-->
+		<!-- graph, lifebar, w = 305, h = 88-->
 		<Layer Type="Quad" OnCommand="diffuse,_SL.HexToRGB(_SL.Colors.UIDark);zoomto,305,88;y,175" />
 		<!-- figure out how to make this only render on p2 and not on p1 ever-->
 		<Layer Type="Quad" OnCommand="zoomto,305,88;y,175;zwrite,1;blend,noeffect;" />

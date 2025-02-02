@@ -962,7 +962,7 @@ function SongOptionsLabel(self)
 	local meta = MetaModsText()
 	if meta ~= '' then table.insert(t, meta) end
 
-	s = table.concat(t, ', ')
+	local s = table.concat(t, ', ')
 
 	if self then
 		self:settext(s)
@@ -971,9 +971,9 @@ function SongOptionsLabel(self)
 	end
 end
 
-function BPMlabelRate(self)	s = AdjustedBPM() .. ' BPM ' .. RateModAppend() if self then self:settext(s) else return s end end
-function BPMandRate(self) s = AdjustedBPM() .. ' ' .. RateModAppend() if self then self:settext(s) else return s end end
-function RateBPMlabel(self) s = RateModText() if s ~= '' then s = s .. ' (' .. AdjustedBPM() .. ' BPM)' end	if self then self:settext(s) else return s end end 
+function BPMlabelRate(self)	local s = AdjustedBPM() .. ' BPM ' .. RateModAppend() if self then self:settext(s) else return s end end
+function BPMandRate(self) local s = AdjustedBPM() .. ' ' .. RateModAppend() if self then self:settext(s) else return s end end
+function RateBPMlabel(self) local s = RateModText() if s ~= '' then s = s .. ' (' .. AdjustedBPM() .. ' BPM)' end	if self then self:settext(s) else return s end end 
 
 function MetaModsText(self)
 	mods = {}
@@ -986,7 +986,7 @@ function MetaModsText(self)
 		end
 	end
 
-	s = table.concat(mods, ', ')
+	local s = table.concat(mods, ', ')
 
 	if self then
 		self:settext(s)
@@ -995,11 +995,11 @@ function MetaModsText(self)
 	end
 end
 
-function RateModText(self) s = '' if modRate ~= 1 then s = string.format('%01.1f',modRate) .. 'x Music Rate' end if self then self:settext(s) else return s end end
-function RateModAppend(self) s = RateModText() if s ~= '' then s = '(' .. s .. ')' end if self then self:settext(s) else return s end end
+function RateModText(self) local s = '' if modRate ~= 1 then s = string.format('%01.1f',modRate) .. 'x Music Rate' end if self then self:settext(s) else return s end end
+function RateModAppend(self) local s = RateModText() if s ~= '' then s = '(' .. s .. ')' end if self then self:settext(s) else return s end end
 
 function AdjustedBPM(self)
-	s = bpm[1]
+	local s = bpm[1]
 	if tonumber(s) then
 		s = math.floor(bpm[1] * modRate + 0.5)
 		if tonumber(bpm[2]) then s = s .. '-' .. math.floor(bpm[2] * modRate + 0.5) end
@@ -1349,9 +1349,26 @@ do
 		local t = OptionRowBase('Music Rate',s and rateModsEdit or rateMods)
 		local edit = s and true or false
 		t.OneChoiceForAllPlayers = true
-		t.LoadSelections = function(self, list, pn)	for i,m in ipairs(self.Choices) do if CheckMod(pn,m..'music') then list[i] = true; s = string.gsub(m,'x','') modRate = tonumber(s) end end end
+		t.LoadSelections = function(self, list, pn)
+			for i,m in ipairs(self.Choices) do
+				if CheckMod(pn,m..'music') then
+					list[i] = true;
+					local s = string.gsub(m,'x','')
+					modRate = tonumber(s)
+				end
+			end
+		end
 		t.SaveSelections = function(self, list, pn)
-			for i,m in ipairs(self.Choices) do if list[i] then s = string.gsub(m,'x',''); modRate = tonumber(s) if not edit then AdjustXModFromRate() SetOptionRow('Adjust Speed',true) end end end
+			for i,m in ipairs(self.Choices) do
+				if list[i] then
+					local s = string.gsub(m,'x','');
+					modRate = tonumber(s)
+					if not edit then
+						AdjustXModFromRate()
+						SetOptionRow('Adjust Speed',true)
+					end
+				end
+			end
 			ApplyMod(s..'xmusic',pn+1)
 			MESSAGEMAN:Broadcast('RateModChanged')
 

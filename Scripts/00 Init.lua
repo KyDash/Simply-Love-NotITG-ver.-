@@ -26,36 +26,6 @@ _SL.GameStyle = {
 }
 _SL.CurrentGameStyle = 'ITG'
 
-_SL.SetGameStyle = function(style)
-    -- the lua state is weird, as it gets reset once before we reach any existing screen, while other singletons such as GAMESTATE and PREFSMAN exist when the first time this script is loaded, SCREENMAN does not, and only exists after the first lua state reset, so if this function is called within one of the files in this directory with an invalid style, we'll get a runtime error upon launching the game
-    -- this won't cause problems for running the game as the second time the scripts are run we'll get to the proper error checking logic and report the invalid style, but lets give a clearer error for anyone trying change styles early, ie they want the game to launch in a sight-reading style
-    if not SCREENMAN then
-        error('SCREENMAN does not exist in the lua stack yet!\nThis should not occur unless _SL.SetGameStyle is called too early with a non existing Game Style\nDoublecheck for typos or ensure that "'.. tostring(style) ..'" is a string and a style that is defined in _SL.GameStyle', 2)
-    end 
-    
-    -- ensure that the style being passed in is a string
-    if type(style) ~= 'string' then SCREENMAN:SystemMessage('SetGameStyle: expected type "string", got "' .. type(style) .. '"') return end
-
-    local currentstyle = _SL.CurrentGameStyle
-    -- no point in doing anything if we aren't actually changing styles
-    if style == currentstyle then return end
-
-    local newstyle = _SL.GameStyle[style]
-    -- check that the style we're trying to change to is valid
-    if newstyle == nil then SCREENMAN:SystemMessage('SetGameStyle: "' .. style .. '" is not a valid Game Style') return end
-
-    -- update the state of the current style to the new style
-    _SL.GameStyle[currentstyle] = false
-    _SL.GameStyle[style] = true
-    _SL.CurrentGameStyle = style
-    -- how do we deal with user set preferences that vary per player on normal gameplay, but need to be forced for specific styles
-    -- update preferences in accordance to the new style 
-    updatepreferencesfromstyle(style)
-    print('Game Style set to "' .. style .. '"')
-end
-
-_SL.SetGameStyle'ModsSRT'
-
 local function updatepreferencesfromstyle(style)
     -- todo remove if else chains to make expanding with new modes easier
     if style == 'ModsSRT' then
@@ -138,3 +108,39 @@ local function updatepreferencesfromstyle(style)
         -- i'll leave this for later since there's more important things to touch
     end
 end
+
+_SL.SetGameStyle = function(style)
+    -- the lua state is weird, as it gets reset once before we reach any existing screen, while other singletons such as GAMESTATE and PREFSMAN exist when the first time this script is loaded, SCREENMAN does not, and only exists after the first lua state reset, so if this function is called within one of the files in this directory with an invalid style, we'll get a runtime error upon launching the game
+    -- this won't cause problems for running the game as the second time the scripts are run we'll get to the proper error checking logic and report the invalid style, but lets give a clearer error for anyone trying change styles early, ie: they want the game to launch in a sight-reading style
+    if not SCREENMAN then
+        -- "override" SCREENMAN so only calls to it when it doesn't exist raise the error
+        -- doing this here is fine since again, the lua state gets reset and SCREENMAN does exist the following time
+        local err = function() error('SCREENMAN does not exist in the lua stack yet!\nThis should not occur unless _SL.SetGameStyle is called too early with a non existing Game Style\nDoublecheck for typos or ensure that "'.. tostring(style) ..'" is a string and a style that is defined in _SL.GameStyle', 2) end
+        SCREENMAN = setmetatable({}, {
+            __index = err,
+            __call = err,
+        })
+    end 
+    
+    -- ensure that the style being passed in is a string
+    if type(style) ~= 'string' then SCREENMAN:SystemMessage('SetGameStyle: expected type "string", got "' .. type(style) .. '"') return end
+
+    local currentstyle = _SL.CurrentGameStyle
+    -- no point in doing anything if we aren't actually changing styles
+    if style == currentstyle then return end
+
+    local newstyle = _SL.GameStyle[style]
+    -- check that the style we're trying to change to is valid
+    if newstyle == nil then SCREENMAN:SystemMessage('SetGameStyle: "' .. style .. '" is not a valid Game Style') return end
+
+    -- update the state of the current style to the new style
+    _SL.GameStyle[currentstyle] = false
+    _SL.GameStyle[style] = true
+    _SL.CurrentGameStyle = style
+    -- how do we deal with user set preferences that vary per player on normal gameplay, but need to be forced for specific styles
+    -- update preferences in accordance to the new style 
+    updatepreferencesfromstyle(style)
+    print('Game Style set to "' .. style .. '"')
+end
+
+_SL.SetGameStyle'ModsSRT'

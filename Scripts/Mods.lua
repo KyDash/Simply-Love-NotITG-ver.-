@@ -290,7 +290,7 @@ else
 	end
 end
 function CheckMod(pn,mod) return mod and GAMESTATE:PlayerIsUsingModifier(pn,string.lower(mod)) end
-function SummaryBranch() ForceSongAndSteps() if not scoreIndex then scoreIndex = 1 end if scoreIndex <= table.getn(AllScores) then return ScreenList('Summary') else scoreIndex = 1 return ScreenList('Ending') end end
+function SummaryBranch() ForceSongAndSteps() --[[if not scoreIndex then scoreIndex = 1 end if scoreIndex <= table.getn(AllScores) then return ScreenList('Summary') else scoreIndex = 1]] return ScreenList('Ending') --[[end]] end
 function Clock(val) local t = GlobalClock:GetSecsIntoEffect() if val then t = t - val end return t end
 --function Clock(val) local t = 0 if val then t = t - val end return t end
 function MusicClock() return Screen():GetSecsIntoEffect() end

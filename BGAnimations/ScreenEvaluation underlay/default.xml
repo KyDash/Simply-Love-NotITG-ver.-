@@ -151,35 +151,6 @@
 					{TNS_W1 = 0, TNS_W2 = 0, TNS_W3 = 0, TNS_W4 = 0, TNS_W5 = 0, TNS_Miss = 0, TNS_HitMine = 0, TNS_AvoidMine = 0, Hold = {HNS_OK = 0, HNS_NG = 0}, Roll = {HNS_OK = 0, HNS_NG = 0}},
 				}
 
-				-- per-column pane --
-				do
-					local columns = pane'PaneColumns'
-					-- set position of actors
-					columns'Labels':xy(70, 52)
-					columns'Percent':zoom(0.4):horizalign'right':shadowlength(0):xy(68, 15):settext(string.gsub(SCREENMAN('PercentP' .. pn)(1):GetText(), '%%', ''))
-					-- rotate the arrow model to the direction represented by each column
-					columns'Left''Note':rotationz(90)
-					columns'Up''Note':rotationz(180)
-					columns'Right''Note':rotationz(-90)
-					for i, v in ipairs(columns'Labels':GetChildren()) do
-						v:y(21 * (i - 1)):zoom(0.35):shadowlength(0):horizalign'right'
-					end
-					-- set judgment counts for each column
-					for ci, column in ipairs{columns'Left', columns'Down', columns'Up', columns'Right'} do
-						column:xy(ci * 55 + 46, 56.5)
-						for i, actor in ipairs(column:GetChildren()) do
-							actor:y(21 * (i - 2)):zoom(0.3):shadowlength(0)
-							if actor.settext then
-								local count = tostring(columncounts[ci - 1][actor:GetName()])
-								local len = #count
-								if len < 5 then count = string.rep(' ', 4 - len) .. count end
-								actor:settext(count)
-							end
-						end
-						column'Note':zoom(0.5):y(-30)
-					end
-				end
-
 				-- spellcard pane --
 				do
 					-- base spellcard setup, each spellcard pane shares this setup in common 
@@ -342,6 +313,35 @@
 				end
 				-- add a point at song end to draw the lifebar
 				plotlifebar(songlen, panesize.width)
+
+				-- per-column pane --
+				do
+					local columns = pane'PaneColumns'
+					-- set position of actors
+					columns'Labels':xy(70, 52)
+					columns'Percent':zoom(0.4):horizalign'right':shadowlength(0):xy(68, 15):settext(string.gsub(SCREENMAN('PercentP' .. pn)(1):GetText(), '%%', ''))
+					-- rotate the arrow model to the direction represented by each column
+					columns'Left''Note':rotationz(90)
+					columns'Up''Note':rotationz(180)
+					columns'Right''Note':rotationz(-90)
+					for i, v in ipairs(columns'Labels':GetChildren()) do
+						v:y(21 * (i - 1)):zoom(0.35):shadowlength(0):horizalign'right'
+					end
+					-- set judgment counts for each column
+					for ci, column in ipairs{columns'Left', columns'Down', columns'Up', columns'Right'} do
+						column:xy(ci * 55 + 46, 56.5)
+						for i, actor in ipairs(column:GetChildren()) do
+							actor:y(21 * (i - 2)):zoom(0.3):shadowlength(0)
+							if actor.settext then
+								local count = tostring(columncounts[ci - 1][actor:GetName()])
+								local len = #count
+								if len < 5 then count = string.rep(' ', 4 - len) .. count end
+								actor:settext(count)
+							end
+						end
+						column'Note':zoom(0.5):y(-30)
+					end
+				end
 
 				-- table of existing panes, and the actors being held inside, this is used to hide and unhide actors depending on which pane is being viewed
 				local paneactors = {

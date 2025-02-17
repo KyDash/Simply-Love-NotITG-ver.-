@@ -29,16 +29,33 @@ _SL.CurrentGameStyle = 'ITG'
 local function updatepreferencesfromstyle(style)
     -- todo remove if else chains to make expanding with new modes easier
     if style == 'ModsSRT' then
+        --[[if SONGMAN then
+            _SL.CrashScreen = {
+                -- song needs Title + Subtitle
+                to = SONGMAN:FindSong'carpet',
+                from = SONGMAN:FindSong'Enemy Approaching アレンジ Credits',
+            }
+        end]]
         local judgewindowadd = 0.0015
         GAMESTATE:SetSRT(1) -- hides general overlay stuff in gameplay
         -- uksrt score weights
-        PREFSMAN:SetPreference('GradeWeightMarvelous',      5)
+        PREFSMAN:SetPreference('PercentScoreWeightMarvelous',      5)
+                :SetPreference('PercentScoreWeightPerfect',        4)
+                :SetPreference('PercentScoreWeightGreat',          2)
+                :SetPreference('PercentScoreWeightGood',           0)
+                :SetPreference('PercentScoreWeightBoo',            -2)
+                :SetPreference('PercentScoreWeightMiss',           -4)
+                :SetPreference('PercentScoreWeightHitMine',        -8)
+                :SetPreference('PercentScoreWeightOK',             5)
+                :SetPreference('PercentScoreWeightNG',             0)
+
+                :SetPreference('GradeWeightMarvelous',      5)
                 :SetPreference('GradeWeightPerfect',        4)
                 :SetPreference('GradeWeightGreat',          2)
                 :SetPreference('GradeWeightGood',           0)
                 :SetPreference('GradeWeightBoo',            -2)
                 :SetPreference('GradeWeightMiss',           -4)
-                :SetPreference('PercentScoreWeightHitMine', -8)
+                :SetPreference('GradeWeightHitMine',        -8)
                 :SetPreference('GradeWeightOK',             5)
                 :SetPreference('GradeWeightNG',             0)
 
@@ -83,15 +100,25 @@ local function updatepreferencesfromstyle(style)
 
     if style == 'ITG' then
         GAMESTATE:SetSRT(0)
-        PREFSMAN:SetPreference('PercentScoreWeightMarvelous',   5)
-                :SetPreference('PercentScoreWeightPerfect',     4)
-                :SetPreference('PercentScoreWeightGreat',       2)
-                :SetPreference('PercentScoreWeightGood',        0)
-                :SetPreference('PercentScoreWeightBoo',         -6)
-                :SetPreference('PercentScoreWeightMiss',        -12)
+        PREFSMAN:SetPreference('PercentScoreWeigthMarvelous',   5)
+                :SetPreference('PercentScoreWeigthPerfect',     4)
+                :SetPreference('PercentScoreWeigthGreat',       2)
+                :SetPreference('PercentScoreWeigthGood',        0)
+                :SetPreference('PercentScoreWeigthBoo',         -6)
+                :SetPreference('PercentScoreWeigthMiss',        -12)
                 :SetPreference('PercentScoreWeightHitMine',     -6)
-                :SetPreference('PercentScoreWeightOK',          5)
-                :SetPreference('PercentScoreWeightNG',          0)
+                :SetPreference('PercentScoreWeigthOK',          5)
+                :SetPreference('PercentScoreWeigthNG',          0)
+
+                :SetPreference('GradeWeigthMarvelous',   5)
+                :SetPreference('GradeWeigthPerfect',     4)
+                :SetPreference('GradeWeigthGreat',       2)
+                :SetPreference('GradeWeigthGood',        0)
+                :SetPreference('GradeWeigthBoo',         -6)
+                :SetPreference('GradeWeigthMiss',        -12)
+                :SetPreference('GradeWeightHitMine',     -6)
+                :SetPreference('GradeWeigthOK',          5)
+                :SetPreference('GradeWeigthNG',          0)
 
                 :SetPreference('JudgeWindowAdd',                0)
                 :SetPreference('JudgeWindowScale',              1)
@@ -143,4 +170,7 @@ _SL.SetGameStyle = function(style)
     print('Game Style set to "' .. style .. '"')
 end
 
-_SL.SetGameStyle'ModsSRT'
+_SL.IsAnSRTStyle = function() return _SL.CurrentGameStyle == "ModsSRT" end
+
+_SL.SetGameStyle'ITG'
+-- _SL.SetGameStyle'ModsSRT'

@@ -290,7 +290,21 @@ else
 	end
 end
 function CheckMod(pn,mod) return mod and GAMESTATE:PlayerIsUsingModifier(pn,string.lower(mod)) end
-function SummaryBranch() ForceSongAndSteps() --[[if not scoreIndex then scoreIndex = 1 end if scoreIndex <= table.getn(AllScores) then return ScreenList('Summary') else scoreIndex = 1]] return ScreenList('Ending') --[[end]] end
+function SummaryBranch()
+	ForceSongAndSteps()
+	if _SL.IsAnSRTStyle() then
+		return ScreenList('Ending')
+	end
+	if not scoreIndex then
+		scoreIndex = 1
+	end
+	if scoreIndex <= table.getn(AllScores) then
+		return ScreenList('Summary')
+	else
+		scoreIndex = 1
+		return ScreenList('Ending')
+	end
+end
 function Clock(val) local t = GlobalClock:GetSecsIntoEffect() if val then t = t - val end return t end
 --function Clock(val) local t = 0 if val then t = t - val end return t end
 function MusicClock() return Screen():GetSecsIntoEffect() end
@@ -1353,7 +1367,7 @@ do
 			for i,m in ipairs(self.Choices) do
 				if CheckMod(pn,m..'music') then
 					list[i] = true;
-					local s = string.gsub(m,'x','')
+					s = string.gsub(m,'x','')
 					modRate = tonumber(s)
 				end
 			end
@@ -1361,7 +1375,7 @@ do
 		t.SaveSelections = function(self, list, pn)
 			for i,m in ipairs(self.Choices) do
 				if list[i] then
-					local s = string.gsub(m,'x','');
+					s = string.gsub(m,'x','');
 					modRate = tonumber(s)
 					if not edit then
 						AdjustXModFromRate()

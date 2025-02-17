@@ -17,7 +17,12 @@ end
 -- end
 
 function EvaluationNextScreen()
-
+	--[[if _SL.CrashScreen then
+		if GAMESTATE:GetCurrentSong() == _SL.CrashScreen.from then
+			_SL.CrashScreen.ShouldCrash = true
+			return "ScreenStage"
+		end
+	end]]
 	if GetPref('EventMode') then return SongSelectionScreen() end
 	if IsTimedSet() then
 		if Clock( TimedSet.End ) < 0 then 
@@ -68,6 +73,16 @@ function GetGameplayScreen()
 	if Song and Song:GetSongDir() == "Songs/In The Groove/Training1/" then
 		return "ScreenGameplayTraining"
 	end
+
+	--[[if _SL.CrashScreen then
+		if Song == _SL.CrashScreen.from and _SL.CrashScreen.ShouldCrash then
+			local song = _SL.CrashScreen.to
+			local steps = song:GetAllSteps()[1]
+			GAMESTATE:SetCurrentSong(song)
+				:SetCurrentSteps(0, steps)
+				:SetCurrentSteps(1, steps)
+		end
+	end]]
 
 	return "ScreenGameplay"
 end

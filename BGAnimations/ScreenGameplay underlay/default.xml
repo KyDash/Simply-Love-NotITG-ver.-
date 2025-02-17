@@ -262,8 +262,10 @@
 			if not GAMESTATE:IsCourseMode() then
 				local p1 = SCREENMAN:GetTopScreen():GetChild('ScoreP1')
 				local p2 = SCREENMAN:GetTopScreen():GetChild('ScoreP2')
+				local score1, score2 = 0, 0
 				if p1 then p1 = p1:GetChild('ScoreDisplayPercentage Percent'):GetChild('PercentP1'); score1 = string.gsub(p1:GetText(),'%%','') end
 				if p2 then p2 = p2:GetChild('ScoreDisplayPercentage Percent'):GetChild('PercentP2'); score2 = string.gsub(p2:GetText(),'%%','') end
+				
 				if p1 then p1:diffuse(1,1,1,1) end
 				if p2 then p2:diffuse(1,1,1,1) end
 				if p1 and p2 and tonumber(score1) < tonumber(score2) then p1:diffuse(1,1,1,0.7) end

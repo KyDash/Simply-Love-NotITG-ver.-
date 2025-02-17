@@ -241,10 +241,12 @@ function GetInitialDifficulty()
 end
 
 function DifficultyChangingIsAvailable()
+	if _SL.IsAnSRTStyle() then return false end
 	return GAMESTATE:GetPlayMode() ~= PLAY_MODE_ENDLESS and GAMESTATE:GetPlayMode() ~= PLAY_MODE_ONI and GAMESTATE:GetSortOrder() ~= SORT_MODE_MENU
 end
 
 function ModeMenuAvailable()
+	if _SL.IsAnSRTStyle() then return false end
 	if GAMESTATE:IsCourseMode() then return false end
 	--Trace( "here1" )
 	if GAMESTATE:GetSortOrder() == SORT_MODE_MENU then return false end

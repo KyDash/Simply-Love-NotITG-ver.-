@@ -36,6 +36,7 @@
 		}
 
 		-- overall pane logic contained here
+
 		for pn = 1, 2 do
 			if GAMESTATE:IsPlayerEnabled(pn - 1) then -- only operate on player actors if they are joined, else they won't exist
 
@@ -161,7 +162,7 @@
 					for i, actor in ipairs(card'TitleBorder':GetChildren()) do
 						actor:shadowlength(0):horizalign'left':maxwidth(395):vertalign'top'
 					end
-					card'Percent':zoom(0.4):horizalign'right':shadowlength(0):xy(68, 15)
+					card'Percent':zoom(0.4):horizalign'right':shadowlength(0):xy(68, 15):maxwidth(160)
 					card'Difficulty':zoom(0.35):horizalign'right':shadowlength(0):xy(70, 31)
 					card'DifficultyNumber':zoom(0.3):horizalign'left':shadowlength(0):xy(79, 35.5)
 					card'DifficultyNumberBorder':zoom(0.3):xy(79, 35.5)
@@ -319,7 +320,7 @@
 					local columns = pane'PaneColumns'
 					-- set position of actors
 					columns'Labels':xy(70, 52)
-					columns'Percent':zoom(0.4):horizalign'right':shadowlength(0):xy(68, 15):settext(string.gsub(SCREENMAN('PercentP' .. pn)(1):GetText(), '%%', ''))
+					columns'Percent':zoom(0.4):horizalign'right':shadowlength(0):xy(68, 15):settext(SCREENMAN('PercentP' .. pn)(1):GetText()):maxwidth(160)
 					-- rotate the arrow model to the direction represented by each column
 					columns'Left''Note':rotationz(90)
 					columns'Up''Note':rotationz(180)

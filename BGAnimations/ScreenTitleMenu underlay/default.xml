@@ -1,11 +1,11 @@
 <ActorFrame><children>
 	<ActorFrame
 		InitCommand="%function()
-			Profile(0).Love.Dir = ThemeName()
+			Profile(0).Love.Dir = THEME:GetCurThemeName()
 			_SL.CycleBGStyles()
 		end"
 	/>
-	<ActorFrame OffCommand="queuecommand,Out" OutCommand="%function() local s = SCREENMAN:GetTopScreen():GetChild('Logo') TitleMenuOut(s) end" />
+	<ActorFrame OffCommand="queuecommand,Out" OutCommand="%function() local s = SCREENMAN('Logo') TitleMenuOut(s) end" />
 		<ActorFrame Command="queuecommand,Game" GameCommand="%DetectGame" />
 	
 <!--centers-->				
@@ -119,7 +119,7 @@
 			Text=""
 			Command="x,SCREEN_CENTER_X;y,SCREEN_CENTER_Y-163.5;zoom,0.45;shadowlength,0;diffusealpha,0;sleep,.3;queuecommand,Set"
 			SetCommand="%function(self)
-				local s = SCREENMAN:GetTopScreen():GetChild('Songs'):GetText()
+				local s = SCREENMAN('Songs'):GetText()
 				self:settext(s)
 				self:linear(.5)
 				self:diffusealpha(1)
@@ -130,7 +130,7 @@
 			Font="_misobold white"
 			Text=""
 			Command="x,SCREEN_CENTER_X;y,SCREEN_CENTER_Y-180.5;zoom,0.3;shadowlength,0;diffusealpha,0;sleep,.3;queuecommand,Set" SetCommand="%function(self)
-				local s = SCREENMAN:GetTopScreen():GetChild('LifeDifficulty'):GetText()
+				local s = SCREENMAN('LifeDifficulty'):GetText()
 				self:settext(s)
 				self:linear(.5)
 				self:diffusealpha(1)

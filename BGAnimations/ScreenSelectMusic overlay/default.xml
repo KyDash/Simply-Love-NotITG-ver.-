@@ -60,11 +60,11 @@
 	</children></Layer>
 	<Layer
 		Type="ActorFrame"
-		Condition="IsTimedSet() and not GetPref('EventMode')"
+		Condition="IsTimedSet() and not PREFSMAN:GetPreference('EventMode')"
 		OnCommand="x,SCREEN_CENTER_X-(SCREEN_WIDTH*160/640-92);y,SCREEN_CENTER_Y-14;queuecommand,Loop"
 		CurrentSongChangedMessageCommand="stoptweening;queuecommand,Loop"
 		LoopCommand="%function(self)
-			if GAMESTATE:GetCurrentSong() and -Clock( TimedSet.CutOff ) < MSSMsMsToSeconds(Screen():GetChild('TotalTime'):GetText()) then
+			if GAMESTATE:GetCurrentSong() and -Clock( TimedSet.CutOff ) < MSSMsMsToSeconds(SCREENMAN('TotalTime'):GetText()) then
 				self:hidden(0)
 			else
 				self:hidden(1)

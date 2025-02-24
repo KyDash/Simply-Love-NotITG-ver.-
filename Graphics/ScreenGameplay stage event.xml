@@ -7,7 +7,7 @@
 			self:zoom(1.5);
 			self:vertalign('top');
 			self:y(-80);
-			if not GetPref('EventMode') then 
+			if not PREFSMAN:GetPreference('EventMode') then 
 				self:settext('SONG ' .. table.getn(AllScores)+1) 
 				-- self:y(-20);
 			elseif IsTimedSet() then 

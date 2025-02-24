@@ -24,9 +24,9 @@ function NonCombos()
 		-- end
 	end
 	t.SaveSelections = function(self, list, pn)
-		--if list[1] then SetPref('JudgeWindowSecondsGood',0.135) SetPref('JudgeWindowSecondsBoo',0.180) end
-		--if list[2] then SetPref('JudgeWindowSecondsGood',0.135)	SetPref('JudgeWindowSecondsBoo',0.135) end
-		--if list[3] then	SetPref('JudgeWindowSecondsGood',0.102)	SetPref('JudgeWindowSecondsBoo',0.102) end
+		--if list[1] then PREFSMAN:SetPreference('JudgeWindowSecondsGood',0.135) PREFSMAN:SetPreference('JudgeWindowSecondsBoo',0.180) end
+		--if list[2] then PREFSMAN:SetPreference('JudgeWindowSecondsGood',0.135)	PREFSMAN:SetPreference('JudgeWindowSecondsBoo',0.135) end
+		--if list[3] then	PREFSMAN:SetPreference('JudgeWindowSecondsGood',0.102)	PREFSMAN:SetPreference('JudgeWindowSecondsBoo',0.102) end
 	end
 	return t
 end
@@ -42,6 +42,9 @@ end
 
 function _SL.IsCouples(pn)
 	if not GAMESTATE:PlayerUsingBothSides() then return false end
-	if pn then return CheckMod(pn, 'Couples') end
-	return (CheckMod(0, 'Couples') or CheckMod(1, 'Couples'))
+	if FUCK_EXE and GAMESTATE:PlayerUsingBothSides() then
+		local s = SCREENMAN()
+		local poptions = (s'PlayerOptionsP1' or s'PlayerOptionsP2')
+		return string.find(string.lower(poptions:GetText()), 'couples')
+	end
 end

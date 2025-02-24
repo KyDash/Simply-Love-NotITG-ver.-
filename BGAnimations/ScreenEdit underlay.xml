@@ -28,6 +28,6 @@
 			OnCommand=""
 			OffCommand=""
 		/>
-		<ActorFrame Command="%ScreenEditInit" FirstUpdateCommand="%ScreenEdit" />
+		<ActorFrame Command="%ScreenEditInit" />
 	</children>
 </ActorFrame>

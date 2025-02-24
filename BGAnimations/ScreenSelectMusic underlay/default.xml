@@ -1,5 +1,5 @@
 <ActorFrame> <children>
-	<ActorFrame Command="%function() if GAMESTATE:GetCoinMode() == 1 and not GetPref('EventMode') then rateMods = rateModsPay else rateMods = rateModsFree end end" />
+	<ActorFrame Command="%function() if GAMESTATE:GetCoinMode() == 1 and not PREFSMAN:GetPreference('EventMode') then rateMods = rateModsPay else rateMods = rateModsFree end end" />
 	<Layer 
 		File="@'Banner'.._SL.Color()..'.png'"
 		OnCommand="x,SCREEN_CENTER_X-(SCREEN_WIDTH*160/640-3);y,SCREEN_CENTER_Y-138;ZoomToWidth,306;ZoomToHeight,119"

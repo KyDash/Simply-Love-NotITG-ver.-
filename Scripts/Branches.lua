@@ -7,7 +7,7 @@ function GetArcadeStartScreen()
 		return "ScreenSetTime"
 	end
 
-	return "ScreenLove"
+	return THEME:GetMetric('Common','FirstAttractScreen')
 end
 
 -- defined in fallback
@@ -23,7 +23,7 @@ function EvaluationNextScreen()
 			return "ScreenStage"
 		end
 	end]]
-	if GetPref('EventMode') then return SongSelectionScreen() end
+	if PREFSMAN:GetPreference('EventMode') then return SongSelectionScreen() end
 	if IsTimedSet() then
 		if Clock( TimedSet.End ) < 0 then 
 			return SongSelectionScreen()

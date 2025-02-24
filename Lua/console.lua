@@ -3,12 +3,12 @@ local event = stitch "lua.event"
 local show = stitch "lua.show"
 
 local DevConsole = self
-local DevBuffer = self:GetChild("DevBuffer")
-local DevInput = self:GetChild("DevInput")
-local DevTest = self:GetChild("DevTest")
-local DevCursor = self:GetChild("DevCursor")
-local DevBackground = self:GetChild("DevBackgroud")
-local DevInBg = self:GetChild("DevInBg")
+local DevBuffer = self("DevBuffer")
+local DevInput = self("DevInput")
+local DevTest = self("DevTest")
+local DevCursor = self("DevCursor")
+local DevBackground = self("DevBackgroud")
+local DevInBg = self("DevInBg")
 
 local enabled = false
 local scale = 0.6

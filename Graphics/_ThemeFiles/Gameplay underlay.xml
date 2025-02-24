@@ -15,7 +15,7 @@
 			end
 			function DeadDangerFrame(self,p)
 				local pn = p;
-				if GAMESTATE:PlayerUsingBothSides() or ( GAMESTATE:GetNumPlayersEnabled() == 1 and GetPref('SoloSingle') ) then 
+				if GAMESTATE:PlayerUsingBothSides() or ( GAMESTATE:GetNumPlayersEnabled() == 1 and PREFSMAN:GetPreference('SoloSingle') ) then 
 					pn = GAMESTATE:GetMasterPlayerNumber() + 1 
 				end;
 				self:aux(pn);

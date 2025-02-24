@@ -138,7 +138,7 @@ end
 
 local game
 function DetectGame()
-	local w = SCREENMAN:GetTopScreen():GetChild('Logo'):GetWidth()
+	local w = SCREENMAN('Logo'):GetWidth()
 	if w == 640 then game = 'dance'; PREFSMAN:SetPreference('AutogenSteps',false) end
 	if w == 642 then game = 'pump'; PREFSMAN:SetPreference('AutogenSteps',false) end
 	if w == 644 then game = 'techno'; TechnoPrefs() end
@@ -148,7 +148,7 @@ function StyleIcon()
 	if not game then game = 'dance' end
 	local s = "icon " .. game .. " " .. CurStyleName()
 	local path = THEME:GetPath( EC_GRAPHICS, "MenuElements" , s)
-	local i = SCREENMAN:GetTopScreen():GetChild('StyleIcon')
+	local i = SCREENMAN('StyleIcon')
 	i:Load(path)
 end
 	
@@ -358,9 +358,9 @@ end
 	t.Choices = { "On", "Decents Only", "Off" }
 	t.LoadSelections = function(self, list, pn) if not Decents() then list[3] = true elseif not WayOffs() then list[2] = true else list[1] = true end end
 	t.SaveSelections = function(self, list, pn)
-		if list[1] then SetPref('JudgeWindowSecondsGood',0.135) SetPref('JudgeWindowSecondsBoo',0.180) end
-		if list[2] then SetPref('JudgeWindowSecondsGood',0.135)	SetPref('JudgeWindowSecondsBoo',0.135) end
-		if list[3] then	SetPref('JudgeWindowSecondsGood',0.102)	SetPref('JudgeWindowSecondsBoo',0.102) end
+		if list[1] then PREFSMAN:SetPreference('JudgeWindowSecondsGood',0.135) PREFSMAN:SetPreference('JudgeWindowSecondsBoo',0.180) end
+		if list[2] then PREFSMAN:SetPreference('JudgeWindowSecondsGood',0.135)	PREFSMAN:SetPreference('JudgeWindowSecondsBoo',0.135) end
+		if list[3] then	PREFSMAN:SetPreference('JudgeWindowSecondsGood',0.102)	PREFSMAN:SetPreference('JudgeWindowSecondsBoo',0.102) end
 	end
 	return t
 end

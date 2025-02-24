@@ -73,191 +73,419 @@
 -- Redefine these in Theme.lua if other values are desired.
 
 -- Used with GoTo option for PlayerOptions and with Summary screen. These can return either functions or strings.
-	local screenList = { Gameplay = 'ScreenStage' , SelectMusic = 'ScreenSelectMusic' , PlayerOptions = 'ScreenPlayerOptions' , TitleMenu = ScreenTitleBranch  , NameEntry = 'ScreenNameEntryTraditional' , Evaluation = SelectEvaluationScreen , Summary = 'Summary' , Ending = SelectEndingScreen }
-	function ScreenList(str) if type(screenList[str]) == 'function' then return screenList[str]() else return screenList[str] end end
+local screenList = {
+	Gameplay = 'ScreenStage',
+	SelectMusic = 'ScreenSelectMusic',
+	PlayerOptions = 'ScreenPlayerOptions',
+	TitleMenu = ScreenTitleBranch,
+	NameEntry = 'ScreenNameEntryTraditional',
+	Evaluation = SelectEvaluationScreen,
+	Summary = 'Summary',
+	Ending = SelectEndingScreen
+}
+local function ScreenList(str)
+	local screen = screenList[str]
+	if type(screen) == 'function' then
+		return screen()
+	end
+	return screen
+end
 
 -- Judgment tween commands.
---[[if FUCK_EXE and tonumber(GAMESTATE:GetVersionDate()) >= 20180821 then
-	_SL.Tweens = {
-		outElastic = function(t, b, c, d, a, p)
-			if t == 0 then return b end
+-- create a table to hold a variety of judgment and combo pulse effects
+-- if a type does not define every pulse type, fall back onto the original Simply Love ones
 
-			t = t / d
+local easing = _SL.Easing
+local wrap = easing.wrap
+local comboscale = 0.7
 
-			if t == 1 then return b + c end
+-- this will be better to split into it's own judge / combo / hold lists
+-- but making writing it grouped by style for the moment
+-- list taken from Gimmick https://github.com/femboyindustries/gimmick-theme/
+-- funnily some of the original sources came from me (Ky) so
 
-			if not p then p = d * 0.3 end
-
-			local s
-
-			if not a or a < math.abs(c) then
-				a = c
-				s = p / 4
-			else
-				s = p / (2 * math.pi) * math.asin(c/a)
+local playerEffects = {
+	Judgment = {
+		{
+			name = "Love",
+			fn = function(self)
+				self:zoom(0.8)
+					:decelerate(0.1):zoom(0.75)
+					:sleep(0.6):accelerate(0.2):zoom(0)
 			end
-
-			return a * math.pow(2, -10 * t) * math.sin((t * d - s) * (2 * math.pi) / p) + c + b
-		end,
-
-		inBack = function(t, b, c, d, s)
-			if not s then s = 1.70158 end
-			t = t / d
-			return c * t * t * ((s + 1) * t - s) + b
-		end,
-
-		outCirc = function(t, b, c, d)
-			t = t / d - 1
-			return(c * math.sqrt(1 - math.pow(t, 2)) + b)
-		end,
-
-		outBounce = function(t, b, c, d)
-			t = t / d
-			if t < 1 / 2.75 then
-				return c * (7.5625 * t * t) + b
-			elseif t < 2 / 2.75 then
-				t = t - (1.5 / 2.75)
-				return c * (7.5625 * t * t + 0.75) + b
-			elseif t < 2.5 / 2.75 then
-				t = t - (2.25 / 2.75)
-				return c * (7.5625 * t * t + 0.9375) + b
-			else
-				t = t - (2.625 / 2.75)
-				return c * (7.5625 * t * t + 0.984375) + b
+		},
+		{
+			name = "ᐅᓪᓗᕆᐊᖅ",
+			fn = function(self)
+				self:zoomx(0.7):zoomy(0.9)
+					:tween(0.7, wrap(easing.outElastic)):zoom(1)
+					:tween(0.2, easing.inBack:param(2.5)):zoom(0)
 			end
-		end
+		},
+		{
+			name = "ITG2",
+			fn = function(self, n)
+				self:zoomx(1.3):zoomy(1.7)
+					:decelerate(0.1):zoom(1)
+					:sleep(1):accelerate(0.2):zoom(0)
+				if n == 1 then
+					self:glowshift():effectperiod(0.05):effectcolor1(1,1,1,0):effectcolor2(1,1,1,0.5)
+				end
+			end
+		},
+		{
+			name = "GrooveNights",
+			fn = function(self)
+				self:zoom(1.15)
+					:decelerate(0.1):zoom(1)
+					:sleep(1):accelerate(0.2):zoom(0)
+			end
+		},
+		{
+			name = "ITG Retro",
+			fn = function(self)
+				self:zoomx(1.1):zoomy(1.4)
+					:decelerate(0.1):zoom(1)
+					:sleep(1):accelerate(0.2):zoom(0)
+			end
+		},
+		{
+			name = "SLG Jose's Modification",
+			fn = function(self)
+				self:zoom(1.15)
+					:bounceend(0.2):zoom(1)
+					:sleep(0.6):accelerate(0.2):zoom(0)
+			end
+		},
+		{
+			name = "Gimmick",
+			fn = function(self)
+				self:zoomx(1.3):zoomy(0.5):skewx(0.2)
+					:tween(0.1, wrap(easing.outBack)):zoom(1):skewx(0)
+					:sleep(0.6):tween(0.2, wrap(easing.inBack)):skewx(-0.5):zoomx(0):zoomy(0.1)
+					:sleep(0):skewx(0)
+			end
+		}
+	},
+
+	Combo = {
+		{
+			name = "Static",
+			fn = function(self)
+				self:zoom(comboscale)
+			end
+		},
+		{
+			name = "Love",
+			fn = function(self, combo)
+				local newzoom = scale(combo, 50, 3000, 0.8, 1.8)
+				self:zoom(comboscale * newzoom)
+			end,
+		},
+		{
+			name = "ᐅᓪᓗᕆᐊᖅ",
+			fn = function(self)
+				local y = self:GetY()
+				self:zoom(comboscale)
+					:tween(0.05, easing.outCirc):y(y - 12)
+					:tween(0.2, easing.outBounce):y(y)
+			end
+		},
+		{
+			name = "ITG2",
+			fn = function(self, combo)
+				local newZoom = scale(combo,0,500,0.9,1.4)
+				self:zoom(1.2*newZoom)
+					:linear(0.05):zoom(newZoom)
+			end,
+		},
+		{
+			name = "GrooveNights",
+			fn = function(self)
+				local newZoom = scale(combo,0,500,0.9,1.4)
+				self:zoom(1.05*newZoom)
+					:linear(0.05):zoom(newZoom)
+			end
+		},
+		{
+			name = "SLG Jose's Modification",
+			fn = function(self, combo)
+				local newzoom = scale(combo, 50, 3000, 0.8, 1.8)
+				self:zoom(comboscale * newzoom):addy(-4)
+				:bounceend(0.2):addy(4)
+			end
+		},
+		{
+			name = "Gimmick",
+			function(self)
+				self:zoomx(1.1):zoomy(0.5)
+					:tween(0.1, wrap(easing.outBack)):zoom(1) 
+			end
+		}
+	},
+
+	Hold = {
+		{
+			name = "Love",
+			fn = function(self)
+				self:diffuse(1,1,1,1):zoom(0.5)
+					:sleep(.5):zoom(0)
+			end
+		},
+		{
+			name = "ITG2",
+			fn = function(self)
+				self:diffuse(1,1,1,1):zoom(1.25)
+					:linear(0.3):zoom(1)
+					:sleep(0.5):diffuse(1,1,1,0)
+			end,
+		},
+		{
+			name = "SLG Jose's Modification",
+			fn = function(self)
+				self:diffuse(1,1,1,1):zoom(.5)
+					:sleep(.5):bouncebegin(0.4):rotationz(360):zoom(0)
+			end
+		},
+		{
+			name = "Gimmick",
+			fn = function(self)
+				self:zoomx(1.5):zoomy(1.2)
+					:tween(0.2,outBack):zoom(1) 
+			end
+		}
 	}
-	function JudgmentTween(self)
-		self:zoomx(0.7)
-		self:zoomy(0.9)
-		self:tween(.7, '_SL.Tweens.outElastic(%f, 0, 1, 1)')
-		self:zoomx(1)
-		self:zoomy(1)
-		self:tween(.2, '_SL.Tweens.inBack(%f, 0, 1, 1, 2.5)')
-		self:zoom(0)
-	end
+}
 
-	function ComboTween(self)
-		local y=self:GetY();
-		self:zoom(0.7);
-		self:tween(0.05, '_SL.Tweens.outCirc(%f, 0, 1, 1)');
-		--self:zoomy(0.7 * 1.15);
-		self:y(y - 12);
-		self:tween(0.2, '_SL.Tweens.outBounce(%f, 0, 1, 1)');
-		--self:zoom(0.7);
-		self:y(y);
-	end
-else]]
-	function JudgmentTween(self) self:zoom(.8) self:decelerate(.1) self:zoom(.75) self:sleep(.6) self:accelerate(.2) self:zoom(0) end
+function JudgmentTween(self, n) playerEffects.Judgment[2].fn(self, n) end
+function ComboTween(self, combo) playerEffects.Combo[3].fn(self, n) end
+function HoldTween(self) playerEffects.Hold[1].fn(self, n) end
 
-	function ComboTween(self)
-		local combo=self:GetZoom();
-		local newZoom=scale(combo,50,3000,0.8,1.8);
-		self:zoom(0.7*newZoom);
-		self:linear(0.05);
-		self:zoom(0.7*newZoom);
-	end
--- end
-	function HoldTween(self) self:diffuse(1,1,1,1) self:zoom(.5); self:sleep(.5) self:zoom(0) end
 
 -- Used with Judgment Graphs.
-	local judgeGraphWidth = 44
-	local judgeGraphHeight = 20
+local judgeGraphWidth = 44
+local judgeGraphHeight = 20
 
 -- Used with Synthetic Difficulty List
-	local maxRows = 5
-	local blankMeter = '?'
-	maxFeet = 20 -- used in ScreenSelectMusic overlay/DifficultyList.xml
-	local minFeet = 0
-	feetBaseZoom = 0.275 -- -- used in ScreenSelectMusic overlay/DifficultyList.xml
+local maxRows = 5
+local blankMeter = '?'
+maxFeet = 20 -- used in ScreenSelectMusic overlay/DifficultyList.xml
+local minFeet = 0
+feetBaseZoom = 0.275 -- -- used in ScreenSelectMusic overlay/DifficultyList.xml
 
 -- Judgment Font List
-	local judgmentFontList = { 'Default' , 'Tactics', 'Chromatic', 'Deco', 'GrooveNights', 'ITG2' }
-	if FUCK_EXE then -- Auto load on NotITG
-		local list = { 'Default' }
-		
-		local dir = string.sub(THEME:GetPath(2,'','_blank.png'),9)
-		dir = string.sub(dir,1,string.find(dir,'/')-1)
-		for _,v in pairs({ GAMESTATE:GetFileStructure('Themes/'.. dir ..'/Graphics/_Judgments/') }) do
-			local t, _, name = string.find(v, "(.+) %dx%d")
-			if t then table.insert( list, name )
-			else print('[Judgment] Error in loading ' .. v)
-			end
+local judgmentFontList = { 'Default' , 'Tactics', 'Chromatic', 'Deco', 'GrooveNights', 'ITG2' }
+if FUCK_EXE then -- Auto load on NotITG
+	local list = { 'Default' }
+	
+	local dir = string.sub(THEME:GetPath(2,'','_blank.png'),9)
+	dir = string.sub(dir,1,string.find(dir,'/')-1)
+	for _,v in pairs({ GAMESTATE:GetFileStructure('Themes/'.. dir ..'/Graphics/_Judgments/') }) do
+		local t, _, name = string.find(v, "(.+) %dx%d")
+		if t then table.insert( list, name )
+		else print('[Judgment] Error in loading ' .. v)
 		end
-
-		judgmentFontList = list
 	end
 
-	local holdJudgmentFontList = { 'Default' , 'GrooveNights', 'ITG2'}
-	if FUCK_EXE then
-		local list = { 'Default' }
-		
-		local dir = string.sub(THEME:GetPath(2,'','_blank.png'),9)
-		dir = string.sub(dir,1,string.find(dir,'/')-1)
-		for _,v in pairs({ GAMESTATE:GetFileStructure('Themes/'.. dir ..'/Graphics/_Hold Judgments/') }) do
-			local t, _, name = string.find(v, "(.+) %dx%d")
-			if t then table.insert( list, name )
-			else print('[Hold Judgment] Error in loading ' .. v)
-			end
-		end
+	judgmentFontList = list
+end
 
-		holdJudgmentFontList = list
+local holdJudgmentFontList = { 'Default' , 'GrooveNights', 'ITG2'}
+if FUCK_EXE then
+	local list = { 'Default' }
+	
+	local dir = string.sub(THEME:GetPath(2,'','_blank.png'),9)
+	dir = string.sub(dir,1,string.find(dir,'/')-1)
+	for _,v in pairs({ GAMESTATE:GetFileStructure('Themes/'.. dir ..'/Graphics/_Hold Judgments/') }) do
+		local t, _, name = string.find(v, "(.+) %dx%d")
+		if t then table.insert( list, name )
+		else print('[Hold Judgment] Error in loading ' .. v)
+		end
 	end
+
+	holdJudgmentFontList = list
+end
 
 -- Used with ThemeFiles function
-	local themeDir = '_ThemeFiles'
+local themeDir = '_ThemeFiles'
 
 -- Used with LifeBar option 
-	lifeBarSizeAdd = { Width = 0, Height = 4, OffsetX = 0, OffsetY = -2 } -- Allows size adjustments for cases like Meatboy's progress bar.
+lifeBarSizeAdd = { Width = 0, Height = 4, OffsetX = 0, OffsetY = -2 } -- Allows size adjustments for cases like Meatboy's progress bar.
 
 -- Used with CompareScore and Measure display
-	local DPLimit = 9 -- Max of DP the compare score feature will display before switching to percent.
-	local function CompareTextColor(n) if n < 0 then return 1,.3,1,1 end return 0.3,1,0.3,1 end
-	local function ModTextFormat(self,n) end -- This is added on top of the base positioning etc.
+local DPLimit = 9 -- Max of DP the compare score feature will display before switching to percent.
+local function CompareTextColor(n) if n < 0 then return 1,.3,1,1 end return 0.3,1,0.3,1 end
+local function ModTextFormat(self,n) end -- This is added on top of the base positioning etc.
 
 -- Used with Speed Mods, to determine selected mod and as limits for slider speed mods.
-	local speedMax = 2000
-	local speedSpread = 5
-	local speedMin = 5
+local speedMax = 2000
+local speedSpread = 5
+local speedMin = 5
 
 -- These will be the option rows available on the [nth] option screen. The 'NextScreen' row will be automatically added as long as there is more than 1 option screen.
 
-	playerOptions = {}
-	playerOptions[1] = { 'SpeedType','SpeedNumber','Mini','Perspective','NoteSkin','Turn','JudgmentFont','HoldJudgmentFont','Rate' }
+-- metrics.ini/[ScreenPlayerOptions]
+playerOptions = {}
+playerOptions[1] = { 'SpeedType','SpeedNumber','Mini','Perspective','NoteSkin','Turn','JudgmentFont','HoldJudgmentFont','Rate' }
 
-	if FUCK_EXE and tonumber(GAMESTATE:GetVersionDate()) >= 20210420 then -- v4.2.0
-		playerOptions[2] = { 'MetaMods1','MetaMods2','MetaMods3','Accel','Scroll','Effect','Appearance','Handicap','InsertTaps','InsertOther','Hide','Ghost','Compare','Measure','LifeBar' }
-	else
-		playerOptions[2] = { 'Accel','Scroll','Effect','Appearance','Handicap','InsertTaps','InsertOther','Hide','Ghost','Compare','Measure','LifeBar' }
-	end
-	playerOptions.Edit = { 'SpeedType','SpeedNumber','Mini','Perspective','NoteSkin','Turn' }
-	ShowAllInRow = true
+if FUCK_EXE and tonumber(GAMESTATE:GetVersionDate()) >= 20210420 then -- v4.2.0
+	playerOptions[2] = { 'MetaMods1','MetaMods2','MetaMods3','Accel','Scroll','Effect','Appearance','Handicap','InsertTaps','InsertOther','Hide','Ghost','Compare','Measure','LifeBar' }
+else
+	playerOptions[2] = { 'Accel','Scroll','Effect','Appearance','Handicap','InsertTaps','InsertOther','Hide','Ghost','Compare','Measure','LifeBar' }
+end
+playerOptions.Edit = { 'SpeedType','SpeedNumber','Mini','Perspective','NoteSkin','Turn' }
+local ShowAllInRow = true
+
+local metaModsRows = {
+	{
+		modlist = {'MetaFlip', 'MetaInvert', 'MetaVideogames', 'MetaMonocolumn'},
+		default = 'no metaflip, no metainvert, no metavideogames, no metamonocolumn',
+		mods = {'metaflip', 'metainvert', 'metavideogames', 'metamonocolumn'}
+	},
+	{
+		modlist = {'MetaReverse', 'MetaDizzy', 'MetaOrient', 'MetaBrake'},
+		default = 'no metareverse, no metadizzy, no metaorient, no metabrake',
+		mods = {'metareverse', 'metadizzy', 'metaorient', 'metabrake'}
+	},
+	{
+		modlist = {'MetaHidden', '50% MetaStealth'},
+		default = 'no metahidden, no metastealth',
+		mods = {'metahidden', '50% metastealth'}
+	}
+}
+
+local rateMods = { "1.0x", "1.1x", "1.2x", "1.3x", "1.4x", "1.5x", "1.6x", "1.7x", "1.8x", "1.9x", "2.0x" }
+local rateModsEdit = { "1.0x", "1.1x", "1.2x", "1.3x", "1.4x", "1.5x", "1.6x", "1.7x", "1.8x", "1.9x", "2.0x", "0.3x", "0.4x", "0.5x", "0.6x", "0.7x", "0.8x", "0.9x" }
+
+modRate = 1
+local optionIndex = 0
+local ModsPlayer = {}
+local ModsMaster = {}
+ModsMaster.Perspective =	{ modlist = {'Overhead','Hallway','Distant','Incoming','Space'}, Select = 1 }
+ModsMaster.NoteSkin =		{ modlist = NOTESKIN:GetNoteSkinNames(), Select = 1 }
+ModsMaster.Turn =			{ modlist = {'Mirror','SoftShuffle','SmartBlender','Blender',}, default = 'no mirror,no left,no right,no shuffle,no supershuffle,no softshuffle, no spookyshuffle, no smartblender', mods = {'mirror','softshuffle','smartblender','supershuffle'} }
+ModsMaster.Hide = 			{ modlist = {'Hide Targets','Hide Judgments','Hide Background'}, default ='no dark,no blind,no cover', mods = {'dark','blind','cover'} }
+ModsMaster.Accel =			{ modlist = {'Accel','Decel','Wave','Boomerang','Expand','Bump'}, default = 'no boost,no brake,no wave,no boomerang,no expand,no bumpy', mods = {'Boost','Brake','Wave','Boomerang','Expand','Bumpy'} }
+ModsMaster.Scroll = 		{ modlist = {'Reverse','Split','Alternate','Cross','Centered'}, default = 'no reverse,no split,no alternate,no cross,no centered' }
+ModsMaster.Effect = 		{ modlist = {'Drunk','Dizzy','Flip','Invert';'Tornado','Tipsy','Beat'}, default = 'no drunk,no dizzy,no flip,no invert,no tornado,no tipsy,no beat, no big', mods = {'drunk','dizzy','flip','invert','60% tornado','tipsy','beat'} }
+ModsMaster.Appearance = 	{ modlist = {'Sudden','Hidden','Blink','Stealth'}, default ='no hidden,no sudden,no blink,no stealth' }
+ModsMaster.Handicap = 		{ modlist = {'No Mines','No Rolls','No Holds','No Hands','No Jumps','No Stretch'}, default ='no nomines,no noholds,no norolls,no nohands,no nojumps,no nostretch', mods = {'nomines','norolls','noholds','nohands','nojumps','nostretch'} } 
+ModsMaster.InsertTaps =		{ name = 'Insert', modlist = {'Little','Big','Quick','Skippy','Echo','Wide','Stomp'}, default = 'no little,no big,no quick,no skippy,no echo,no stomp,no wide', mods = {'Little','Big','Quick','Skippy','Echo','Wide','Stomp'} }
+ModsMaster.InsertOther =	{ name = 'Other', modlist = {'Planted','Floored','Twister','Mines'}, default = 'no planted,no floored,no twister,no mines' }
+
+ModsMaster.NoMines =		{ name = 'No Mines' }
+ModsMaster.NoJumps =		{ name = 'No Jumps' }
+ModsMaster.NoHolds =		{ name = 'No Holds' }
+ModsMaster.NoHands =		{ name = 'No Hands' }
+ModsMaster.NoRolls =		{ name = 'No Rolls' }
+ModsMaster.Dark =			{ name = 'Hide Targets' }
+ModsMaster.Blind =			{ name = 'Hide Judgments' }
+ModsMaster.Cover =			{ name = 'Hide Background' }
+ModsMaster.Mines =			{ name = 'Add Mines' }
+
+ModsMaster.Boost =			{ name = 'Accel', float = true }
+ModsMaster.Break =			{ name = 'Decel', float = true }
+ModsMaster.Wave =			{ float = true }
+ModsMaster.Expand =			{ float = true }
+ModsMaster.Boomerang =		{ float = true }
+ModsMaster.Bumpy =			{ float = true }
+ModsMaster.Drunk =			{ float = true }
+ModsMaster.Dizzy =			{ float = true }
+ModsMaster.Tornado =		{ float = true }
+ModsMaster.Tipsy =			{ float = true }
+ModsMaster.Beat =			{ float = true }
+ModsMaster.Mini =			{ float = true }
+
+ModsMaster.MetaMods1 = 		{ fnctn = 'MetaMods1' }
+ModsMaster.MetaMods2 = 		{ fnctn = 'MetaMods2' }
+ModsMaster.MetaMods3 = 		{ fnctn = 'MetaMods3' }
+ModsMaster.SpeedType =		{ fnctn = 'SpeedType' }
+ModsMaster.SpeedNumber =	{ fnctn = 'SpeedNumber' }
+ModsMaster.Next =			{ fnctn = 'NextScreenOption' }
+ModsMaster.Ghost = 			{ fnctn = 'EnableGhostData' }
+ModsMaster.Measure =		{ fnctn = 'MeasureOption', modlist = {-1,0,8,12,16,24,32} }
+ModsMaster.Compare =		{ fnctn = 'CompareOption' }
+ModsMaster.LifeBar =		{ fnctn = 'LifeBarOption' }
+ModsMaster.Rate =			{ fnctn = 'RateMods' }
+ModsMaster.RateEdit =		{ fnctn = 'RateMods', arg = 'Edit' }
+-- ModsMaster.SpeedBase =		{ fnctn = 'SpeedMods' }
+-- ModsMaster.SpeedExtra =		{ fnctn = 'SpeedMods', arg = 'Extra' }
+
+ModsMaster.JudgmentFont =		{ fnctn = 'JudgmentFont' }
+ModsMaster.JudgmentTween =		{ fnctn = 'JudgmentTween' }
+-- ModsMaster.ComboFont =			{ fnctn = 'ComboFont' }
+ModsMaster.ComboTween =			{ fnctn = 'ComboTween' }
+ModsMaster.HoldJudgmentFont =	{ fnctn = 'HoldJudgmentFont' }
+ModsMaster.HoldJudgmentTween =	{ fnctn = 'HoldJudgmentTween' }
 
 -----------------------
 -- Utility Functions
 -----------------------
-function number(n) return tonumber(tostring(n)) or loadstring('return '..n)() or 0 end
-function SM(str) SCREENMAN:SystemMessage(str) end
-function BM(str) MESSAGEMAN:Broadcast(str) end
-function Screen() return SCREENMAN:GetTopScreen() end
-function Sound(str) SOUND:PlayOnce( Path("sounds",str )) end
+-- BGAnimations/ScreenSelectMusic overlay/default.xml
+-- Graphics/ScreenOptions cursor 3x2.sprite
+-- Graphics/ScreenOptions underline 3x2.sprite
+-- Graphics/_ThemeFiles/ScoreRow.xml
 function Path(ec,str) return THEME:GetPath( _G['EC_'..string.upper(ec)] , '' , str ) end
+
 local function Player(pn) return GAMESTATE:IsPlayerEnabled(pn-1) end
-function PlayerIndex(pn) if pn == GAMESTATE:GetNumPlayersEnabled() then return pn end return 1 end
-function Profile(pn) if not PROFILEMAN then return {} end if pn == 0 then return PROFILEMAN:GetMachineProfile():GetSaved() else return PROFILEMAN:GetProfile(pn-1):GetSaved() end end
-function GetPref(str) return PREFSMAN:GetPreference(str) end
-function SetPref(str,val) return PREFSMAN:SetPreference(str,val) end
+local function PlayerIndex(pn) if pn == GAMESTATE:GetNumPlayersEnabled() then return pn end return 1 end
+
+-- BGAnimations/ScreenTitleMenu underlay/default.xml
+-- Graphics/ScreenWithMenuElemts stage event.xml
+-- Scripts/Colors.lua
+function Profile(pn)
+	if not PROFILEMAN then
+		return {}
+	end
+
+	if pn == 0 then
+		return PROFILEMAN:GetMachineProfile():GetSaved()
+	end
+
+	return PROFILEMAN:GetProfile(pn-1):GetSaved()
+end
+
+-- BGAnimations/Summary overlay.xml
+-- Graphics/ScreenGameplay footer.xml
+-- Graphics/ScreenGameplay header.xml
 function ThemeFile( file ) return THEME:GetPath( EC_GRAPHICS, '' , themeDir..'/'..file ) end
-function ThemeName() local str = string.sub(THEME:GetPath(2,'','_blank.png'),9) return string.sub(str,1,string.find(str,'/')-1) end   
-function IsType(a,t) return string.find(tostring(a),t) end
-function TableToString(t) local s = '' for i,v in ipairs(t) do s = s .. tostring(v) end return s end
-function GetStartScreen() SetPref("DelayedScreenLoad",false) if GetPref('BreakComboToGetItem') and GetInputType and GetInputType() == "" then return "ScreenArcadeStart" end return THEME:GetMetric('Common','FirstAttractScreen') end
-function GetArcadeStartScreen() if GetInputType() == "" then return "ScreenArcadeStart" end	return THEME:GetMetric('Common','FirstAttractScreen') end
-function MaxLength(str,l) if string.len(str) > l then str = string.sub(str,0,l-3) .. '...' end return str end
-function RowMetric(b,a,r) if r then rowYNum = 0 rowYAdd = a rowYBase = b rowYOffTop = rowYBase + rowYAdd*0.5 return r elseif a then rowYNum = rowYNum + a end rowYNum = rowYNum + 1 if b ~= 'Exit' then rowYOffCenter = rowYBase + rowYAdd*(rowYNum+1+math.mod(rowYNum,2))/2 rowYOffBottom = rowYBase + rowYAdd*(rowYNum+1/2) end return rowYBase+rowYAdd*rowYNum end
-function SecondsToMSS(n) local t = SecondsToMSSMsMs(math.abs(n)) t = string.sub(t,0,string.len(t)-3) if tonumber(n) < 0 then t = '-' .. t end return t end
-function MSSMsMsToSeconds(t) return string.sub(t,string.len(t)-4,string.len(t)) + string.sub(t,1,string.len(t)-6)*60 end
-function ForceSongAndSteps()
+
+local function IsType(a,t) return string.find(tostring(a),t) end
+
+-- metrics.ini/[InitializeScripts]/NextScreen
+function GetStartScreen()
+	PREFSMAN:SetPreference("DelayedScreenLoad",false)
+	if PREFSMAN:GetPreference('BreakComboToGetItem') and GetInputType and GetInputType() == "" then
+		return "ScreenArcadeStart"
+	end
+	return THEME:GetMetric('Common','FirstAttractScreen')
+end
+
+-- Graphics/_ThemeFiles/ScoreRow.xml
+function MaxLength(str,l)
+	if string.len(str) > l then
+		str = string.sub(str,0,l-3) .. '...'
+	end
+	return str
+end
+
+-- BGAnimations/ScreenEvaluationOni overlay.xml
+function SecondsToMSS(n)
+	local t = SecondsToMSSMsMs(math.abs(n))
+	t = string.sub(t,0,string.len(t)-3)
+	if tonumber(n) < 0 then
+		t = '-' .. t
+	end
+	return t
+end
+
+-- BGAnimations/ScreenSelectMusic overlay/default.xml
+function MSSMsMsToSeconds(t)
+	local len = string.len(t)
+	return string.sub(t, len - 4,len) + string.sub(t, 1, len - 6) * 60
+end
+
+local function ForceSongAndSteps()
 	if not GAMESTATE:GetCurrentSong() then
 		local song = SONGMAN:GetRandomSong()
 		if not song then return end
@@ -267,7 +495,7 @@ function ForceSongAndSteps()
 		GAMESTATE:SetCurrentSteps(1,steps[1])
 	end
 end
-function Diffuse(self,c,n) if not c[4] then c[4] = 1 end if n == 1 then self:diffuseupperleft(c[1],c[2],c[3],c[4]) elseif n == 2 then self:diffuseupperright(c[1],c[2],c[3],c[4]) elseif n == 3 then self:diffuselowerleft(c[1],c[2],c[3],c[4]) elseif n == 4 then self:diffuselowerright(c[1],c[2],c[3],c[4]) else self:diffuse(c[1],c[2],c[3],c[4]) end end
+
 if FUCK_EXE then
 	function ApplyMod(mod,pn,f)
 		local m = mod
@@ -289,7 +517,11 @@ else
 		end
 	end
 end
+
+-- Scripts/Other.lua
 function CheckMod(pn,mod) return mod and GAMESTATE:PlayerIsUsingModifier(pn,string.lower(mod)) end
+
+-- metrics.ini
 function SummaryBranch()
 	ForceSongAndSteps()
 	if _SL.IsAnSRTStyle() then
@@ -305,27 +537,71 @@ function SummaryBranch()
 		return ScreenList('Ending')
 	end
 end
-function Clock(val) local t = GlobalClock:GetSecsIntoEffect() if val then t = t - val end return t end
+
+-- BGAnimations/ScreenSelectMusic overlay/default.xml
+-- Scripts/Branches.lua
+function Clock(val)
+	local t = GlobalClock and GlobalClock:GetSecsIntoEffect() or 0
+	if val then
+		t = t - val
+	end
+	return t
+end
 --function Clock(val) local t = 0 if val then t = t - val end return t end
-function MusicClock() return Screen():GetSecsIntoEffect() end
+local function MusicClock() return SCREENMAN():GetSecsIntoEffect() end
 
 --------------------------------
 -- BGAnimation Functions
 --------------------------------
 
-function SelectMusicInit(self) TimedSet.Class = 0; InitializeMods() optionIndex = 0; GhostDataCache = { }; for pn=1,2 do GhostData(pn,"Cache") end; self:queuecommand('FirstUpdate') end
+-- BGAnimations/ScreenSelecMusic underlay/default.xml
+function SelectMusicInit(self)
+	TimedSet.Class = 0;
+	InitializeMods()
+	optionIndex = 0;
+	GhostDataCache = { };
+	for pn=1,2 do
+		GhostData(pn,"Cache")
+	end;
+	self:queuecommand('FirstUpdate')
+end
+
+-- BGAnimations/ScreenSelecMusic underlay/default.xml
 function SelectMusic(self) self:queuecommand('Capture') end
 
-function GameplayInit(self) TimedSet.Class = 1; Combo = {} lifeNormal = {} lifeHot = {} holdJudgments = {} ApplyRateAdjust() self:queuecommand('FirstUpdate') end
-function Gameplay(self) EditMode = false; JudgmentInit() SurroundLife() Danger.Time = {0,0} Danger.State = { false, false} Dead.Time = {0,0} Dead.State = { false, false } Screen():effectclock('music') self:luaeffect('Update') end
+-- BGAnimations/ScreenGameplay underlay/default.xml
+function GameplayInit(self)
+	TimedSet.Class = 1;
+	Combo = {}
+	lifeNormal = {}
+	lifeHot = {}
+	holdJudgments = {}
+	ApplyRateAdjust()
+	self:queuecommand('FirstUpdate')
+end
+function Gameplay(self)
+	JudgmentInit()
+	SurroundLife()
+	Danger.Time = {0,0}
+	Danger.State = {false, false}
+	Dead.Time = {0,0}
+	Dead.State = {false, false}
+	SCREENMAN():effectclock('music')
+	self:luaeffect('Update')
+end
 
-function ScreenEditInit(self) InitializeMods() holdJudgments = {} JudgmentInit() optionIndex = 'Edit' GameplayInit(self) end
-function ScreenEdit() EditMode = true; end
+function ScreenEditInit(self)
+	InitializeMods()
+	holdJudgments = {}
+	JudgmentInit()
+	optionIndex = 'Edit'
+	GameplayInit(self)
+end
 
 ---------------------------------------
 -- Judgment/Gameplay/GhostData Functions
 ---------------------------------------
-
+local trackedStreams = {0,1,4,8,12,16,24,32}
 function JudgmentInit()
 	
 	if FakeCombo == nil or not FakeCombo then
@@ -352,14 +628,14 @@ function JudgmentInit()
 	end
 
 		for pn = 1, 8 do
-			local px = Screen():GetChild('PlayerP'..pn)
+			local px = SCREENMAN('PlayerP'..pn)
 			local mpn = math.mod(pn - 1, 2) + 1
 			local holdJudgeIndex = ModCustom.HoldJudgmentFont[mpn]
 			local holdJudgeName = holdJudgmentFontList[holdJudgeIndex]
 			-- check the contents of the player, if the actor is an actorframe, grab it's contents, if a sprite is contained, check to see if the path contains HoldJudgment to swap
 			if px and holdJudgeIndex ~= 1 then
 				for i = 0, 15 do
-					local sprite = px:GetChild('HoldJudgmentCol' .. i):GetChild('')
+					local sprite = px('HoldJudgmentCol' .. i)('')
 					sprite:Load( THEME:GetPath( EC_GRAPHICS, '', '_Hold Judgments/'.. holdJudgeName ))
 				end
 			end
@@ -367,13 +643,13 @@ function JudgmentInit()
 	
 	local invisibleSettings = {'hidden', 1, 'diffusealpha', 0, 'zoom', 0, 'zoom2', 0, 'x', 9e9, 'y', 9e9, 'x2', 9e9, 'y2', 9e9}
 	for pn = 1,8 do
-		local px = Screen():GetChild('PlayerP'..pn)
+		local px = SCREENMAN('PlayerP'..pn)
 		local mpn = math.mod(pn - 1, 2) + 1
 		local judgeIndex = ModCustom.JudgmentFont[mpn]
 		local judgeName = judgmentFontList[judgeIndex]
 		if px then
-			px = px:GetChild('Judgment')
-			local pxc = px:GetChild('')
+			px = px('Judgment')
+			local pxc = px('')
 			px:aux(mpn)
 			if judgeIndex ~= 1 then
 				pxc:Load( THEME:GetPath( EC_GRAPHICS, '', '_Judgments/'.. judgeName ))
@@ -440,8 +716,8 @@ function GameplayUpdate(self)
 	
 end
 
-function JudgmentCommand(self,n) TrackJudgment(self,n) JudgmentTween(self) end
-function HoldCommand(self,n) TrackJudgment(self,n) HoldTween(self) end
+function JudgmentCommand(self,n) TrackJudgment(self, n) JudgmentTween(self, n) end
+function HoldCommand(self,n) TrackJudgment(self, n) HoldTween(self, n) end
 
 function TrackJudgment(self,j,p)
 	local pn = p or math.max(self:getaux(),1)
@@ -476,7 +752,6 @@ function TrackJudgment(self,j,p)
 	
 end
 
-trackedStreams = {0,1,4,8,12,16,24,32}
 function AddStepToStream(pn,j) -- Each note frequency gets a table of {start beat,end beat} pairs.
 	table.insert(judge[pn].Steps,{GAMESTATE:GetSongBeat(),MusicClock(),j})
 	for i,v in ipairs(trackedStreams) do
@@ -513,7 +788,7 @@ end
 
 function UpdateCheck(str,pn)
 	if _G[str] and _G[str].State and _G[str].Time then
-		if _G[str].State[pn] ~= (_G[str].Time[pn] ~= _G[str][pn]:GetSecsIntoEffect()) then BM(str..'P'..pn) end -- State is going to change, but has not changed yet.
+		if _G[str].State[pn] ~= (_G[str].Time[pn] ~= _G[str][pn]:GetSecsIntoEffect()) then MESSAGEMAN:Broadcast(str..'P'..pn) end -- State is going to change, but has not changed yet.
 		_G[str].State[pn] = _G[str].Time[pn] ~= _G[str][pn]:GetSecsIntoEffect() -- true if updating.
 		_G[str].Time[pn] = _G[str][pn]:GetSecsIntoEffect()
 	end
@@ -565,8 +840,38 @@ function UpdateMeasureText(pn)
 	end
 end
 
-function CompareText(self) local pn = self:getaux() compareText[pn] = self self:shadowlength(0) self:horizalign('left') self:zoom(0.4) local p = Screen():GetChild('PlayerP'..pn) if p then local j = p:GetChild('Judgment') self:x(p:GetX()+j:GetX()+80) self:y(p:GetY()+j:GetY()+30) else self:zoom(0) end ModTextFormat(self,pn) end
-function MeasureText(self) local pn = self:getaux() measureText[pn] = self self:shadowlength(0) self:horizalign('right') self:zoom(0.4) local p = Screen():GetChild('PlayerP'..pn) if p then local j = p:GetChild('Judgment') self:x(p:GetX()+j:GetX()-60) self:y(p:GetY()+j:GetY()+30) else self:zoom(0) end ModTextFormat(self,pn) end
+function CompareText(self)
+	local pn = self:getaux()
+	compareText[pn] = self
+	self:shadowlength(0)
+	self:horizalign('left')
+	self:zoom(0.4)
+	local p = SCREENMAN('PlayerP'..pn)
+	if p then
+		local j = p('Judgment')
+		self:x(p:GetX()+j:GetX()+80)
+		self:y(p:GetY()+j:GetY()+30)
+	else
+		self:zoom(0)
+	end
+	ModTextFormat(self,pn)
+end
+function MeasureText(self)
+	local pn = self:getaux()
+	measureText[pn] = self
+	self:shadowlength(0)
+	self:horizalign('right')
+	self:zoom(0.4)
+	local p = SCREENMAN('PlayerP'..pn)
+	if p then
+		local j = p('Judgment')
+		self:x(p:GetX()+j:GetX()-60)
+		self:y(p:GetY()+j:GetY()+30)
+	else
+		self:zoom(0)
+	end
+	ModTextFormat(self,pn)
+end
 
 function NumColumns(pn) local cols = {4,8,8,6,5,6,10,10,5,10,7,5,10,8,6,12,8,16,4,8,4,5,8,8,10,5,9} local s = GAMESTATE:GetCurrentSteps(pn-1) return s and cols[s:GetStepsType()+1] or 0 end
 
@@ -839,7 +1144,7 @@ end
 
 function OptionFromEvalPlayerOptions(pn,m)
 	if not Player(pn) then return 0 end
-	local mods = string.lower(Screen():GetChild('PlayerOptionsP'..pn):GetText())
+	local mods = string.lower(SCREENMAN('PlayerOptionsP'..pn):GetText())
 	local s = { string.find(mods,'-*%d*%%*%s*'..m) }
 	if not s[1] then return 0 end
 	if s[2]-s[1] == string.len(m) then return 100 end
@@ -853,13 +1158,16 @@ function SongInfo(self)
 	CapturePane()
 	CaptureBPM()
 	CaptureMeter()
-	SongLength = Screen():GetChild('TotalTime'):GetText()
+	SongLength = SCREENMAN('TotalTime'):GetText()
 	CaptureSteps()
 	self:queuemessage('SongInfo')
 end
 
-function JudgeWindow(j) local names = {'Marvelous','Perfect','Great','Good','Boo','Miss','OK','NG','HitMine'} return GetPref('JudgeWindowSeconds'..names[j]) end
-function ScoreWeight(j) local names = {'Marvelous','Perfect','Great','Good','Boo','Miss','OK','NG','HitMine'} return GetPref('PercentScoreWeight'..names[j]) end
+do
+	local windows = {'Marvelous','Perfect','Great','Good','Boo','Miss','OK','NG','HitMine'}
+	function JudgeWindow(j) return PREFSMAN:GetPreference('JudgeWindowSeconds' .. windows[j]) end
+	function ScoreWeight(j) return PREFSMAN:GetPreference('PercentScoreWeight' .. windows[j]) end
+end
 function MaxScoreWeight(j) if j == 9 then return 0 end if j > 6 then return ScoreWeight(7) end	return ScoreWeight(1) end
 paneItemListDance = {'SongNumStepsText' , 'SongJumpsText' , 'SongHoldsText' , 'SongRollsText' , 'SongMinesText' , 'SongHandsText' , 'MachineHighScoreText' , 'ProfileHighScoreText' , 'MachineHighNameText' }
 paneItemListCourse = {'CourseNumStepsText' , 'CourseJumpsText' , 'CourseHoldsText' , 'CourseRollsText' , 'CourseMinesText' , 'CourseHandsText' , 'CourseMachineHighNameText' , 'CourseMachineHighScoreText' , 'CourseProfileHighScoreText' }
@@ -875,7 +1183,7 @@ for i,v in ipairs(judgmentList) do _G[v] = {} end
 function CapturePane()
 	if GAMESTATE:IsCourseMode() then paneItemList = paneItemListCourse else paneItemList = paneItemListDance end
 	for pn = 1, 2 do if Player(pn) then
-		for i,v in ipairs(paneItemList) do _G[v][pn] = Screen():GetChild('PaneDisplayP'..pn):GetChild(''):GetChild(v):GetText() if i == 7 or i == 8 then _G[v][pn] = string.gsub(_G[v][pn],'%%','') end end
+		for i,v in ipairs(paneItemList) do _G[v][pn] = SCREENMAN('PaneDisplayP'..pn)('')(v):GetText() if i == 7 or i == 8 then _G[v][pn] = string.gsub(_G[v][pn],'%%','') end end
 		if tonumber(_G[paneItemList[1]][pn]) then MaxDP[pn] = _G[paneItemList[1]][pn]*ScoreWeight(1) + _G[paneItemList[3]][pn]*ScoreWeight(7) + _G[paneItemList[4]][pn]*ScoreWeight(7) else	MaxDP[pn] = nil	end
 	end end
 end
@@ -884,7 +1192,7 @@ function CaptureJudgment()
 	for pn = 1, 2 do
 		if Player(pn) then
 			for i,v in ipairs(judgmentList) do
-				local j = Screen():GetChild(v .. 'P' .. pn)
+				local j = SCREENMAN(v .. 'P' .. pn)
 				if j then
 					_G[v][pn] = j:GetText()
 				end
@@ -896,9 +1204,9 @@ end
 function CaptureMeter()
 	for pn = 1, 2 do if Player(pn) then
 		local s = GAMESTATE:GetCurrentSteps(pn-1)
-		if s then Difficulty[pn] = s:GetDifficulty() else Difficulty[pn] = Screen():GetChild('MeterP'.. pn):GetChild('Difficulty'):GetText() end
+		if s then Difficulty[pn] = s:GetDifficulty() else Difficulty[pn] = SCREENMAN('MeterP'.. pn)('Difficulty'):GetText() end
 		for i=0,5 do if DifficultyToThemedString(i) == Difficulty[pn] or string.upper(DifficultyToThemedString(i)) == Difficulty[pn] then Difficulty[pn] = i break end end
-		Meter[pn] = Screen():GetChild('MeterP'.. pn):GetChild('Meter'):GetText()
+		Meter[pn] = SCREENMAN('MeterP'.. pn)('Meter'):GetText()
 	end end
 end
 
@@ -923,9 +1231,9 @@ end
 
 function CaptureBPM()
 	bpm = {}
-	local s = SCREENMAN:GetTopScreen():GetChild('BPMDisplay')
+	local s = SCREENMAN('BPMDisplay')
 	if s then
-		s = s:GetChild('Text'):GetText()
+		s = s('Text'):GetText()
 		bpm[1] = string.gsub(s,'^(-?%d+)-?[-%d]*$','%1')
 		bpm[2] = string.gsub(s,'^'..bpm[1]..'%-?','')
 	end
@@ -950,11 +1258,11 @@ end
 
 function GetScore(pn)
 	
-	if EditMode or GAMESTATE:IsCourseMode() then return 0 end
+	if GAMESTATE:IsEditMode() or GAMESTATE:IsCourseMode() then return 0 end
 	
 	local s = 0
-	if Screen():GetChild('PercentP'..pn) then s = Screen():GetChild('PercentP'..pn):GetChild('PercentP'..pn):GetText() end
-	if Screen():GetChild('ScoreP'..pn) then s = Screen():GetChild('ScoreP'..pn):GetChild('ScoreDisplayPercentage Percent'):GetChild('PercentP'..pn):GetText() end
+	if SCREENMAN('PercentP'..pn) then s = SCREENMAN('PercentP'..pn)('PercentP'..pn):GetText() end
+	if SCREENMAN('ScoreP'..pn) then s = SCREENMAN('ScoreP'..pn)('ScoreDisplayPercentage Percent')('PercentP'..pn):GetText() end
 	s = string.gsub(s,'%%','')
 	return tonumber(s) or 0
 	
@@ -1032,12 +1340,12 @@ function DisplaySpeedMod(pn)
 end
 
 function GameplayBPM(self)
-	local b = Screen():GetChild('BPMDisplay')
-	if b then b = b:GetChild('Text'):GetText() end
+	local b = SCREENMAN('BPMDisplay')
+	if b then b = b('Text'):GetText() end
 	if b and bpm then
-		--bpm[3] = Screen():GetChild('BPMDisplay'):GetChild('Text'):GetText()
+		--bpm[3] = SCREENMAN('BPMDisplay')('Text'):GetText()
 		--if not OPENITG then bpm[3] = math.floor(bpm[3] * modRate + 0.5) end
-		bpm[3] = FUCK_EXE and GAMESTATE:GetCurBPM() or Screen():GetChild('BPMDisplay'):GetChild('Text'):GetText() -- more accurate than bpmdisplay
+		bpm[3] = FUCK_EXE and GAMESTATE:GetCurBPM() or SCREENMAN('BPMDisplay')('Text'):GetText() -- more accurate than bpmdisplay
 		self:settext(bpm[3] * modRate)
 		self:sleep(.05)
 		self:queuecommand('Update')
@@ -1068,87 +1376,7 @@ end
 -- Lua Option Row support functions
 -------------------------------------
 
-baseSpeed = { "C700", "C800", "C900", "C1000", "C1100", "C1200", "C1300", "C1400", "1x", "2x", "3x", "4x", "5x", "6x", "7x", "C400", "C500", "C600" }
-extraSpeed = { "0", "+C10", "+C20", "+C30", "+C40", "+C50", "+C60", "+C70", "+C80", "+C90", "+.75x", "+.50x", "+.25x" }
-
-metaModsRows = {
-	{
-		modlist = {'MetaFlip', 'MetaInvert', 'MetaVideogames', 'MetaMonocolumn'},
-		default = 'no metaflip, no metainvert, no metavideogames, no metamonocolumn',
-		mods = {'metaflip', 'metainvert', 'metavideogames', 'metamonocolumn'}
-	},
-	{
-		modlist = {'MetaReverse', 'MetaDizzy', 'MetaOrient', 'MetaBrake'},
-		default = 'no metareverse, no metadizzy, no metaorient, no metabrake',
-		mods = {'metareverse', 'metadizzy', 'metaorient', 'metabrake'}
-	},
-	{
-		modlist = {'MetaHidden', '50% MetaStealth'},
-		default = 'no metahidden, no metastealth',
-		mods = {'metahidden', '50% metastealth'}
-	}
-}
-
-rateMods = { "1.0x", "1.1x", "1.2x", "1.3x", "1.4x", "1.5x", "1.6x", "1.7x", "1.8x", "1.9x", "2.0x" }
-rateModsEdit = { "1.0x", "1.1x", "1.2x", "1.3x", "1.4x", "1.5x", "1.6x", "1.7x", "1.8x", "1.9x", "2.0x", "0.3x", "0.4x", "0.5x", "0.6x", "0.7x", "0.8x", "0.9x" }
-
-modRate = 1
-
-ModsPlayer = {}
-ModsMaster = {}
-ModsMaster.Perspective =	{ modlist = {'Overhead','Hallway','Distant','Incoming','Space'}, Select = 1 }
-ModsMaster.NoteSkin =		{ modlist = NOTESKIN:GetNoteSkinNames(), Select = 1 }
-ModsMaster.Turn =			{ modlist = {'Mirror','SoftShuffle','SmartBlender','Blender',}, default = 'no mirror,no left,no right,no shuffle,no supershuffle,no softshuffle, no spookyshuffle, no smartblender', mods = {'mirror','softshuffle','smartblender','supershuffle'} }
-ModsMaster.Hide = 			{ modlist = {'Hide Targets','Hide Judgments','Hide Background'}, default ='no dark,no blind,no cover', mods = {'dark','blind','cover'} }
-ModsMaster.Accel =			{ modlist = {'Accel','Decel','Wave','Boomerang','Expand','Bump'}, default = 'no boost,no brake,no wave,no boomerang,no expand,no bumpy', mods = {'Boost','Brake','Wave','Boomerang','Expand','Bumpy'} }
-ModsMaster.Scroll = 		{ modlist = {'Reverse','Split','Alternate','Cross','Centered'}, default = 'no reverse,no split,no alternate,no cross,no centered' }
-ModsMaster.Effect = 		{ modlist = {'Drunk','Dizzy','Flip','Invert';'Tornado','Tipsy','Beat'}, default = 'no drunk,no dizzy,no flip,no invert,no tornado,no tipsy,no beat, no big', mods = {'drunk','dizzy','flip','invert','60% tornado','tipsy','beat'} }
-ModsMaster.Appearance = 	{ modlist = {'Sudden','Hidden','Blink','Stealth'}, default ='no hidden,no sudden,no blink,no stealth' }
-ModsMaster.Handicap = 		{ modlist = {'No Mines','No Rolls','No Holds','No Hands','No Jumps','No Stretch'}, default ='no nomines,no noholds,no norolls,no nohands,no nojumps,no nostretch', mods = {'nomines','norolls','noholds','nohands','nojumps','nostretch'} } 
-ModsMaster.InsertTaps =		{ name = 'Insert', modlist = {'Little','Big','Quick','Skippy','Echo','Wide','Stomp'}, default = 'no little,no big,no quick,no skippy,no echo,no stomp,no wide', mods = {'Little','Big','Quick','Skippy','Echo','Wide','Stomp'} }
-ModsMaster.InsertOther =	{ name = 'Other', modlist = {'Planted','Floored','Twister','Mines'}, default = 'no planted,no floored,no twister,no mines' }
-
-ModsMaster.NoMines =		{ name = 'No Mines' }
-ModsMaster.NoJumps =		{ name = 'No Jumps' }
-ModsMaster.NoHolds =		{ name = 'No Holds' }
-ModsMaster.NoHands =		{ name = 'No Hands' }
-ModsMaster.NoRolls =		{ name = 'No Rolls' }
-ModsMaster.Dark =			{ name = 'Hide Targets' }
-ModsMaster.Blind =			{ name = 'Hide Judgments' }
-ModsMaster.Cover =			{ name = 'Hide Background' }
-ModsMaster.Mines =			{ name = 'Add Mines' }
-
-ModsMaster.Boost =			{ name = 'Accel', float = true }
-ModsMaster.Break =			{ name = 'Decel', float = true }
-ModsMaster.Wave =			{ float = true }
-ModsMaster.Expand =			{ float = true }
-ModsMaster.Boomerang =		{ float = true }
-ModsMaster.Bumpy =			{ float = true }
-ModsMaster.Drunk =			{ float = true }
-ModsMaster.Dizzy =			{ float = true }
-ModsMaster.Tornado =		{ float = true }
-ModsMaster.Tipsy =			{ float = true }
-ModsMaster.Beat =			{ float = true }
-ModsMaster.Mini =			{ float = true }
-
-ModsMaster.MetaMods1 = 		{ fnctn = 'MetaMods1' }
-ModsMaster.MetaMods2 = 		{ fnctn = 'MetaMods2' }
-ModsMaster.MetaMods3 = 		{ fnctn = 'MetaMods3' }
-ModsMaster.SpeedType =		{ fnctn = 'SpeedType' }
-ModsMaster.SpeedNumber =	{ fnctn = 'SpeedNumber' }
-ModsMaster.Next =			{ fnctn = 'NextScreenOption' }
-ModsMaster.Ghost = 			{ fnctn = 'EnableGhostData' }
-ModsMaster.Measure =		{ fnctn = 'MeasureOption', modlist = {-1,0,8,12,16,24,32} }
-ModsMaster.Compare =		{ fnctn = 'CompareOption' }
-ModsMaster.LifeBar =		{ fnctn = 'LifeBarOption' }
-ModsMaster.JudgmentFont =	{ fnctn = 'JudgmentOption' }
-ModsMaster.HoldJudgmentFont =	{ fnctn = 'HoldJudgmentOption' }
-ModsMaster.Rate =			{ fnctn = 'RateMods' }
-ModsMaster.RateEdit =		{ fnctn = 'RateMods', arg = 'Edit' }
-ModsMaster.SpeedBase =		{ fnctn = 'SpeedMods' }
-ModsMaster.SpeedExtra =		{ fnctn = 'SpeedMods', arg = 'Extra' }
-
-function OptionRowBase(name,modList)
+local function OptionRowBase(name,modList)
 	local t = {
 		Name = name or 'Unnamed Options',
 		LayoutType = (ShowAllInRow and 'ShowAllInRow') or 'ShowOneInRow',
@@ -1179,7 +1407,7 @@ function LineNames()
 	if table.getn(playerOptions) > 1 and optionIndex ~= 'Edit' then table.insert(optionsList,'Next') lineNames = lineNames .. ',' .. 'Mod' else nextScreen = ScreenList('Gameplay') end
 end
 
-function OptionFromList()
+local function OptionFromList()
 	local t = {}
 	local mod = table.remove(optionsList,1)
 	if not ModsMaster[mod] then ModsMaster[mod] = {} end
@@ -1190,7 +1418,7 @@ function OptionFromList()
 	return t
 end
 
-function OptionFloat(mod)
+local function OptionFloat(mod)
 	if not ModsPlayer[mod] then
 		ModsPlayer[mod] = {0,0}
 	end
@@ -1208,7 +1436,7 @@ function OptionFloat(mod)
 	return SliderOption(name,move,display)
 end
 
-function OptionBool(mod)
+local function OptionBool(mod)
 	local t = OptionRowBase( ModsMaster[mod].name or mod )
 	t.LoadSelections = function(self, list, pn)
 		list[2] = CheckMod(pn,mod)
@@ -1230,7 +1458,7 @@ function OptionBool(mod)
 	return t
 end
 
-function OptionList(mod)
+local function OptionList(mod)
 	local Select = string.find(playerOptions.Flags,'toggle') and ModsMaster[mod].Select ~= 1
 	local mods = {}
 	for i,v in ipairs(ModsMaster[mod].mods or ModsMaster[mod].modlist) do
@@ -1274,7 +1502,7 @@ function OptionList(mod)
 	return t
 end
 
-function CustomMod(name,modVar,choices)
+local function CustomMod(name,modVar,choices)
 	if not ModCustom[modVar] then ModCustom[modVar] = {1,1} end
 	local t = OptionRowBase(name,choices)
 	t.LoadSelections = function(self, list, pn) list[ModCustom[modVar][pn+1]] = true end
@@ -1282,11 +1510,11 @@ function CustomMod(name,modVar,choices)
 	return t
 end
 
-function BoolPrefRow(name,pref,tab)
+local function BoolPrefRow(name,pref,tab)
 	local t = OptionRowBase(name)
 	t.OneChoiceForAllPlayers = true
-	t.LoadSelections = function(self, list, pn) list[1] = not GetPref(pref) list[2] = GetPref(pref) end
-	t.SaveSelections = function(self, list, pn) SetPref(pref,list[2]) for i,p in ipairs(tab or {}) do SetPref(p,list[2]) end end
+	t.LoadSelections = function(self, list, pn) list[1] = not PREFSMAN:GetPreference(pref) list[2] = PREFSMAN:GetPreference(pref) end
+	t.SaveSelections = function(self, list, pn) PREFSMAN:SetPreference(pref,list[2]) for i,p in ipairs(tab or {}) do PREFSMAN:SetPreference(p,list[2]) end end
 	return t
 end
 
@@ -1295,8 +1523,8 @@ end
 -- if this happens twice in a row, guarantee 
 -- on negative 
 
-SliderDisplayFunction = { }
-function SliderOption(name,move,display,share)
+local SliderDisplayFunction = { }
+local function SliderOption(name,move,display,share)
 
 	-- allows SetOptionRow to access display functions based on row name, so initial setting can be made.
 	SliderDisplayFunction[name] = display
@@ -1331,7 +1559,7 @@ end
 -- Lua Option Rows
 --------------------
 
-function SpeedType()
+local function SpeedType()
 	local t = OptionRowBase((optionIndex == 'Edit' and 'Speed') or 'Speed Mod Type',{ 'x' , 'C' , 'm' })
 	t.LoadSelections = function(self, list, pn) for i,v in ipairs(self.Choices) do if modType[pn+1] == v then list[i] = true end end end
 	t.SaveSelections = function(self, list, pn) for i,v in ipairs(list) do if v then modType[pn+1] = self.Choices[i] end end SetSpeedMod(pn+1) SetOptionRow('Adjust Speed',true) end
@@ -1339,7 +1567,7 @@ function SpeedType()
 	return t
 end
 
-function SpeedNumber()
+local function SpeedNumber()
 	local function display( text , pn ) text:settext( DisplaySpeedMod(pn) ) end
 	local function move(pn,dir,cnt) modSpeed[pn+1] = clamp( AddSnap(modSpeed[pn+1] , dir , cnt , { 5 , 25 , 100 } ) , speedMin , speedMax ); SetSpeedMod(pn+1) end
 	return SliderOption('Adjust Speed',move,display)
@@ -1359,7 +1587,7 @@ do
 		lastModRate = modRate
 	end
 
-	function RateMods( s )
+	local function RateMods( s )
 		local t = OptionRowBase('Music Rate',s and rateModsEdit or rateMods)
 		local edit = s and true or false
 		t.OneChoiceForAllPlayers = true
@@ -1397,7 +1625,7 @@ do
 	end
 end
 
-function MetaMods( s, iRow )
+local function MetaMods( s, iRow )
 	local metaModsRow = metaModsRows[ iRow ]
 	local t = OptionRowBase('MetaMods' .. iRow, metaModsRow.modlist)
 
@@ -1424,19 +1652,19 @@ function MetaMods( s, iRow )
 	return t
 end
 
-function MetaMods1( s )
+local function MetaMods1( s )
 	return MetaMods( s, 1 )
 end
 
-function MetaMods2( s )
+local function MetaMods2( s )
 	return MetaMods( s, 2 )
 end
 
-function MetaMods3( s )
+local function MetaMods3( s )
 	return MetaMods( s, 3 )
 end
 
-function NextScreenOption()
+local function NextScreenOption()
 	local t = OptionRowBase('Next Screen',{'Gameplay','Select Music','More Options'})
 	t.OneChoiceForAllPlayers = true
 	t.LoadSelections = function(self, list, pn) list[1] = true end
@@ -1448,7 +1676,7 @@ function NextScreenOption()
 	return t
 end
 
-function EnableGhostData(a) -- Use an argument of 0 for the operator menu option, to affect machine profile.
+local function EnableGhostData(a) -- Use an argument of 0 for the operator menu option, to affect machine profile.
 	local t = OptionRowBase('Save Ghost Data',{'No','Yes'})
 	if a then t.OneChoiceForAllPlayers = true end
 	t.LoadSelections = function(self, list, pn) if not Profile(a or pn+1).Ghost then Profile(a or pn+1).Ghost = {} end list[2] = Profile(a or pn+1).Ghost.Save; list[1] = not list[2] end
@@ -1484,16 +1712,17 @@ function CutOffTime()
 	return t
 end
 
-function JudgmentOption() return CustomMod('Judgment Font','JudgmentFont',judgmentFontList) end
-function HoldJudgmentOption() return CustomMod('Hold Judgment Font','HoldJudgmentFont',holdJudgmentFontList) end
-function LifeBarOption() return CustomMod('Life Bar Type','LifeBar',{'Normal','Surround'}) end
-function CompareOption()
+local function JudgmentFont() return CustomMod('Judgment Font','JudgmentFont',judgmentFontList) end
+local function HoldJudgmentFont() return CustomMod('Hold Judgment Font','HoldJudgmentFont',holdJudgmentFontList) end
+
+local function LifeBarOption() return CustomMod('Life Bar Type','LifeBar',{'Normal','Surround'}) end
+local function CompareOption()
 	local t = CustomMod('Compare Score','Compare',{ 'None' , 'Personal' , 'Machine' , 'Subtractive' })
 	if Player(1) and Player(2) and GAMESTATE:GetCurrentSteps(0) == GAMESTATE:GetCurrentSteps(1) then table.insert(t.Choices,'Opponent') end
 	for pn=1,2 do if ModCustom.Compare[pn] > table.getn(t.Choices) then ModCustom.Compare[pn] = 2 end end
 	return t
 end
-function MeasureOption() 
+local function MeasureOption() 
 	local t = CustomMod('Measure Count','Measure',{ 'Off' , 'All' } )
 	for i,v in ipairs(ModsMaster.Measure.modlist) do if i > 2 then if v == 32 or v == 192 then table.insert(t.Choices,v..'nds') else table.insert(t.Choices,v..'ths') end end end
 	return t
@@ -1517,7 +1746,7 @@ function CalculateSpeedMod()
 end
 
 function SpeedString(pn,speed) local s = speed or modSpeed[pn] or ''; if modType[pn] == 'x' then return string.format('%g',math.floor(s)/100) .. 'x' else return modType[pn] .. math.floor(s) end end
-function SetSpeedMod(pn) ApplyMod('1x',pn) ApplyMod(SpeedString(pn),pn) BM('SpeedModChanged') end
+function SetSpeedMod(pn) ApplyMod('1x',pn) ApplyMod(SpeedString(pn),pn) MESSAGEMAN:Broadcast('SpeedModChanged') end
 
 function ApplyRateAdjust()
 	for pn=1,2 do
@@ -1535,16 +1764,16 @@ function RevertRateAdjust() for pn=1,2 do if modSpeed then ApplyMod(SpeedString(
 
 function SurroundLife()
 	for pn=1,2 do if ModCustom.LifeBar and ModCustom.LifeBar[pn] == 2 then
-		local meter = Screen():GetChild('LifeP'..pn)
+		local meter = SCREENMAN('LifeP'..pn)
 		local width = THEME:GetMetric('LifeMeterBar','MeterHeight')
 		local height = THEME:GetMetric('LifeMeterBar','MeterWidth')
 		meter:rotationz(-90)
 		meter:rotationy(0)
-		meter:GetChild(''):zoom(0)
-		meter:GetChild('Frame'):zoom(0)
-		meter:GetChild('Background'):zoom(0)
+		meter(''):zoom(0)
+		meter('Frame'):zoom(0)
+		meter('Background'):zoom(0)
 		meter:y(SCREEN_CENTER_Y+lifeBarSizeAdd.OffsetY) meter:zoomy((SCREEN_HEIGHT+lifeBarSizeAdd.Height)/height)
-		if GAMESTATE:PlayerUsingBothSides() or ( GAMESTATE:GetNumPlayersEnabled() == 1 and GetPref('SoloSingle') ) then 
+		if GAMESTATE:PlayerUsingBothSides() or ( GAMESTATE:GetNumPlayersEnabled() == 1 and PREFSMAN:GetPreference('SoloSingle') ) then 
 			meter:x(SCREEN_CENTER_X) 
 			meter:zoomx((SCREEN_WIDTH+lifeBarSizeAdd.Width)/width)
 			lifeNormal[pn]:Load(ThemeFile('doublebar.png')); lifeNormal[pn]:diffuse(0.2,0.2,0.2,1)
@@ -1911,12 +2140,12 @@ function FrameOn(self,ThemedTitles)
 end
 
 function FrameCapture(self) -- I had a simpler version which checked parent, but on ITG machines parent is not an argument of propagated commands.
-	if Screen():GetChild('Frame'):GetChild('Page') == self then
+	if SCREENMAN('Frame')('Page') == self then
 		captureIndex = captureIndex + 1
 		return
 	end
 	for j,v in ipairs({'More','DisqualifiedP1','DisqualifiedP2'}) do
-		if Screen():GetChild('Frame'):GetChild(v) == self then
+		if SCREENMAN('Frame')(v) == self then
 			return
 		end
 	end
@@ -1929,12 +2158,12 @@ function FrameCapture(self) -- I had a simpler version which checked parent, but
 	if captureIndex == 1 then -- option rows, cursors, and line highlights
  
 		if IsType(self,'ActorFrame') then
-			if IsType(self:GetChild(''),'ActorFrame') then
-				table.insert(optionRow,self:GetChild(''))
+			if IsType(self(''),'ActorFrame') then
+				table.insert(optionRow,self(''))
 				self:propagate(1)
-				self:GetChild(''):propagate(1)
+				self(''):propagate(1)
 			end
-			if IsType(self:GetChild(''),'Sprite') then
+			if IsType(self(''),'Sprite') then
 				table.insert(optionCursor,self)
 				table.insert(optionCursorSprite,{})
 				self:propagate(1)
@@ -1965,7 +2194,7 @@ function FrameCapture(self) -- I had a simpler version which checked parent, but
 		end
 	 
 	elseif captureIndex == 3 then  -- underline sprites
-		Screen():GetChild('Frame'):propagate(0)
+		SCREENMAN('Frame'):propagate(0)
 		for j,v in ipairs(optionUnderlineSprite) do
 			if not v[3] then
 				table.insert(v,self)
@@ -2031,7 +2260,7 @@ end
 -- Timed Set Functions
 --------------------------------
 
-function MenuTimerSeconds( s ) TimedSet.MenuTimer = s; if IsTimedSet() or not GetPref('MenuTimer') then return -1 else return s end end
+function MenuTimerSeconds( s ) TimedSet.MenuTimer = s; if IsTimedSet() or not PREFSMAN:GetPreference('MenuTimer') then return -1 else return s end end
 function IsTimedSet() return not GAMESTATE:IsCourseMode() and Profile(0).TimedSets end
 
 TimedSet = { }
@@ -2066,7 +2295,7 @@ TimedSet.Timer = function(self)
 
 	TimedSet.Display(self)
 
-	if not GetPref('EventMode') then
+	if not PREFSMAN:GetPreference('EventMode') then
 
 		local time = -Clock( TimedSet.End )
 
@@ -2119,7 +2348,7 @@ function SaveProfile(self)
 	end
 	
 	if bSave then
-		BM('SaveProfile')
+		MESSAGEMAN:Broadcast('SaveProfile')
 		self:queuecommand("SaveProfile")
 	end
 end

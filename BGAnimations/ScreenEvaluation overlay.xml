@@ -73,7 +73,7 @@
 				else
 					self:SetFromSteps(GAMESTATE:GetCurrentSteps(PLAYER_1))
 				end
-				P1Difficulty = self:GetChild('Difficulty'):GetText()
+				P1Difficulty = self('Difficulty'):GetText()
 			end"
 		/>
 		<Layer 
@@ -117,7 +117,7 @@
 				else
 					self:SetFromSteps(GAMESTATE:GetCurrentSteps(PLAYER_2))
 				end
-				P2Difficulty = self:GetChild('Difficulty'):GetText()
+				P2Difficulty = self('Difficulty'):GetText()
 			end"
 		/>
 		<Layer 

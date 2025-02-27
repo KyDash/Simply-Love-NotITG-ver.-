@@ -91,6 +91,138 @@ local function ScreenList(str)
 	return screen
 end
 
+-----------------------
+-- Utility Functions
+-----------------------
+-- BGAnimations/ScreenSelectMusic overlay/default.xml
+-- Graphics/ScreenOptions cursor 3x2.sprite
+-- Graphics/ScreenOptions underline 3x2.sprite
+-- Graphics/_ThemeFiles/ScoreRow.xml
+function Path(ec,str) return THEME:GetPath( _G['EC_'..string.upper(ec)] , '' , str ) end
+
+local function Player(pn) return GAMESTATE:IsPlayerEnabled(pn-1) end
+local function PlayerIndex(pn) if pn == GAMESTATE:GetNumPlayersEnabled() then return pn end return 1 end
+
+-- BGAnimations/ScreenTitleMenu underlay/default.xml
+-- Graphics/ScreenWithMenuElemts stage event.xml
+-- Scripts/Colors.lua
+function Profile(pn)
+	if not PROFILEMAN then
+		return {}
+	end
+
+	if pn == 0 then
+		return PROFILEMAN:GetMachineProfile():GetSaved()
+	end
+
+	return PROFILEMAN:GetProfile(pn-1):GetSaved()
+end
+
+-- BGAnimations/Summary overlay.xml
+-- Graphics/ScreenGameplay footer.xml
+-- Graphics/ScreenGameplay header.xml
+function ThemeFile( file ) return THEME:GetPath( EC_GRAPHICS, '' , '_ThemeFiles/'..file ) end
+
+local function IsType(a,t) return string.find(tostring(a),t) end
+
+-- metrics.ini/[InitializeScripts]/NextScreen
+function GetStartScreen()
+	PREFSMAN:SetPreference("DelayedScreenLoad",false)
+	if PREFSMAN:GetPreference('BreakComboToGetItem') and GetInputType and GetInputType() == "" then
+		return "ScreenArcadeStart"
+	end
+	return THEME:GetMetric('Common','FirstAttractScreen')
+end
+
+-- Graphics/_ThemeFiles/ScoreRow.xml
+function MaxLength(str,l)
+	if string.len(str) > l then
+		str = string.sub(str,0,l-3) .. '...'
+	end
+	return str
+end
+
+-- BGAnimations/ScreenEvaluationOni overlay.xml
+function SecondsToMSS(n)
+	local t = SecondsToMSSMsMs(math.abs(n))
+	t = string.sub(t,0,string.len(t)-3)
+	if tonumber(n) < 0 then
+		t = '-' .. t
+	end
+	return t
+end
+
+-- BGAnimations/ScreenSelectMusic overlay/default.xml
+function MSSMsMsToSeconds(t)
+	local len = string.len(t)
+	return string.sub(t, len - 4,len) + string.sub(t, 1, len - 6) * 60
+end
+
+local function ForceSongAndSteps()
+	if not GAMESTATE:GetCurrentSong() then
+		local song = SONGMAN:GetRandomSong()
+		if not song then return end
+		GAMESTATE:SetCurrentSong(song)
+		steps = song:GetAllSteps()
+		GAMESTATE:SetCurrentSteps(0,steps[1])
+		GAMESTATE:SetCurrentSteps(1,steps[1])
+	end
+end
+
+if FUCK_EXE then
+	function ApplyMod(mod,pn,f)
+		local m = mod
+		if m then
+			if f then
+				m = f .. '% ' .. m
+			end
+			GAMESTATE:ApplyModifiers(m,pn)
+		end
+	end
+else
+	function ApplyMod(mod,pn,f)
+		local m = mod
+		if m then
+			if f then
+				m = f .. '% ' .. m
+			end
+			GAMESTATE:ApplyGameCommand('mod,'..m,pn)
+		end
+	end
+end
+
+-- Scripts/Other.lua
+function CheckMod(pn,mod) return mod and GAMESTATE:PlayerIsUsingModifier(pn,string.lower(mod)) end
+
+-- metrics.ini
+function SummaryBranch()
+	ForceSongAndSteps()
+	if _SL.IsAnSRTStyle() then
+		return ScreenList('Ending')
+	end
+	if not scoreIndex then
+		scoreIndex = 1
+	end
+	if scoreIndex <= table.getn(AllScores) then
+		return ScreenList('Summary')
+	else
+		scoreIndex = 1
+		return ScreenList('Ending')
+	end
+end
+
+-- BGAnimations/ScreenSelectMusic overlay/default.xml
+-- Scripts/Branches.lua
+function Clock(val)
+	local t = GlobalClock and GlobalClock:GetSecsIntoEffect() or 0
+	if val then
+		t = t - val
+	end
+	return t
+end
+--function Clock(val) local t = 0 if val then t = t - val end return t end
+local function MusicClock() return SCREENMAN():GetSecsIntoEffect() end
+
 -- Judgment tween commands.
 -- create a table to hold a variety of judgment and combo pulse effects
 -- if a type does not define every pulse type, fall back onto the original Simply Love ones
@@ -306,9 +438,6 @@ if FUCK_EXE then
 	holdJudgmentFontList = list
 end
 
--- Used with ThemeFiles function
-local themeDir = '_ThemeFiles'
-
 -- Used with LifeBar option 
 lifeBarSizeAdd = { Width = 0, Height = 4, OffsetX = 0, OffsetY = -2 } -- Allows size adjustments for cases like Meatboy's progress bar.
 
@@ -396,159 +525,188 @@ ModsMaster.Tipsy =			{ float = true }
 ModsMaster.Beat =			{ float = true }
 ModsMaster.Mini =			{ float = true }
 
-ModsMaster.MetaMods1 = 		{ fnctn = 'MetaMods1' }
-ModsMaster.MetaMods2 = 		{ fnctn = 'MetaMods2' }
-ModsMaster.MetaMods3 = 		{ fnctn = 'MetaMods3' }
-ModsMaster.SpeedType =		{ fnctn = 'SpeedType' }
-ModsMaster.SpeedNumber =	{ fnctn = 'SpeedNumber' }
-ModsMaster.Next =			{ fnctn = 'NextScreenOption' }
-ModsMaster.Ghost = 			{ fnctn = 'EnableGhostData' }
-ModsMaster.Measure =		{ fnctn = 'MeasureOption', modlist = {-1,0,8,12,16,24,32} }
-ModsMaster.Compare =		{ fnctn = 'CompareOption' }
-ModsMaster.LifeBar =		{ fnctn = 'LifeBarOption' }
-ModsMaster.Rate =			{ fnctn = 'RateMods' }
-ModsMaster.RateEdit =		{ fnctn = 'RateMods', arg = 'Edit' }
+local function OptionRowBase(name,modList)
+	local t = {
+		Name = name or 'Unnamed Options',
+		LayoutType = (ShowAllInRow and 'ShowAllInRow') or 'ShowOneInRow',
+		SelectType = 'SelectOne',
+		OneChoiceForAllPlayers = false,
+		ExportOnChange = true,
+		Choices = modList or {'Off','On'},
+		LoadSelections = function(self, list, pn) list[1] = true end,
+		SaveSelections = function(self, list, pn)	 end
+	}
+	return t
+end
+local SliderDisplayFunction = { }
+local function SliderOption(name,move,display,share)
+
+	-- allows SetOptionRow to access display functions based on row name, so initial setting can be made.
+	SliderDisplayFunction[name] = display
+	if THEMED_TITLES then SliderDisplayFunction[THEME:GetMetric("OptionTitles",name)] = display end
+
+	local slider = {{1,1,0},{1,1,0}} -- {position, counts, clock}
+	local t = OptionRowBase(name,{' ',' ',' '})
+	t.OneChoiceForAllPlayers = share
+	t.LayoutType = 'ShowOneInRow'
+	t.LoadSelections = function(self, list, pn) list[1] = true slider[pn+1][1] = 1 end
+	t.SaveSelections = function(self, list, pn)
+		if share and pn ~= GAMESTATE:GetMasterPlayerNumber() then return end
+		if Clock(slider[pn+1][3]) < 0.1 then slider[pn+1][2] = math.min(slider[pn+1][2]+1) else slider[pn+1][2] = 1 end
+		slider[pn+1][3] = Clock()
+		for i=1,3 do if list[i] then
+			if slider[pn+1][1] == math.mod(i+2,3) then move(pn, 1,slider[pn+1][2]) SetOptionRow(name) end
+			if slider[pn+1][1] == math.mod(i+1,3) then move(pn,-1,slider[pn+1][2]) SetOptionRow(name) end
+			slider[pn+1][1] = math.mod(i,3)
+		end end
+	end
+	return t
+end
+
+local function MetaMods( s, iRow )
+	local metaModsRow = metaModsRows[ iRow ]
+	local t = OptionRowBase('MetaMods' .. iRow, metaModsRow.modlist)
+
+	t.SelectType = 'SelectMultiple'
+	t.OneChoiceForAllPlayers = true
+
+	t.LoadSelections = function(self, list, pn)
+		for i, v in ipairs(metaModsRow.mods) do
+			list[i] = CheckMod(pn, v)
+		end
+	end
+
+	t.SaveSelections = function(self, list, pn)
+		if pn ~= 0 then return end -- in OneChoiceForAllPlayers row, list in other players than player 1 is not valid
+
+		ApplyMod(metaModsRow.default, pn+1)
+		for i, v in ipairs(list) do
+			if v then
+				ApplyMod(metaModsRow.mods[i], pn+1)
+			end
+		end
+	end
+
+	return t
+end
+
+local function CustomMod(name,modVar,choices)
+	if not ModCustom[modVar] then ModCustom[modVar] = {1,1} end
+	local t = OptionRowBase(name,choices)
+	t.LoadSelections = function(self, list, pn) list[ModCustom[modVar][pn+1]] = true end
+	t.SaveSelections = function(self, list, pn) for i,v in ipairs(list) do if v then ModCustom[modVar][pn+1] = i end end end
+	return t
+end
+
+ModsMaster.MetaMods1 = 		{ fnctn = function(s) return MetaMods(s, 1) end }
+ModsMaster.MetaMods2 = 		{ fnctn = function(s) return MetaMods(s, 2) end }
+ModsMaster.MetaMods3 = 		{ fnctn = function(s) return MetaMods(s, 3) end }
+ModsMaster.SpeedType =		{ fnctn = function()
+	local t = OptionRowBase((optionIndex == 'Edit' and 'Speed') or 'Speed Mod Type',{ 'x' , 'C' , 'm' })
+	t.LoadSelections = function(self, list, pn) for i,v in ipairs(self.Choices) do if modType[pn+1] == v then list[i] = true end end end
+	t.SaveSelections = function(self, list, pn) for i,v in ipairs(list) do if v then modType[pn+1] = self.Choices[i] end end SetSpeedMod(pn+1) SetOptionRow('Adjust Speed',true) end
+	t.LayoutType = 'ShowOneInRow'
+	return t
+end}
+ModsMaster.SpeedNumber =	{ fnctn = function()
+	local function display( text , pn ) text:settext( DisplaySpeedMod(pn) ) end
+	local function move(pn,dir,cnt) modSpeed[pn+1] = clamp( AddSnap(modSpeed[pn+1] , dir , cnt , { 5 , 25 , 100 } ) , speedMin , speedMax ); SetSpeedMod(pn+1) end
+	return SliderOption('Adjust Speed',move,display)
+end}
+ModsMaster.Next =			{ fnctn = function()
+	local t = OptionRowBase('Next Screen',{'Gameplay','Select Music','More Options'})
+	t.OneChoiceForAllPlayers = true
+	t.LoadSelections = function(self, list, pn) list[1] = true end
+	t.SaveSelections = function(self, list, pn)
+			if list[1] then nextScreen = ScreenList('Gameplay') end
+			if list[2] then nextScreen = ScreenList('SelectMusic') end
+			if list[3] then nextScreen = ScreenList('PlayerOptions') end
+		end
+	return t
+end}
+ModsMaster.Ghost = 			{ fnctn = function(a)
+	local t = OptionRowBase('Save Ghost Data',{'No','Yes'})
+	if a then t.OneChoiceForAllPlayers = true end
+	t.LoadSelections = function(self, list, pn) if not Profile(a or pn+1).Ghost then Profile(a or pn+1).Ghost = {} end list[2] = Profile(a or pn+1).Ghost.Save; list[1] = not list[2] end
+	t.SaveSelections = function(self, list, pn) Profile(a or pn+1).Ghost.Save = list[2] end
+	if a then CheckProfile.Ghost = { Save = Profile(0).Ghost and Profile(0).Ghost.Save } end
+	return t
+end}
+ModsMaster.Measure =		{ fnctn = function()
+	local t = CustomMod('Measure Count','Measure',{ 'Off' , 'All' } )
+	for i,v in ipairs(ModsMaster.Measure.modlist) do if i > 2 then if v == 32 or v == 192 then table.insert(t.Choices,v..'nds') else table.insert(t.Choices,v..'ths') end end end
+	return t
+end, modlist = {-1,0,8,12,16,24,32} }
+ModsMaster.Compare =		{ fnctn = function()
+	local t = CustomMod('Compare Score','Compare',{ 'None' , 'Personal' , 'Machine' , 'Subtractive' })
+	if Player(1) and Player(2) and GAMESTATE:GetCurrentSteps(0) == GAMESTATE:GetCurrentSteps(1) then table.insert(t.Choices,'Opponent') end
+	for pn=1,2 do if ModCustom.Compare[pn] > table.getn(t.Choices) then ModCustom.Compare[pn] = 2 end end
+	return t
+end}
+ModsMaster.LifeBar =		{ fnctn = function() return CustomMod('Life Bar Type','LifeBar',{'Normal','Surround'}) end }
+
+do
+	local lastModRate = 1
+	local function AdjustXModFromRate()
+		for pn = 1, 2 do
+			if Player(pn) then
+				if modType[pn] == 'x' then
+
+					modSpeed[pn] = modSpeed[pn] * lastModRate / modRate
+				end
+			end
+		end
+		lastModRate = modRate
+	end
+	local function RateMods(s)
+		local t = OptionRowBase('Music Rate',s and rateModsEdit or rateMods)
+		local edit = s and true or false
+		t.OneChoiceForAllPlayers = true
+		t.LayoutType = 'ShowOneInRow'
+		t.LoadSelections = function(self, list, pn)
+			for i,m in ipairs(self.Choices) do
+				if CheckMod(pn,m..'music') then
+					list[i] = true;
+					s = string.gsub(m,'x','')
+					modRate = tonumber(s)
+				end
+			end
+		end
+		t.SaveSelections = function(self, list, pn)
+			for i,m in ipairs(self.Choices) do
+				if list[i] then
+					s = string.gsub(m,'x','');
+					modRate = tonumber(s)
+					if not edit then
+						AdjustXModFromRate()
+						SetOptionRow('Adjust Speed',true)
+					end
+				end
+			end
+			ApplyMod(s..'xmusic',pn+1)
+			MESSAGEMAN:Broadcast('RateModChanged')
+
+			if optionRowTextCache and optionRowTextCache[t.Name] then
+				local text = optionRowText[ optionRowTextCache[t.Name] ][1]
+
+				text:settext('Music Rate\nBPM: ' .. DisplayOptionsBPM())
+				text:maxwidth(0)
+			end
+		end
+		return t
+	end
+	ModsMaster.Rate =			{ fnctn = RateMods	}
+	ModsMaster.RateEdit =		{ fnctn = RateMods, arg = 'Edit' }
+end
 -- ModsMaster.SpeedBase =		{ fnctn = 'SpeedMods' }
 -- ModsMaster.SpeedExtra =		{ fnctn = 'SpeedMods', arg = 'Extra' }
 
-ModsMaster.JudgmentFont =		{ fnctn = 'JudgmentFont' }
-ModsMaster.JudgmentTween =		{ fnctn = 'JudgmentTween' }
+ModsMaster.JudgmentFont =		{ fnctn = function() return CustomMod('Judgment Font','JudgmentFont',judgmentFontList) end }
+-- ModsMaster.JudgmentTween =		{ fnctn = JudgmentTween }
 -- ModsMaster.ComboFont =			{ fnctn = 'ComboFont' }
-ModsMaster.ComboTween =			{ fnctn = 'ComboTween' }
-ModsMaster.HoldJudgmentFont =	{ fnctn = 'HoldJudgmentFont' }
-ModsMaster.HoldJudgmentTween =	{ fnctn = 'HoldJudgmentTween' }
-
------------------------
--- Utility Functions
------------------------
--- BGAnimations/ScreenSelectMusic overlay/default.xml
--- Graphics/ScreenOptions cursor 3x2.sprite
--- Graphics/ScreenOptions underline 3x2.sprite
--- Graphics/_ThemeFiles/ScoreRow.xml
-function Path(ec,str) return THEME:GetPath( _G['EC_'..string.upper(ec)] , '' , str ) end
-
-local function Player(pn) return GAMESTATE:IsPlayerEnabled(pn-1) end
-local function PlayerIndex(pn) if pn == GAMESTATE:GetNumPlayersEnabled() then return pn end return 1 end
-
--- BGAnimations/ScreenTitleMenu underlay/default.xml
--- Graphics/ScreenWithMenuElemts stage event.xml
--- Scripts/Colors.lua
-function Profile(pn)
-	if not PROFILEMAN then
-		return {}
-	end
-
-	if pn == 0 then
-		return PROFILEMAN:GetMachineProfile():GetSaved()
-	end
-
-	return PROFILEMAN:GetProfile(pn-1):GetSaved()
-end
-
--- BGAnimations/Summary overlay.xml
--- Graphics/ScreenGameplay footer.xml
--- Graphics/ScreenGameplay header.xml
-function ThemeFile( file ) return THEME:GetPath( EC_GRAPHICS, '' , themeDir..'/'..file ) end
-
-local function IsType(a,t) return string.find(tostring(a),t) end
-
--- metrics.ini/[InitializeScripts]/NextScreen
-function GetStartScreen()
-	PREFSMAN:SetPreference("DelayedScreenLoad",false)
-	if PREFSMAN:GetPreference('BreakComboToGetItem') and GetInputType and GetInputType() == "" then
-		return "ScreenArcadeStart"
-	end
-	return THEME:GetMetric('Common','FirstAttractScreen')
-end
-
--- Graphics/_ThemeFiles/ScoreRow.xml
-function MaxLength(str,l)
-	if string.len(str) > l then
-		str = string.sub(str,0,l-3) .. '...'
-	end
-	return str
-end
-
--- BGAnimations/ScreenEvaluationOni overlay.xml
-function SecondsToMSS(n)
-	local t = SecondsToMSSMsMs(math.abs(n))
-	t = string.sub(t,0,string.len(t)-3)
-	if tonumber(n) < 0 then
-		t = '-' .. t
-	end
-	return t
-end
-
--- BGAnimations/ScreenSelectMusic overlay/default.xml
-function MSSMsMsToSeconds(t)
-	local len = string.len(t)
-	return string.sub(t, len - 4,len) + string.sub(t, 1, len - 6) * 60
-end
-
-local function ForceSongAndSteps()
-	if not GAMESTATE:GetCurrentSong() then
-		local song = SONGMAN:GetRandomSong()
-		if not song then return end
-		GAMESTATE:SetCurrentSong(song)
-		steps = song:GetAllSteps()
-		GAMESTATE:SetCurrentSteps(0,steps[1])
-		GAMESTATE:SetCurrentSteps(1,steps[1])
-	end
-end
-
-if FUCK_EXE then
-	function ApplyMod(mod,pn,f)
-		local m = mod
-		if m then
-			if f then
-				m = f .. '% ' .. m
-			end
-			GAMESTATE:ApplyModifiers(m,pn)
-		end
-	end
-else
-	function ApplyMod(mod,pn,f)
-		local m = mod
-		if m then
-			if f then
-				m = f .. '% ' .. m
-			end
-			GAMESTATE:ApplyGameCommand('mod,'..m,pn)
-		end
-	end
-end
-
--- Scripts/Other.lua
-function CheckMod(pn,mod) return mod and GAMESTATE:PlayerIsUsingModifier(pn,string.lower(mod)) end
-
--- metrics.ini
-function SummaryBranch()
-	ForceSongAndSteps()
-	if _SL.IsAnSRTStyle() then
-		return ScreenList('Ending')
-	end
-	if not scoreIndex then
-		scoreIndex = 1
-	end
-	if scoreIndex <= table.getn(AllScores) then
-		return ScreenList('Summary')
-	else
-		scoreIndex = 1
-		return ScreenList('Ending')
-	end
-end
-
--- BGAnimations/ScreenSelectMusic overlay/default.xml
--- Scripts/Branches.lua
-function Clock(val)
-	local t = GlobalClock and GlobalClock:GetSecsIntoEffect() or 0
-	if val then
-		t = t - val
-	end
-	return t
-end
---function Clock(val) local t = 0 if val then t = t - val end return t end
-local function MusicClock() return SCREENMAN():GetSecsIntoEffect() end
+-- ModsMaster.ComboTween =			{ fnctn = ComboTween }
+ModsMaster.HoldJudgmentFont =	{ fnctn = function() return CustomMod('Hold Judgment Font','HoldJudgmentFont',holdJudgmentFontList) end }
+-- ModsMaster.HoldJudgmentTween =	{ fnctn = HoldJudgmentTween }
 
 --------------------------------
 -- BGAnimation Functions
@@ -1297,8 +1455,8 @@ function BPMlabelRate(self)	local s = AdjustedBPM() .. ' BPM ' .. RateModAppend(
 function BPMandRate(self) local s = AdjustedBPM() .. ' ' .. RateModAppend() if self then self:settext(s) else return s end end
 function RateBPMlabel(self) local s = RateModText() if s ~= '' then s = s .. ' (' .. AdjustedBPM() .. ' BPM)' end	if self then self:settext(s) else return s end end 
 
-function MetaModsText(self)
-	mods = {}
+local function MetaModsText(self)
+	local mods = {}
 
 	for _, metaModsRow in ipairs(metaModsRows) do
 		for i, v in ipairs(metaModsRow.mods) do
@@ -1376,20 +1534,6 @@ end
 -- Lua Option Row support functions
 -------------------------------------
 
-local function OptionRowBase(name,modList)
-	local t = {
-		Name = name or 'Unnamed Options',
-		LayoutType = (ShowAllInRow and 'ShowAllInRow') or 'ShowOneInRow',
-		SelectType = 'SelectOne',
-		OneChoiceForAllPlayers = false,
-		ExportOnChange = true,
-		Choices = modList or {'Off','On'},
-		LoadSelections = function(self, list, pn) list[1] = true end,
-		SaveSelections = function(self, list, pn)	 end
-	}
-	return t
-end
-
 function PlayerOptionsInit() LineNames() SetPlayerOptionFlags() return not string.find(playerOptions.Flags,'toggle') end
 function SetPlayerOptionFlags() local f = 'toggle' for i,v in ipairs(optionsList) do if ModsMaster[v] and ModsMaster[v].float then f = '' end end playerOptions.Flags = playerOptions[optionIndex].Flags or f end
 
@@ -1405,17 +1549,6 @@ function LineNames()
 
 	lineNames = string.sub(lineNames,1,string.len(lineNames)-1)
 	if table.getn(playerOptions) > 1 and optionIndex ~= 'Edit' then table.insert(optionsList,'Next') lineNames = lineNames .. ',' .. 'Mod' else nextScreen = ScreenList('Gameplay') end
-end
-
-local function OptionFromList()
-	local t = {}
-	local mod = table.remove(optionsList,1)
-	if not ModsMaster[mod] then ModsMaster[mod] = {} end
-		if ModsMaster[mod].fnctn	then t = _G[ModsMaster[mod].fnctn](ModsMaster[mod].arg)
-	elseif ModsMaster[mod].float	then t = OptionFloat(mod)
-	elseif ModsMaster[mod].modlist	then t = OptionList(mod)
-									else t = OptionBool(mod) end
-	return t
 end
 
 local function OptionFloat(mod)
@@ -1502,14 +1635,6 @@ local function OptionList(mod)
 	return t
 end
 
-local function CustomMod(name,modVar,choices)
-	if not ModCustom[modVar] then ModCustom[modVar] = {1,1} end
-	local t = OptionRowBase(name,choices)
-	t.LoadSelections = function(self, list, pn) list[ModCustom[modVar][pn+1]] = true end
-	t.SaveSelections = function(self, list, pn) for i,v in ipairs(list) do if v then ModCustom[modVar][pn+1] = i end end end
-	return t
-end
-
 local function BoolPrefRow(name,pref,tab)
 	local t = OptionRowBase(name)
 	t.OneChoiceForAllPlayers = true
@@ -1518,37 +1643,23 @@ local function BoolPrefRow(name,pref,tab)
 	return t
 end
 
+function OptionFromList()
+	local t = {}
+	local mod = table.remove(optionsList,1)
+	if not ModsMaster[mod] then ModsMaster[mod] = {} end
+		if ModsMaster[mod].fnctn	then t = ModsMaster[mod].fnctn(ModsMaster[mod].arg)
+	elseif ModsMaster[mod].float	then t = OptionFloat(mod)
+	elseif ModsMaster[mod].modlist	then t = OptionList(mod)
+									else t = OptionBool(mod) end
+	return t
+end
+
 -- have clock track larger time
 -- if second is 1 higher but ms is still within range, neither increment or reset. Make some indication of second increase
 -- if this happens twice in a row, guarantee 
 -- on negative 
 
-local SliderDisplayFunction = { }
-local function SliderOption(name,move,display,share)
-
-	-- allows SetOptionRow to access display functions based on row name, so initial setting can be made.
-	SliderDisplayFunction[name] = display
-	if THEMED_TITLES then SliderDisplayFunction[THEME:GetMetric("OptionTitles",name)] = display end
-
-	local slider = {{1,1,0},{1,1,0}} -- {position, counts, clock}
-	local t = OptionRowBase(name,{' ',' ',' '})
-	t.OneChoiceForAllPlayers = share
-	t.LayoutType = 'ShowOneInRow'
-	t.LoadSelections = function(self, list, pn) list[1] = true slider[pn+1][1] = 1 end
-	t.SaveSelections = function(self, list, pn)
-		if share and pn ~= GAMESTATE:GetMasterPlayerNumber() then return end
-		if Clock(slider[pn+1][3]) < 0.1 then slider[pn+1][2] = math.min(slider[pn+1][2]+1) else slider[pn+1][2] = 1 end
-		slider[pn+1][3] = Clock()
-		for i=1,3 do if list[i] then
-			if slider[pn+1][1] == math.mod(i+2,3) then move(pn, 1,slider[pn+1][2]) SetOptionRow(name) end
-			if slider[pn+1][1] == math.mod(i+1,3) then move(pn,-1,slider[pn+1][2]) SetOptionRow(name) end
-			slider[pn+1][1] = math.mod(i,3)
-		end end
-	end
-	return t
-end
-
-function AddSnap( val , dir , cnt , speed )
+local function AddSnap( val , dir , cnt , speed )
 	local n = clamp( math.floor( cnt / 5 ) + 1 , 1 , table.getn( speed ) )
 	local add = dir * speed[n]
 	local ret = val + add
@@ -1558,132 +1669,6 @@ end
 --------------------
 -- Lua Option Rows
 --------------------
-
-local function SpeedType()
-	local t = OptionRowBase((optionIndex == 'Edit' and 'Speed') or 'Speed Mod Type',{ 'x' , 'C' , 'm' })
-	t.LoadSelections = function(self, list, pn) for i,v in ipairs(self.Choices) do if modType[pn+1] == v then list[i] = true end end end
-	t.SaveSelections = function(self, list, pn) for i,v in ipairs(list) do if v then modType[pn+1] = self.Choices[i] end end SetSpeedMod(pn+1) SetOptionRow('Adjust Speed',true) end
-	t.LayoutType = 'ShowOneInRow'
-	return t
-end
-
-local function SpeedNumber()
-	local function display( text , pn ) text:settext( DisplaySpeedMod(pn) ) end
-	local function move(pn,dir,cnt) modSpeed[pn+1] = clamp( AddSnap(modSpeed[pn+1] , dir , cnt , { 5 , 25 , 100 } ) , speedMin , speedMax ); SetSpeedMod(pn+1) end
-	return SliderOption('Adjust Speed',move,display)
-end
-
-do
-	local lastModRate = 1
-	local function AdjustXModFromRate()
-		for pn = 1, 2 do
-			if Player(pn) then
-				if modType[pn] == 'x' then
-
-					modSpeed[pn] = modSpeed[pn] * lastModRate / modRate
-				end
-			end
-		end
-		lastModRate = modRate
-	end
-
-	local function RateMods( s )
-		local t = OptionRowBase('Music Rate',s and rateModsEdit or rateMods)
-		local edit = s and true or false
-		t.OneChoiceForAllPlayers = true
-		t.LoadSelections = function(self, list, pn)
-			for i,m in ipairs(self.Choices) do
-				if CheckMod(pn,m..'music') then
-					list[i] = true;
-					s = string.gsub(m,'x','')
-					modRate = tonumber(s)
-				end
-			end
-		end
-		t.SaveSelections = function(self, list, pn)
-			for i,m in ipairs(self.Choices) do
-				if list[i] then
-					s = string.gsub(m,'x','');
-					modRate = tonumber(s)
-					if not edit then
-						AdjustXModFromRate()
-						SetOptionRow('Adjust Speed',true)
-					end
-				end
-			end
-			ApplyMod(s..'xmusic',pn+1)
-			MESSAGEMAN:Broadcast('RateModChanged')
-
-			if optionRowTextCache and optionRowTextCache[t.Name] then
-				local text = optionRowText[ optionRowTextCache[t.Name] ][1]
-
-				text:settext('Music Rate\nBPM: ' .. DisplayOptionsBPM())
-				text:maxwidth(0)
-			end
-		end
-		return t
-	end
-end
-
-local function MetaMods( s, iRow )
-	local metaModsRow = metaModsRows[ iRow ]
-	local t = OptionRowBase('MetaMods' .. iRow, metaModsRow.modlist)
-
-	t.SelectType = 'SelectMultiple'
-	t.OneChoiceForAllPlayers = true
-
-	t.LoadSelections = function(self, list, pn)
-		for i, v in ipairs(metaModsRow.mods) do
-			list[i] = CheckMod(pn, v)
-		end
-	end
-
-	t.SaveSelections = function(self, list, pn)
-		if pn ~= 0 then return end -- in OneChoiceForAllPlayers row, list in other players than player 1 is not valid
-
-		ApplyMod(metaModsRow.default, pn+1)
-		for i, v in ipairs(list) do
-			if v then
-				ApplyMod(metaModsRow.mods[i], pn+1)
-			end
-		end
-	end
-
-	return t
-end
-
-local function MetaMods1( s )
-	return MetaMods( s, 1 )
-end
-
-local function MetaMods2( s )
-	return MetaMods( s, 2 )
-end
-
-local function MetaMods3( s )
-	return MetaMods( s, 3 )
-end
-
-local function NextScreenOption()
-	local t = OptionRowBase('Next Screen',{'Gameplay','Select Music','More Options'})
-	t.OneChoiceForAllPlayers = true
-	t.LoadSelections = function(self, list, pn) list[1] = true end
-	t.SaveSelections = function(self, list, pn)
-			if list[1] then nextScreen = ScreenList('Gameplay') end
-			if list[2] then nextScreen = ScreenList('SelectMusic') end
-			if list[3] then nextScreen = ScreenList('PlayerOptions') end
-		end
-	return t
-end
-
-local function EnableGhostData(a) -- Use an argument of 0 for the operator menu option, to affect machine profile.
-	local t = OptionRowBase('Save Ghost Data',{'No','Yes'})
-	if a then t.OneChoiceForAllPlayers = true end
-	t.LoadSelections = function(self, list, pn) if not Profile(a or pn+1).Ghost then Profile(a or pn+1).Ghost = {} end list[2] = Profile(a or pn+1).Ghost.Save; list[1] = not list[2] end
-	t.SaveSelections = function(self, list, pn) Profile(a or pn+1).Ghost.Save = list[2] end
-	if a then CheckProfile.Ghost = { Save = Profile(0).Ghost and Profile(0).Ghost.Save } end
-	return t
-end
 
 function PlayModeType()
 	local t = OptionRowBase('Play Mode Type',{'Stages','Timer'})
@@ -1712,21 +1697,6 @@ function CutOffTime()
 	return t
 end
 
-local function JudgmentFont() return CustomMod('Judgment Font','JudgmentFont',judgmentFontList) end
-local function HoldJudgmentFont() return CustomMod('Hold Judgment Font','HoldJudgmentFont',holdJudgmentFontList) end
-
-local function LifeBarOption() return CustomMod('Life Bar Type','LifeBar',{'Normal','Surround'}) end
-local function CompareOption()
-	local t = CustomMod('Compare Score','Compare',{ 'None' , 'Personal' , 'Machine' , 'Subtractive' })
-	if Player(1) and Player(2) and GAMESTATE:GetCurrentSteps(0) == GAMESTATE:GetCurrentSteps(1) then table.insert(t.Choices,'Opponent') end
-	for pn=1,2 do if ModCustom.Compare[pn] > table.getn(t.Choices) then ModCustom.Compare[pn] = 2 end end
-	return t
-end
-local function MeasureOption() 
-	local t = CustomMod('Measure Count','Measure',{ 'Off' , 'All' } )
-	for i,v in ipairs(ModsMaster.Measure.modlist) do if i > 2 then if v == 32 or v == 192 then table.insert(t.Choices,v..'nds') else table.insert(t.Choices,v..'ths') end end end
-	return t
-end
 
 function DQ() return BoolPrefRow('DQ','Disqualification') end
 function Merciful() return BoolPrefRow('Merciful','MercifulBeginner',{'FailOffInBeginner','FailOffForFirstStageEasy'}) end

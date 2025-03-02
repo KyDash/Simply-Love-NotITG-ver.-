@@ -6,8 +6,8 @@ local function round(num, ndp) local mult = 10 ^ (ndp or 0) return math.floor(nu
 
 local epsilon = 0.044
 
-SLGraphicSettings = {}
-local t = SLGraphicSettings
+_SL.Graphics = {}
+local t = _SL.Graphics
 t.LineNames = function()
 	local lines = 'Windowed,DisplayAspectRatio,DisplayResolution,DisplayColor,TextureResolution,TextureColor,MovieColor,SmoothLines,CelShadeModels,DelayedTextureDelete,RefreshRate,Vsync,ShowStats,ShowBanners'
 	if MonthOfYear() == 4 and DayOfMonth() == 1 then

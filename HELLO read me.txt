@@ -13,13 +13,16 @@ just going to include a few notes here that may help
 you use and understand the theme.
 
 (edited for NotITG v4 by TaroNuke, Ky_Dash, and ArcticFqx)
+further additions by Ky_Dash, heavily referencing work done by contributors of the following themes:
+https://github.com/Simply-Love/Simply-Love-SM5
+https://github.com/zarzob/Simply-Love-SM5/
+https://github.com/femboyindustries/gimmick-theme/
 
 <3~<3~<3~<3~<3~<3~<3~<3~<3~<3~<3~<3~<3~<3~<3~<3~<3~<3
 
 
 compatible with: 
-Stepmania 3.95 and arcade machines - NOT compatible with oITG beta3
-normal aspect ratio and widescreen
+NotITG v4.9.2 at minimum
 
 functionality for: 
 dance, pump, and techno game modes

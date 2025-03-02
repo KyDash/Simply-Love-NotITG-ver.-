@@ -446,85 +446,6 @@ local DPLimit = 9 -- Max of DP the compare score feature will display before swi
 local function CompareTextColor(n) if n < 0 then return 1,.3,1,1 end return 0.3,1,0.3,1 end
 local function ModTextFormat(self,n) end -- This is added on top of the base positioning etc.
 
--- Used with Speed Mods, to determine selected mod and as limits for slider speed mods.
-local speedMax = 2000
-local speedSpread = 5
-local speedMin = 5
-
--- These will be the option rows available on the [nth] option screen. The 'NextScreen' row will be automatically added as long as there is more than 1 option screen.
-
--- metrics.ini/[ScreenPlayerOptions]
-playerOptions = {}
-playerOptions[1] = { 'SpeedType','SpeedNumber','Mini','Perspective','NoteSkin','Turn','JudgmentFont','HoldJudgmentFont','Rate' }
-
-if FUCK_EXE and tonumber(GAMESTATE:GetVersionDate()) >= 20210420 then -- v4.2.0
-	playerOptions[2] = { 'MetaMods1','MetaMods2','MetaMods3','Accel','Scroll','Effect','Appearance','Handicap','InsertTaps','InsertOther','Hide','Ghost','Compare','Measure','LifeBar' }
-else
-	playerOptions[2] = { 'Accel','Scroll','Effect','Appearance','Handicap','InsertTaps','InsertOther','Hide','Ghost','Compare','Measure','LifeBar' }
-end
-playerOptions.Edit = { 'SpeedType','SpeedNumber','Mini','Perspective','NoteSkin','Turn' }
-local ShowAllInRow = true
-
-local metaModsRows = {
-	{
-		modlist = {'MetaFlip', 'MetaInvert', 'MetaVideogames', 'MetaMonocolumn'},
-		default = 'no metaflip, no metainvert, no metavideogames, no metamonocolumn',
-		mods = {'metaflip', 'metainvert', 'metavideogames', 'metamonocolumn'}
-	},
-	{
-		modlist = {'MetaReverse', 'MetaDizzy', 'MetaOrient', 'MetaBrake'},
-		default = 'no metareverse, no metadizzy, no metaorient, no metabrake',
-		mods = {'metareverse', 'metadizzy', 'metaorient', 'metabrake'}
-	},
-	{
-		modlist = {'MetaHidden', '50% MetaStealth'},
-		default = 'no metahidden, no metastealth',
-		mods = {'metahidden', '50% metastealth'}
-	}
-}
-
-local rateMods = { "1.0x", "1.1x", "1.2x", "1.3x", "1.4x", "1.5x", "1.6x", "1.7x", "1.8x", "1.9x", "2.0x" }
-local rateModsEdit = { "1.0x", "1.1x", "1.2x", "1.3x", "1.4x", "1.5x", "1.6x", "1.7x", "1.8x", "1.9x", "2.0x", "0.3x", "0.4x", "0.5x", "0.6x", "0.7x", "0.8x", "0.9x" }
-
-modRate = 1
-local optionIndex = 0
-local ModsPlayer = {}
-local ModsMaster = {}
-ModsMaster.Perspective =	{ modlist = {'Overhead','Hallway','Distant','Incoming','Space'}, Select = 1 }
-ModsMaster.NoteSkin =		{ modlist = NOTESKIN:GetNoteSkinNames(), Select = 1 }
-ModsMaster.Turn =			{ modlist = {'Mirror','SoftShuffle','SmartBlender','Blender',}, default = 'no mirror,no left,no right,no shuffle,no supershuffle,no softshuffle, no spookyshuffle, no smartblender', mods = {'mirror','softshuffle','smartblender','supershuffle'} }
-ModsMaster.Hide = 			{ modlist = {'Hide Targets','Hide Judgments','Hide Background'}, default ='no dark,no blind,no cover', mods = {'dark','blind','cover'} }
-ModsMaster.Accel =			{ modlist = {'Accel','Decel','Wave','Boomerang','Expand','Bump'}, default = 'no boost,no brake,no wave,no boomerang,no expand,no bumpy', mods = {'Boost','Brake','Wave','Boomerang','Expand','Bumpy'} }
-ModsMaster.Scroll = 		{ modlist = {'Reverse','Split','Alternate','Cross','Centered'}, default = 'no reverse,no split,no alternate,no cross,no centered' }
-ModsMaster.Effect = 		{ modlist = {'Drunk','Dizzy','Flip','Invert';'Tornado','Tipsy','Beat'}, default = 'no drunk,no dizzy,no flip,no invert,no tornado,no tipsy,no beat, no big', mods = {'drunk','dizzy','flip','invert','60% tornado','tipsy','beat'} }
-ModsMaster.Appearance = 	{ modlist = {'Sudden','Hidden','Blink','Stealth'}, default ='no hidden,no sudden,no blink,no stealth' }
-ModsMaster.Handicap = 		{ modlist = {'No Mines','No Rolls','No Holds','No Hands','No Jumps','No Stretch'}, default ='no nomines,no noholds,no norolls,no nohands,no nojumps,no nostretch', mods = {'nomines','norolls','noholds','nohands','nojumps','nostretch'} } 
-ModsMaster.InsertTaps =		{ name = 'Insert', modlist = {'Little','Big','Quick','Skippy','Echo','Wide','Stomp'}, default = 'no little,no big,no quick,no skippy,no echo,no stomp,no wide', mods = {'Little','Big','Quick','Skippy','Echo','Wide','Stomp'} }
-ModsMaster.InsertOther =	{ name = 'Other', modlist = {'Planted','Floored','Twister','Mines'}, default = 'no planted,no floored,no twister,no mines' }
-
-ModsMaster.NoMines =		{ name = 'No Mines' }
-ModsMaster.NoJumps =		{ name = 'No Jumps' }
-ModsMaster.NoHolds =		{ name = 'No Holds' }
-ModsMaster.NoHands =		{ name = 'No Hands' }
-ModsMaster.NoRolls =		{ name = 'No Rolls' }
-ModsMaster.Dark =			{ name = 'Hide Targets' }
-ModsMaster.Blind =			{ name = 'Hide Judgments' }
-ModsMaster.Cover =			{ name = 'Hide Background' }
-ModsMaster.Mines =			{ name = 'Add Mines' }
-
-ModsMaster.Boost =			{ name = 'Accel', float = true }
-ModsMaster.Break =			{ name = 'Decel', float = true }
-ModsMaster.Wave =			{ float = true }
-ModsMaster.Expand =			{ float = true }
-ModsMaster.Boomerang =		{ float = true }
-ModsMaster.Bumpy =			{ float = true }
-ModsMaster.Drunk =			{ float = true }
-ModsMaster.Dizzy =			{ float = true }
-ModsMaster.Tornado =		{ float = true }
-ModsMaster.Tipsy =			{ float = true }
-ModsMaster.Beat =			{ float = true }
-ModsMaster.Mini =			{ float = true }
-
 local function OptionRowBase(name,modList)
 	local t = {
 		Name = name or 'Unnamed Options',
@@ -563,33 +484,6 @@ local function SliderOption(name,move,display,share)
 	return t
 end
 
-local function MetaMods( s, iRow )
-	local metaModsRow = metaModsRows[ iRow ]
-	local t = OptionRowBase('MetaMods' .. iRow, metaModsRow.modlist)
-
-	t.SelectType = 'SelectMultiple'
-	t.OneChoiceForAllPlayers = true
-
-	t.LoadSelections = function(self, list, pn)
-		for i, v in ipairs(metaModsRow.mods) do
-			list[i] = CheckMod(pn, v)
-		end
-	end
-
-	t.SaveSelections = function(self, list, pn)
-		if pn ~= 0 then return end -- in OneChoiceForAllPlayers row, list in other players than player 1 is not valid
-
-		ApplyMod(metaModsRow.default, pn+1)
-		for i, v in ipairs(list) do
-			if v then
-				ApplyMod(metaModsRow.mods[i], pn+1)
-			end
-		end
-	end
-
-	return t
-end
-
 local function CustomMod(name,modVar,choices)
 	if not ModCustom[modVar] then ModCustom[modVar] = {1,1} end
 	local t = OptionRowBase(name,choices)
@@ -597,116 +491,6 @@ local function CustomMod(name,modVar,choices)
 	t.SaveSelections = function(self, list, pn) for i,v in ipairs(list) do if v then ModCustom[modVar][pn+1] = i end end end
 	return t
 end
-
-ModsMaster.MetaMods1 = 		{ fnctn = function(s) return MetaMods(s, 1) end }
-ModsMaster.MetaMods2 = 		{ fnctn = function(s) return MetaMods(s, 2) end }
-ModsMaster.MetaMods3 = 		{ fnctn = function(s) return MetaMods(s, 3) end }
-ModsMaster.SpeedType =		{ fnctn = function()
-	local t = OptionRowBase((optionIndex == 'Edit' and 'Speed') or 'Speed Mod Type',{ 'x' , 'C' , 'm' })
-	t.LoadSelections = function(self, list, pn) for i,v in ipairs(self.Choices) do if modType[pn+1] == v then list[i] = true end end end
-	t.SaveSelections = function(self, list, pn) for i,v in ipairs(list) do if v then modType[pn+1] = self.Choices[i] end end SetSpeedMod(pn+1) SetOptionRow('Adjust Speed',true) end
-	t.LayoutType = 'ShowOneInRow'
-	return t
-end}
-ModsMaster.SpeedNumber =	{ fnctn = function()
-	local function display( text , pn ) text:settext( DisplaySpeedMod(pn) ) end
-	local function move(pn,dir,cnt) modSpeed[pn+1] = clamp( AddSnap(modSpeed[pn+1] , dir , cnt , { 5 , 25 , 100 } ) , speedMin , speedMax ); SetSpeedMod(pn+1) end
-	return SliderOption('Adjust Speed',move,display)
-end}
-ModsMaster.Next =			{ fnctn = function()
-	local t = OptionRowBase('Next Screen',{'Gameplay','Select Music','More Options'})
-	t.OneChoiceForAllPlayers = true
-	t.LoadSelections = function(self, list, pn) list[1] = true end
-	t.SaveSelections = function(self, list, pn)
-			if list[1] then nextScreen = ScreenList('Gameplay') end
-			if list[2] then nextScreen = ScreenList('SelectMusic') end
-			if list[3] then nextScreen = ScreenList('PlayerOptions') end
-		end
-	return t
-end}
-ModsMaster.Ghost = 			{ fnctn = function(a)
-	local t = OptionRowBase('Save Ghost Data',{'No','Yes'})
-	if a then t.OneChoiceForAllPlayers = true end
-	t.LoadSelections = function(self, list, pn) if not Profile(a or pn+1).Ghost then Profile(a or pn+1).Ghost = {} end list[2] = Profile(a or pn+1).Ghost.Save; list[1] = not list[2] end
-	t.SaveSelections = function(self, list, pn) Profile(a or pn+1).Ghost.Save = list[2] end
-	if a then CheckProfile.Ghost = { Save = Profile(0).Ghost and Profile(0).Ghost.Save } end
-	return t
-end}
-ModsMaster.Measure =		{ fnctn = function()
-	local t = CustomMod('Measure Count','Measure',{ 'Off' , 'All' } )
-	for i,v in ipairs(ModsMaster.Measure.modlist) do if i > 2 then if v == 32 or v == 192 then table.insert(t.Choices,v..'nds') else table.insert(t.Choices,v..'ths') end end end
-	return t
-end, modlist = {-1,0,8,12,16,24,32} }
-ModsMaster.Compare =		{ fnctn = function()
-	local t = CustomMod('Compare Score','Compare',{ 'None' , 'Personal' , 'Machine' , 'Subtractive' })
-	if Player(1) and Player(2) and GAMESTATE:GetCurrentSteps(0) == GAMESTATE:GetCurrentSteps(1) then table.insert(t.Choices,'Opponent') end
-	for pn=1,2 do if ModCustom.Compare[pn] > table.getn(t.Choices) then ModCustom.Compare[pn] = 2 end end
-	return t
-end}
-ModsMaster.LifeBar =		{ fnctn = function() return CustomMod('Life Bar Type','LifeBar',{'Normal','Surround'}) end }
-
-do
-	local lastModRate = 1
-	local function AdjustXModFromRate()
-		for pn = 1, 2 do
-			if Player(pn) then
-				if modType[pn] == 'x' then
-
-					modSpeed[pn] = modSpeed[pn] * lastModRate / modRate
-				end
-			end
-		end
-		lastModRate = modRate
-	end
-	local function RateMods(s)
-		local t = OptionRowBase('Music Rate',s and rateModsEdit or rateMods)
-		local edit = s and true or false
-		t.OneChoiceForAllPlayers = true
-		t.LayoutType = 'ShowOneInRow'
-		t.LoadSelections = function(self, list, pn)
-			for i,m in ipairs(self.Choices) do
-				if CheckMod(pn,m..'music') then
-					list[i] = true;
-					s = string.gsub(m,'x','')
-					modRate = tonumber(s)
-				end
-			end
-		end
-		t.SaveSelections = function(self, list, pn)
-			for i,m in ipairs(self.Choices) do
-				if list[i] then
-					s = string.gsub(m,'x','');
-					modRate = tonumber(s)
-					if not edit then
-						AdjustXModFromRate()
-						SetOptionRow('Adjust Speed',true)
-					end
-				end
-			end
-			ApplyMod(s..'xmusic',pn+1)
-			MESSAGEMAN:Broadcast('RateModChanged')
-
-			if optionRowTextCache and optionRowTextCache[t.Name] then
-				local text = optionRowText[ optionRowTextCache[t.Name] ][1]
-
-				text:settext('Music Rate\nBPM: ' .. DisplayOptionsBPM())
-				text:maxwidth(0)
-			end
-		end
-		return t
-	end
-	ModsMaster.Rate =			{ fnctn = RateMods	}
-	ModsMaster.RateEdit =		{ fnctn = RateMods, arg = 'Edit' }
-end
--- ModsMaster.SpeedBase =		{ fnctn = 'SpeedMods' }
--- ModsMaster.SpeedExtra =		{ fnctn = 'SpeedMods', arg = 'Extra' }
-
-ModsMaster.JudgmentFont =		{ fnctn = function() return CustomMod('Judgment Font','JudgmentFont',judgmentFontList) end }
--- ModsMaster.JudgmentTween =		{ fnctn = JudgmentTween }
--- ModsMaster.ComboFont =			{ fnctn = 'ComboFont' }
--- ModsMaster.ComboTween =			{ fnctn = ComboTween }
-ModsMaster.HoldJudgmentFont =	{ fnctn = function() return CustomMod('Hold Judgment Font','HoldJudgmentFont',holdJudgmentFontList) end }
--- ModsMaster.HoldJudgmentTween =	{ fnctn = HoldJudgmentTween }
 
 --------------------------------
 -- BGAnimation Functions
@@ -734,7 +518,7 @@ function GameplayInit(self)
 	lifeNormal = {}
 	lifeHot = {}
 	holdJudgments = {}
-	ApplyRateAdjust()
+	--ApplyRateAdjust()
 	self:queuecommand('FirstUpdate')
 end
 function Gameplay(self)
@@ -1263,7 +1047,7 @@ function InitializeMods()
 	ModsPlayer = { }
 	ModCustom = { LifeBar = {1,1}, JudgmentFont = {1,1}, HoldJudgmentFont = {1,1}, Compare = {1,1}, Measure = {1,1} }
 	modRate = 1
-	CalculateSpeedMod()
+	-- CalculateSpeedMod()
 	ResetScores()
 	TimedSet.Reset()
 	LoadFromProfile()
@@ -1433,6 +1217,26 @@ end
 -- Intended to be used from ScreenEvaluation.
 -- It will return a human-readable string consists of metamods and rate mods currently being used.
 -- If BitmapText is given, this function will set the string to the BitmapText.
+local function MetaModsText(self)
+	local mods = {}
+
+	for _, metaModsRow in ipairs(metaModsRows) do
+		for i, v in ipairs(metaModsRow.mods) do
+			if CheckMod(0, v) then
+				table.insert(mods, metaModsRow.modlist[i])
+			end
+		end
+	end
+
+	local s = table.concat(mods, ', ')
+
+	if self then
+		self:settext(s)
+	else
+		return s
+	end
+end
+
 function SongOptionsLabel(self)
 	local t = {}
 
@@ -1454,26 +1258,6 @@ end
 function BPMlabelRate(self)	local s = AdjustedBPM() .. ' BPM ' .. RateModAppend() if self then self:settext(s) else return s end end
 function BPMandRate(self) local s = AdjustedBPM() .. ' ' .. RateModAppend() if self then self:settext(s) else return s end end
 function RateBPMlabel(self) local s = RateModText() if s ~= '' then s = s .. ' (' .. AdjustedBPM() .. ' BPM)' end	if self then self:settext(s) else return s end end 
-
-local function MetaModsText(self)
-	local mods = {}
-
-	for _, metaModsRow in ipairs(metaModsRows) do
-		for i, v in ipairs(metaModsRow.mods) do
-			if CheckMod(0, v) then
-				table.insert(mods, metaModsRow.modlist[i])
-			end
-		end
-	end
-
-	local s = table.concat(mods, ', ')
-
-	if self then
-		self:settext(s)
-	else
-		return s
-	end
-end
 
 function RateModText(self) local s = '' if modRate ~= 1 then s = string.format('%01.1f',modRate) .. 'x Music Rate' end if self then self:settext(s) else return s end end
 function RateModAppend(self) local s = RateModText() if s ~= '' then s = '(' .. s .. ')' end if self then self:settext(s) else return s end end
@@ -1534,8 +1318,25 @@ end
 -- Lua Option Row support functions
 -------------------------------------
 
-function PlayerOptionsInit() LineNames() SetPlayerOptionFlags() return not string.find(playerOptions.Flags,'toggle') end
-function SetPlayerOptionFlags() local f = 'toggle' for i,v in ipairs(optionsList) do if ModsMaster[v] and ModsMaster[v].float then f = '' end end playerOptions.Flags = playerOptions[optionIndex].Flags or f end
+function PlayerOptionsInit()
+	print'PlayerOptionsInit'
+	print'Setting LineNames'
+	LineNames()
+	print'Setting Flags'
+	SetPlayerOptionFlags()
+	print(playerOptions.Flags)
+	return not string.find(playerOptions.Flags,'toggle')
+end
+function SetPlayerOptionFlags()
+	local f = 'toggle'
+	for i,v in ipairs(optionsList) do
+		print(i, v)
+		if ModsMaster[v] and ModsMaster[v].float then
+			f = ''
+		end
+	end
+	playerOptions.Flags = playerOptions[optionIndex].Flags or f
+end
 
 function LineNames()
 	optionIndex = tonumber(optionIndex) and math.mod(optionIndex,table.getn(playerOptions))+1 or optionIndex
@@ -1549,6 +1350,7 @@ function LineNames()
 
 	lineNames = string.sub(lineNames,1,string.len(lineNames)-1)
 	if table.getn(playerOptions) > 1 and optionIndex ~= 'Edit' then table.insert(optionsList,'Next') lineNames = lineNames .. ',' .. 'Mod' else nextScreen = ScreenList('Gameplay') end
+	print(lineNames)
 end
 
 local function OptionFloat(mod)
@@ -1646,8 +1448,9 @@ end
 function OptionFromList()
 	local t = {}
 	local mod = table.remove(optionsList,1)
+	print(mod)
 	if not ModsMaster[mod] then ModsMaster[mod] = {} end
-		if ModsMaster[mod].fnctn	then t = ModsMaster[mod].fnctn(ModsMaster[mod].arg)
+	if ModsMaster[mod].fnctn	then t = ModsMaster[mod].fnctn(ModsMaster[mod].arg)
 	elseif ModsMaster[mod].float	then t = OptionFloat(mod)
 	elseif ModsMaster[mod].modlist	then t = OptionList(mod)
 									else t = OptionBool(mod) end
@@ -1704,19 +1507,6 @@ function Merciful() return BoolPrefRow('Merciful','MercifulBeginner',{'FailOffIn
 --------------------------
 -- Mod Specific functions
 --------------------------
-
-function CalculateSpeedMod()
-	modType = {'C','C'}
-	modSpeed = {700,700}
-	for pn=1,2 do if Player(pn) then
-		for i=speedMin,speedMax,speedSpread do
-			if CheckMod(pn-1,'C'..i) then modType[pn] = 'C'; modSpeed[pn] = i elseif CheckMod(pn-1,(i/100)..'x') then modType[pn] = 'x'; modSpeed[pn] = i elseif CheckMod(pn - 1, 'm' .. i) then modType[pn] = 'm'; modSpeed[pn] = i end
-		end
-	end end
-end
-
-function SpeedString(pn,speed) local s = speed or modSpeed[pn] or ''; if modType[pn] == 'x' then return string.format('%g',math.floor(s)/100) .. 'x' else return modType[pn] .. math.floor(s) end end
-function SetSpeedMod(pn) ApplyMod('1x',pn) ApplyMod(SpeedString(pn),pn) MESSAGEMAN:Broadcast('SpeedModChanged') end
 
 function ApplyRateAdjust()
 	for pn=1,2 do
@@ -2219,7 +2009,7 @@ end
 
 function CancelAll(self)
 	local pn = self:getaux()
-	CalculateSpeedMod()
+	-- CalculateSpeedMod()
 	for s,v in pairs(ModCustom) do v[pn] = 1 end
 	for s,v in pairs(ModsPlayer) do if tonumber(v[pn]) then v[pn] = 0 else v[pn] = nil end end
 	for i,v in ipairs(playerOptions[optionIndex]) do InitializeOptionRow(i) end
